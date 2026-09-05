@@ -10,3 +10,10 @@ __pycache__/
 
 # Reference PDFs
 *.pdf
+
+# Home Assistant runtime state and secrets. configuration.yaml IS tracked
+# (see its header), but nothing that carries credentials or per-instance state.
+secrets.yaml
+home-assistant*.log*
+home-assistant_v2.db*
+.storage/

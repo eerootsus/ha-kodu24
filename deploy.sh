@@ -48,6 +48,10 @@ done
 # deleting a HACS theme because it is not in this repo would be a nasty
 # surprise. Package directories we fully own are mirrored.
 MANIFEST=(
+  # The root config, and therefore the `packages:` block that decides what HA
+  # actually loads. Tracked since 2026-09-05 -- it was unversioned before, and
+  # that is how battery-monitor stayed undeployed and silent.
+  "configuration.yaml configuration.yaml    no"
   "danfoss.py         pyscript/danfoss.py   no"
   "trv-climate/       trv-climate/          yes"
   "backup-monitor/    backup-monitor/       yes"

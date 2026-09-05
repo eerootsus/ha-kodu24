@@ -1,0 +1,81 @@
+# Home Assistant's root configuration. VERSION CONTROLLED — edit here and run
+# ./deploy.sh, not in /config directly, or the next deploy will overwrite it.
+#
+# In the repo since 2026-09-05. It was unversioned before, which is how the
+# battery-monitor package went missing: the file existed and was documented as
+# live, but nothing here declared it under `packages:`, so HA never loaded it
+# and no alert ever fired. The packages block below decides what is actually
+# running — adding a package directory without adding it here does nothing.
+#
+# Secrets stay out: this file carries none today (no !secret references), and
+# anything sensitive belongs in secrets.yaml, which is gitignored.
+
+
+# Loads default set of integrations. Do not remove.
+default_config:
+
+# Text to speech
+tts:
+  - platform: google_translate
+
+
+automation: !include automations.yaml
+script: !include scripts.yaml
+scene: !include scenes.yaml
+
+
+zha:
+  zigpy_config:
+    ota:
+      extra_providers:
+        - type: ikea
+        - type: sonoff
+        - type: z2m
+        - type: advanced
+          warning: I understand I can *destroy* my devices by enabling OTA updates from files. Some OTA updates can be mistakenly applied to the wrong device, breaking it. I am consciously using this at my own risk.
+          path: /config/zigbee_ota
+
+
+recorder:
+  purge_keep_days: 180
+
+
+homeassistant:
+  customize:
+    sensor.vicare_heating_gas_consumption_current_day:
+      device_class: gas
+    sensor.vicare_hot_water_gas_consumption_current_day:
+      device_class: gas
+    sensor.trv_danfoss_ada_load_estimate:
+      state_class: measurement
+    sensor.trv_danfoss_kitchen_load_estimate:
+      state_class: measurement
+    sensor.trv_danfoss_lola_load_estimate:
+      state_class: measurement
+    sensor.trv_danfoss_master_load_estimate:
+      state_class: measurement
+    sensor.trv_danfoss_stairwell_load_estimate:
+      state_class: measurement
+  packages:
+    chores: !include chores/package.yaml
+    chores_sensors: !include chores/sensors/chores.yaml
+    chores_rotation: !include chores/automations/rotation.yaml
+    chores_weekly_summary: !include chores/automations/weekly_summary.yaml
+    chores_washer: !include chores/automations/washer_finished.yaml 
+    climate_sensors: !include trv-climate/climate.yaml
+    backup_monitor: !include backup-monitor/backup_monitor.yaml
+    battery_monitor: !include battery-monitor/battery_monitor.yaml
+
+
+pyscript:
+  allow_all_imports: true
+  hass_is_global: true
+
+logger:
+  default: warning
+  logs:
+    custom_components.pyscript: info
+    
+frontend:
+  themes: !include_dir_merge_named themes    
+

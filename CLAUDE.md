@@ -46,6 +46,14 @@ never knew about. `dashboard/` directories are excluded entirely — they are
 records of storage-mode dashboards and paste-in card templates, not files HA
 loads.
 
+`configuration.yaml` is tracked here as of 2026-09-05 and is deployed like
+everything else, so **edit it in the repo, not in `/config`** — the next deploy
+overwrites the live copy. It matters more than the package files: its
+`packages:` block is what decides which packages HA actually loads, and while
+it was unversioned `battery-monitor` sat in the repo, documented as live,
+without ever being declared — so it never loaded and never alerted. Adding a
+package directory does nothing until it is listed there.
+
 Storage-mode dashboards still have to be edited in the UI; the YAML under
 `*/dashboard/` is the reviewable record, since HA keeps the live copy in
 `.storage`.
