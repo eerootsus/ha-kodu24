@@ -1,4 +1,10 @@
-# Backup monitor — alerts for the off-site backups running on alpine-docker.
+# Backup monitor — alerts for the backup jobs protecting the server.
+#
+# Three run on the VM (alpine-docker) and are off-site: media, borg, flash.
+# One runs on the Unraid host and is local: `pool` (ZFS pool -> parity array,
+# added 2026-09-05) — it is host-side because the consistent snapshot needs
+# zfs, and because the VM's own vdisk is part of what it backs up, so a
+# VM-side cron would be circular. Both report through the same webhook.
 #
 # Not climate-related, but it lives here for the same reason battery-monitor
 # does: this is the de facto HA config repo. The backup jobs themselves and
@@ -17,7 +23,8 @@
 # authorises exactly one automation, whereas a long-lived token on an
 # internet-facing VM would grant full control of the house.
 #
-# /root/bin/notify-ha.sh on the VM reports three states:
+# /root/bin/notify-ha.sh on the VM (and the equivalent notify() inside
+# /boot/config/scripts/pool-backup.sh on the host) reports three states:
 #   ok      — run finished cleanly
 #   fail    — run broke; alert immediately, with detail
 #   running — a previous run is still going. The media sync's pidfile guard
@@ -43,6 +50,12 @@ input_text:
     max: 20
   backup_flash_status:
     name: Backup flash status
+    max: 20
+  # pool -> array nightly (device-failure layer for the ZFS pool). Unlike the
+  # three above it runs on the Unraid *host*, not the VM: the consistent
+  # snapshot needs zfs, and the VM's own vdisk is part of what it copies.
+  backup_pool_status:
+    name: Backup pool status
     max: 20
 
 input_number:
@@ -156,6 +169,14 @@ input_datetime:
     name: Backup flash last ok
     has_date: true
     has_time: true
+  backup_pool_last_seen:
+    name: Backup pool last seen
+    has_date: true
+    has_time: true
+  backup_pool_last_ok:
+    name: Backup pool last ok
+    has_date: true
+    has_time: true
 
 # ---------------------------------------------------------------------------
 # Template entities exist for the dashboard, and for one property input_* lack:
@@ -218,6 +239,13 @@ template:
                   and (now().timestamp()
                        - (state_attr('input_datetime.backup_flash_last_ok', 'timestamp') | float(0))) < 93600) }}
 
+      - name: Backup pool healthy
+        unique_id: backup_pool_healthy
+        state: >
+          {{ (states('input_text.backup_pool_status') == 'ok'
+                  and (now().timestamp()
+                       - (state_attr('input_datetime.backup_pool_last_ok', 'timestamp') | float(0))) < 93600) }}
+
 automation:
   - id: backup_job_report
     alias: Backup - report from alpine-docker
@@ -237,7 +265,7 @@ automation:
       # Ignore unexpected job names rather than failing on a templated
       # entity_id that doesn't resolve.
       - condition: template
-        value_template: "{{ trigger.json.job in ['media', 'borg', 'flash'] }}"
+        value_template: "{{ trigger.json.job in ['media', 'borg', 'flash', 'pool'] }}"
     action:
       - service: input_datetime.set_datetime
         target:
@@ -287,7 +315,7 @@ automation:
         hours: "/1"
     action:
       - repeat:
-          for_each: ["media", "borg", "flash"]
+          for_each: ["media", "borg", "flash", "pool"]
           sequence:
             - variables:
                 seen_entity: "input_datetime.backup_{{ repeat.item }}_last_seen"

@@ -67,6 +67,25 @@ alias:
 
 ---
 
+# The only local job of the four: ZFS pool -> parity array, run on the Unraid
+# host rather than the VM. Same strip treatment so it reads identically.
+type: custom:uptime-card
+title_template: Pool to array
+entity: binary_sensor.backup_pool_healthy
+hours_to_show: 168
+icon: mdi:database-arrow-right
+severity: 10
+update_interval: 300
+title_adaptive_color: false
+status_adaptive_color: true
+icon_adaptive_color: false
+tooltip_adaptive_color: true
+alias:
+  ok: Backed up
+  ko: Failing
+
+---
+
 # ---------------------------------------------------------------------------
 # 2. Current state — what the strip cannot tell you: when each last succeeded,
 #    and what the last report actually said.
@@ -82,6 +101,8 @@ entities:
     name: Borg (precious)
   - entity: input_datetime.backup_flash_last_ok
     name: Unraid flash
+  - entity: input_datetime.backup_pool_last_ok
+    name: Pool to array
   - type: section
     label: Last reported status
   - entity: input_text.backup_media_status
@@ -90,6 +111,8 @@ entities:
     name: Borg (precious)
   - entity: input_text.backup_flash_status
     name: Unraid flash
+  - entity: input_text.backup_pool_status
+    name: Pool to array
   - type: section
     label: Off-site capacity
   - entity: sensor.hetzner_box_used

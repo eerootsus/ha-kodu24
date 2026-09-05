@@ -7,7 +7,7 @@
 # Note HA requires a hyphen in dashboard url_paths, hence `home-server`.
 #
 # Views:
-#   Overview   — internet + the three backup uptime strips, then the four
+#   Overview   — internet + the four backup uptime strips, then the four
 #                numbers that matter: array free, VM disk, Hetzner box, updates
 #   Backups    — the strips again with detail: last run, last status, off-site
 #                size and borg growth
@@ -75,6 +75,20 @@ views:
       entity: binary_sensor.backup_flash_healthy
       hours_to_show: 168
       icon: mdi:usb-flash-drive
+      severity: 10
+      update_interval: 300
+      title_adaptive_color: false
+      status_adaptive_color: true
+      icon_adaptive_color: false
+      tooltip_adaptive_color: true
+      alias:
+        ok: Backed up
+        ko: Failing
+    - type: custom:uptime-card
+      title_template: Pool to array
+      entity: binary_sensor.backup_pool_healthy
+      hours_to_show: 168
+      icon: mdi:database-arrow-right
       severity: 10
       update_interval: 300
       title_adaptive_color: false
@@ -171,6 +185,20 @@ views:
       alias:
         ok: Backed up
         ko: Failing
+    - type: custom:uptime-card
+      title_template: Pool to array
+      entity: binary_sensor.backup_pool_healthy
+      hours_to_show: 168
+      icon: mdi:database-arrow-right
+      severity: 10
+      update_interval: 300
+      title_adaptive_color: false
+      status_adaptive_color: true
+      icon_adaptive_color: false
+      tooltip_adaptive_color: true
+      alias:
+        ok: Backed up
+        ko: Failing
     - type: entities
       title: Backups
       entities:
@@ -182,6 +210,8 @@ views:
         name: Borg (precious)
       - entity: input_datetime.backup_flash_last_ok
         name: Unraid flash
+      - entity: input_datetime.backup_pool_last_ok
+        name: Pool to array
       - type: section
         label: Last reported status
       - entity: input_text.backup_media_status
@@ -190,6 +220,8 @@ views:
         name: Borg (precious)
       - entity: input_text.backup_flash_status
         name: Unraid flash
+      - entity: input_text.backup_pool_status
+        name: Pool to array
       - type: section
         label: Off-site capacity
       - entity: sensor.hetzner_box_used
