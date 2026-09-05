@@ -51,6 +51,7 @@ MANIFEST=(
   "danfoss.py         pyscript/danfoss.py   no"
   "trv-climate/       trv-climate/          yes"
   "backup-monitor/    backup-monitor/       yes"
+  "battery-monitor/   battery-monitor/      yes"
   "chores/            chores/               yes"
   "themes/            themes/               no"
 )
@@ -59,11 +60,10 @@ MANIFEST=(
 # configuration.yaml's `packages:` block -- copying them would put files in
 # /config that HA never loads, which reads like they are running when they are
 # not:
-#   battery-monitor/  -- has never been deployed at all (verified 2026-09-05).
-#                        The battery and safety-device alerts it describes are
-#                        therefore not running. Add the !include first, then
-#                        add it here.
-#   curve-test/       -- a heating-curve test artifact, not a live package.
+#   curve-test/  -- not a passive package: it steps the Vitodens heating curve
+#                   down to find the house's tolerance floor. Deploying it
+#                   changes how the heating runs, so it goes live only on a
+#                   deliberate decision, never as part of a routine deploy.
 
 cd "$(dirname "$0")"
 
