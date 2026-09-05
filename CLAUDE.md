@@ -10,6 +10,44 @@ The climate half is a PyScript helper for Danfoss eTRV0103 Zigbee thermostatic r
 
 ## Setup & Deployment
 
+**Deploy with `./deploy.sh`** (added 2026-09-05). It rsyncs every package in
+its manifest into HA's `/config` and runs `ha core check`; `--restart` also
+restarts HA, `-n` is a dry run.
+
+Prerequisites, one-time:
+
+1. HA add-on **Advanced SSH & Web Terminal** installed and started, with this
+   workstation's public key in its `authorized_keys` option, port `22222`.
+   (This is HA OS/Supervised — the Observer on :4357 confirms it — so add-ons
+   are available.)
+2. Nothing to change in the Tailscale policy: `tag:workstation → tag:home` is
+   not port-restricted (both :8123 and :4357 answer over the tailnet).
+
+Two things about the transport that are not obvious:
+
+- **It must go over the tailnet.** HA sits on a segment the workstation cannot
+  reach directly — HA's LAN address does not even ping from the wifi, though
+  the Unraid host and the VM reach it fine. Hence `HA_HOST` defaults to the
+  tailnet name.
+- **Nabu Casa remote UI cannot carry ssh.** It proxies the frontend only, so
+  it is not an alternative transport for deploys.
+
+The script uses ssh `ControlMaster` — not for speed, but because the key lives
+in the 1Password agent, which prompts per signature. Without one shared
+connection each manifest entry would raise its own prompt and the later ones
+would time out.
+
+`--delete` is applied **per manifest entry**, not globally: package dirs this
+repo owns are mirrored, but `themes/` and `pyscript/` are not, because HACS
+also writes into `config/themes/` and mirroring would delete themes this repo
+never knew about. `dashboard/` directories are excluded entirely — they are
+records of storage-mode dashboards and paste-in card templates, not files HA
+loads.
+
+Storage-mode dashboards still have to be edited in the UI; the YAML under
+`*/dashboard/` is the reviewable record, since HA keeps the live copy in
+`.storage`.
+
 This is not a standalone Python project - it runs within Home Assistant's PyScript integration.
 
 **Installation:**
