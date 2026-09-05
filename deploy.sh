@@ -20,7 +20,7 @@
 set -euo pipefail
 
 HA_HOST="${HA_HOST:-homeassistant.tail7c95c3.ts.net}"
-HA_PORT="${HA_PORT:-22222}"
+HA_PORT="${HA_PORT:-22}"
 HA_USER="${HA_USER:-root}"
 HA_CONFIG="${HA_CONFIG:-/config}"
 
@@ -51,11 +51,19 @@ MANIFEST=(
   "danfoss.py         pyscript/danfoss.py   no"
   "trv-climate/       trv-climate/          yes"
   "backup-monitor/    backup-monitor/       yes"
-  "battery-monitor/   battery-monitor/      yes"
   "chores/            chores/               yes"
-  "curve-test/        curve-test/           yes"
   "themes/            themes/               no"
 )
+
+# Deliberately NOT in the manifest, because neither is referenced from
+# configuration.yaml's `packages:` block -- copying them would put files in
+# /config that HA never loads, which reads like they are running when they are
+# not:
+#   battery-monitor/  -- has never been deployed at all (verified 2026-09-05).
+#                        The battery and safety-device alerts it describes are
+#                        therefore not running. Add the !include first, then
+#                        add it here.
+#   curve-test/       -- a heating-curve test artifact, not a live package.
 
 cd "$(dirname "$0")"
 
@@ -81,7 +89,12 @@ for entry in "${MANIFEST[@]}"; do
   DEL=""; [[ "$mirror" == "yes" ]] && DEL="--delete"
   echo "  $src -> $HA_CONFIG/$dst${DEL:+  (mirrored)}"
   ssh "${SSH_OPTS[@]}" "$HA_USER@$HA_HOST" "mkdir -p '$(dirname "$HA_CONFIG/$dst")'"
-  rsync -a $DEL $DRY \
+  # --itemize-changes so both dry and real runs say what actually moved; a
+  # silent dry run is not a safety check.
+  # --no-owner/--no-group: -a would try to map the local uid/gid onto HA,
+  # where those users do not exist. Everything under /config is root-owned and
+  # the add-on connects as root, so leaving ownership alone is correct.
+  rsync -a --no-owner --no-group $DEL $DRY --itemize-changes \
         --exclude 'dashboard/' --exclude '*.md' --exclude '__pycache__/' \
         -e "ssh ${SSH_OPTS[*]}" \
         "$src" "$HA_USER@$HA_HOST:$HA_CONFIG/$dst"

@@ -16,8 +16,10 @@ restarts HA, `-n` is a dry run.
 
 Prerequisites, one-time:
 
-1. HA add-on **Advanced SSH & Web Terminal** installed and started, with this
-   workstation's public key in its `authorized_keys` option, port `22222`.
+1. An SSH add-on installed and started, with this workstation's public key in
+   its `authorized_keys` option. Ours listens on **port 22** (the script's
+   default) and has `rsync`, `tar` and the `ha` CLI available. Note a newly
+   added key needs the add-on *restarted*, not just the config saved.
    (This is HA OS/Supervised — the Observer on :4357 confirms it — so add-ons
    are available.)
 2. Nothing to change in the Tailscale policy: `tag:workstation → tag:home` is
