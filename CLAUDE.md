@@ -54,9 +54,58 @@ it was unversioned `battery-monitor` sat in the repo, documented as live,
 without ever being declared — so it never loaded and never alerted. Adding a
 package directory does nothing until it is listed there.
 
-Storage-mode dashboards still have to be edited in the UI; the YAML under
-`*/dashboard/` is the reviewable record, since HA keeps the live copy in
-`.storage`.
+### Dashboards (storage mode)
+
+Both dashboards — `lovelace` (Ülevaade) and `home-server` (Server) — are
+**storage mode**: HA owns the live copy as JSON in `/config/.storage/`, which
+is why the YAML under `*/dashboard/` is a hand-maintained *record* rather than
+the thing HA loads. The record can therefore drift; check before assuming.
+
+They can still be edited from the shell. Three routes, in the order worth
+reaching for:
+
+1. **Patch `/config/.storage/lovelace.<id>` and restart** — what was used on
+   2026-09-05 to add the pool strip. Load the JSON, insert precisely, write it
+   back, `ha core restart`. Prefer a *surgical* insert over regenerating the
+   file from the YAML record: a wholesale overwrite silently applies any drift
+   the record has accumulated. Back the file up first, keep the wrapper
+   (`version`, `minor_version`, `key`) intact, and re-render the YAML record to
+   match so the two do not diverge.
+   **The restart is required** — HA holds the config in memory and would
+   otherwise rewrite your edit on the next UI change.
+2. **Websocket API `lovelace/config/save`** — the supported route, applies live
+   with no restart, but needs a long-lived access token.
+3. **Convert the dashboard to YAML mode** (declare it under `lovelace:` in
+   `configuration.yaml`). This makes it a plain file that `deploy.sh` can own,
+   and removes the record/live duplication entirely — at the cost of losing UI
+   editing for that dashboard. Not done; worth considering if the record keeps
+   drifting.
+
+Card *definitions* also exist as paste-in templates under `*/dashboard/`, for
+adding by hand in the UI editor.
+
+### Verifying a deploy
+
+`ha core check` only validates syntax. To confirm entities actually exist and
+carry values, query the recorder DB over ssh (`sqlite3` is present):
+
+```sh
+sqlite3 /config/home-assistant_v2.db "SELECT sm.entity_id, s.state
+  FROM states s JOIN states_meta sm ON s.metadata_id=sm.metadata_id
+  WHERE sm.entity_id LIKE '%backup_pool%'
+  GROUP BY sm.entity_id HAVING MAX(s.last_updated_ts);"
+```
+
+New `input_*` helpers only appear after a restart (or Developer Tools → YAML →
+Reload all), so a package can deploy cleanly and still show nothing until then.
+
+### Transport gotchas
+
+- **No sftp subsystem** on the add-on: `scp` fails with "subsystem request
+  failed". `rsync` works (it tunnels over the ssh channel), as does
+  `ssh host 'cat file'` for pulling one file.
+- A newly added `authorized_keys` entry needs the **add-on restarted**, not
+  just the config saved.
 
 This is not a standalone Python project - it runs within Home Assistant's PyScript integration.
 

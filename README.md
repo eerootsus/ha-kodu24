@@ -15,6 +15,28 @@ housekeeping packages that have nowhere better to live:
   its history intact.
 - **`themes/`** — HA themes; currently the e-ink serif theme the chores
   dashboard is built around.
+- **`configuration.yaml`** — HA's root config, tracked here since 2026-09-05.
+  Its `packages:` block decides what HA actually loads, so a package directory
+  in this repo does nothing until it is listed there.
+
+## Deploying
+
+```sh
+./deploy.sh -n         # dry run, shows exactly what would change
+./deploy.sh            # rsync + `ha core check`
+./deploy.sh --restart  # ...and restart HA
+```
+
+Runs over the tailnet (HA is not reachable from the workstation's LAN segment)
+and needs the SSH add-on holding this workstation's key. **Edit here, not in
+`/config`** — deploys overwrite the live copies.
+
+`curve-test/` is deliberately not deployed: it steps the heating curve down to
+find the house's tolerance floor, so it goes live only on a conscious decision.
+
+Dashboards are storage mode, so the YAML under `*/dashboard/` is a record, not
+what HA loads — see the dashboard section in `CLAUDE.md` for how to change them
+from the shell and keep the record in step.
 
 ## Climate
 
