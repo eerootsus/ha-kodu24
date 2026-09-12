@@ -58,6 +58,15 @@ input_text:
     name: Backup pool status
     max: 20
 
+  # zpool health, not a backup at all -- it rides this machinery because the
+  # dead-man switch below is exactly what a health check wants, and the
+  # templated `backup_<job>_*` entity names are what make that generic. The
+  # `backup_` prefix is a naming artifact; read it as "monitored job zpool".
+  # Reported daily by /boot/config/scripts/zpool-check.sh on the host.
+  backup_zpool_status:
+    name: Backup zpool status
+    max: 120
+
 input_number:
   # Recorded rather than merely alerted on, because capacity is a slope, not a
   # state: HA long-term statistics make "when does this box need upgrading"
@@ -178,6 +187,15 @@ input_datetime:
     has_date: true
     has_time: true
 
+  backup_zpool_last_seen:
+    name: Backup zpool last seen
+    has_date: true
+    has_time: true
+  backup_zpool_last_ok:
+    name: Backup zpool last ok
+    has_date: true
+    has_time: true
+
 # ---------------------------------------------------------------------------
 # Template entities exist for the dashboard, and for one property input_* lack:
 # long-term statistics. HA keeps statistics for sensors carrying a state_class,
@@ -246,6 +264,16 @@ template:
                   and (now().timestamp()
                        - (state_attr('input_datetime.backup_pool_last_ok', 'timestamp') | float(0))) < 93600) }}
 
+      # 26 h like the others: zpool-check runs daily at 06:00, so two missed
+      # runs is the signal. A DEGRADED mirror reports `fail` immediately and
+      # trips this the same way a failed backup does.
+      - name: Backup zpool healthy
+        unique_id: backup_zpool_healthy
+        state: >
+          {{ (states('input_text.backup_zpool_status') == 'ok'
+                  and (now().timestamp()
+                       - (state_attr('input_datetime.backup_zpool_last_ok', 'timestamp') | float(0))) < 93600) }}
+
 automation:
   - id: backup_job_report
     alias: Backup - report from alpine-docker
@@ -265,7 +293,7 @@ automation:
       # Ignore unexpected job names rather than failing on a templated
       # entity_id that doesn't resolve.
       - condition: template
-        value_template: "{{ trigger.json.job in ['media', 'borg', 'flash', 'pool'] }}"
+        value_template: "{{ trigger.json.job in ['media', 'borg', 'flash', 'pool', 'zpool'] }}"
     action:
       - service: input_datetime.set_datetime
         target:
@@ -315,7 +343,7 @@ automation:
         hours: "/1"
     action:
       - repeat:
-          for_each: ["media", "borg", "flash", "pool"]
+          for_each: ["media", "borg", "flash", "pool", "zpool"]
           sequence:
             - variables:
                 seen_entity: "input_datetime.backup_{{ repeat.item }}_last_seen"
