@@ -143,9 +143,19 @@ Two facts that govern any mesh work here:
   same firmware supports elsewhere, and the entity behind them is never created.
   zigpy then refuses to read or write those attributes at all, so it can only be
   cleared in `zigbee.db`. Diffing the table across identical devices is how you
-  spot it. Note this was done on the five TRVs on 2026-09-13 and **did not** bring
-  the missing entity back — they are identical now, which is not the same as fixed.
-  See `BETTER_THERMOSTAT.md`.
+  spot it. Clearing it is necessary but **not sufficient**: ZHA only creates these
+  config entities at device *interview*, so the device also needs a Reconfigure
+  (Settings → Devices & Services → ZHA → device → Reconfigure). Cache first, then
+  reconfigure — the other order re-reads the attribute, finds it still cached as
+  unsupported, and skips it. Done for the TRVs on 2026-09-13; see
+  `BETTER_THERMOSTAT.md`.
+- **New ZHA entities are slugged in HA's instance language** (`language: et` here), so
+  a reconfigure creates `number.<area>_<device>_kohalik_temperatuuri_nihe` next to
+  older English-slugged siblings. Display names are unaffected — `friendly_name` is
+  translated at runtime, so every device already shows Estonian — but mismatched ids
+  break templating across devices. Rename them back over the websocket API
+  (`config/entity_registry/update`; no REST equivalent), and expect to redo it after
+  the next reconfigure.
 
 This is not a standalone Python project - it runs within Home Assistant's PyScript integration.
 

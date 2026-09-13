@@ -76,10 +76,11 @@ opposite directions:
 | `number.trv_danfoss_<room>_regulation_setpoint_offset` (`0x404B`) | the PID's target, display unchanged | write **+offset**: the valve aims higher, the room lands on the displayed setpoint while the TRV keeps showing its own warm reading |
 | `number.trv_danfoss_<room>_local_temperature_offset` | the sensor reading itself | write **−offset**: the TRV's reported temperature becomes the true room temperature, so setpoint and display both become honest |
 
-The sensor one is conceptually cleaner — this *is* a sensor error — but **Lola has no
-`local_temperature_offset` entity** (the ZHA quirk/locale variance noted above), so
-only `regulation_setpoint_offset` is available on all four rooms. Use that one unless
-Lola is re-interviewed, and keep all four on the same knob so they stay comparable.
+**Use `local_temperature_offset`.** It is the conceptually right one — this *is* a
+sensor error, so correct the sensor and both the setpoint and the display become
+honest. It was unavailable on Lola until 2026-09-13; it is now on all four rooms that
+have an external sensor, under matching entity ids. Keep all four on the same knob so
+they stay comparable.
 
 Both are currently **0.0** on every TRV. Verify the sign on one room before rolling
 it out — set it, wait for the room to re-settle, and check the offset sensor moves
@@ -174,41 +175,39 @@ It is also self-sealing: zigpy short-circuits attributes it believes unsupported
 `zha.set_zigbee_cluster_attribute` on `0x0010` never reaches the radio. The cache can
 only be cleared in the database.
 
-**Done:** with core stopped and the DB backed up to `/config/zigbee.db.bak-20260913`,
-the 10 rows that were not unanimous across the five were deleted.
+**Done, and it worked — in two steps, both needed.**
 
-> **If you are reading this because you queried `zigbee.db` and found all five TRVs
-> at an identical 13 unsupported rows — that tidiness is this edit, not a fix that
-> worked.** The entity it was meant to restore is still missing. Do not take the
-> matching counts as evidence the problem is solved.
+1. With core stopped and the DB backed up to `/config/zigbee.db.bak-20260913`, the 10
+   rows that were not unanimous across the five were deleted. All five now carry an
+   identical 13 rows. **This alone changed nothing** — the entity stayed missing
+   across a restart, which ruled out the cache being the whole story.
+2. A **Reconfigure** on Lola (Settings → Devices & Services → ZHA → device →
+   Reconfigure) then brought six entities back: 32 → 38. `0x0010` was *not* re-marked
+   unsupported, confirming the read succeeded this time.
 
-**Result: necessary but not sufficient — the entity did not come back.** The edit
-itself held (`0x0010` stayed deleted across a restart), which is worth something: it
-separates "the cache *was* the problem" from "the cache was *a* problem", and it
-means a re-interview now tests one variable instead of two. Lola still
-has no `local_temperature_offset`. Nor is a cached *value* the gate: no TRV has a
-cached `513/0x0010`, including the three that do have the entity. The remaining
-explanation is that ZHA discovers these config entities at **device interview**, not
-on every startup, so an already-initialised device keeps whatever entity set it was
-paired under — which is why years of restarts never fixed it.
+Both steps were necessary and neither was sufficient. ZHA discovers these config
+entities at **device interview**, not at startup, so an already-initialised device
+keeps whatever entity set it was paired under — which is why restarts never helped.
+But a reconfigure alone would have re-read `0x0010`, found it in the unsupported
+cache, and skipped it. Clear the cache *then* reconfigure.
 
-**Remaining step, needs the UI:** Settings → Devices & Services → ZHA → TRV Danfoss
-Lola → Reconfigure. There is no `zha.reconfigure_device` service, so it cannot be
-scripted from the REST API; the websocket command is `zha/devices/reconfigure`. Do it
-when the device is awake and expect it to take a few minutes on a sleepy end device.
-The cache clear means the `0x0010` read will at least be attempted this time.
-- **Behavioural config is unified across all five:** `prioritize external = off`,
-  external sensor = `-8000`, load balancing off, min/max 5/35, valve orientation
-  Horizontal, setpoint response "quick 5min", valve exercise Thu 11:00, adaptation
-  enabled.
-- **Watch item (resolved 2026-09-13):** Lola's Zigbee link was weak (`lqi`/`rssi`
-  unknown; writes needed several retries). The ZBMINIR2 routers went in and Lola
-  re-parented onto one — LQI 217 to her parent. Use `./zigbee-topology.sh`, not
-  `sensor.*_lqi`, to check this: the sensor reads the wrong hop and went *down* to
-  ~118 as her actual link improved.
-- **Note:** the eTRV clock is no longer synced by this project (set_time was
-  removed). It only affects valve-exercise/adaptation timing, not BT control; sync
-  once manually via ZHA if desired.
+Lola now has `local_temperature_offset` like the other three. Still missing:
+`sensor:timestamp` (the eTRV clock readout, 38 vs 39) — harmless, nothing uses it.
+
+**Entity IDs come back in HA's instance language.** The instance runs `language: et`,
+so the six new entities were created as
+`number.lola_s_room_trv_danfoss_lola_kohalik_temperatuuri_nihe` and similar, while the
+older ones carry English slugs from when they were paired. Display names were already
+uniform — `friendly_name` is translated at runtime, so *every* TRV shows Estonian —
+but the ids were not, which breaks templating across devices. They were renamed back
+to the `trv_danfoss_<room>_<feature>` pattern over the websocket API
+(`config/entity_registry/update`; there is no REST equivalent). **Expect to redo this
+after any future reconfigure.**
+
+**Stairwell is still divergent** and was left alone: 26 entities, no offsets, and two
+Estonian slugs (`valine_temperatuuriandur`, `kasuta_koormuse_tasakaalustamist`). The
+same two-step fix should work on it. It has no external sensor, so it is outside the
+trim work and was not worth another interview.
 
 ## Status — 2026-09-13
 
