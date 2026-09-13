@@ -385,8 +385,15 @@ views:
           value: battery
         # Both rules, because they catch different things and the card ORs its
         # excludes: `entity.platform` catches anything from the companion app
-        # whatever it is called, the regex mirrors battery_monitor.yaml's own
-        # rejectattr and catches an Apple device fed in by some other integration.
+        # whatever it is called (an Android phone matches none of the words in the
+        # regex), the regex catches an Apple device fed in by some other integration.
+        #
+        # This pair is duplicated in battery_monitor.yaml, which expresses the same
+        # two rules as `rejectattr('entity_id','in', integration_entities('mobile_app'))`
+        # and the same regex. There is no way to share one definition across a card
+        # and a Jinja template, so they are kept in step by hand -- change one, change
+        # the other, or the dashboard and the digest disagree about what needs a
+        # battery.
         #
         # This used to read `display.platform`, which is not a field the card can
         # resolve -- it silently returned undefined, never matched, and every phone

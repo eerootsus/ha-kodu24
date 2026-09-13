@@ -52,11 +52,13 @@ template:
         # are evaluated in the same pass, so a self-reference would read the previous
         # cycle (and None on first run).
         state: >
+          {% set personal = integration_entities('mobile_app') %}
           {% set warn = states('input_number.battery_warn_level') | float(25) %}
           {% set ns = namespace(n=0) %}
           {% for s in states.sensor
                | selectattr('attributes.device_class','defined')
                | selectattr('attributes.device_class','eq','battery')
+               | rejectattr('entity_id','in', personal)
                | rejectattr('entity_id','search','iphone|ipad|watch|macbook|phone') %}
             {% if s.state in ['unavailable','unknown'] or s.state | float(101) <= warn %}
               {% set ns.n = ns.n + 1 %}
@@ -66,11 +68,21 @@ template:
         attributes:
           # Phones, tablets and watches are excluded: they live below any sane
           # threshold and are not what "go change a battery" means.
+          #
+          # Two rules, the same pair the Server dashboard's battery card uses, because
+          # they catch different things: `integration_entities('mobile_app')` catches
+          # anything from the companion app whatever it is called (an Android phone
+          # matches none of the words below), the regex catches an Apple device fed in
+          # by some other integration. Keep the two in step with the card's `exclude:`
+          # block -- when they drift, the dashboard and the digest disagree about what
+          # needs a battery, which is exactly what happened before 2026-09-13.
           dead: >
+            {% set personal = integration_entities('mobile_app') %}
             {% set ns = namespace(o=[]) %}
             {% for s in states.sensor
                  | selectattr('attributes.device_class','defined')
                  | selectattr('attributes.device_class','eq','battery')
+                 | rejectattr('entity_id','in', personal)
                  | rejectattr('entity_id','search','iphone|ipad|watch|macbook|phone') %}
               {% if s.state in ['unavailable','unknown'] %}
                 {% set ns.o = ns.o + [ s.name | replace(' Battery','') | replace(' Aku','') ] %}
@@ -78,11 +90,13 @@ template:
             {% endfor %}
             {{ ns.o | sort }}
           low: >
+            {% set personal = integration_entities('mobile_app') %}
             {% set warn = states('input_number.battery_warn_level') | float(25) %}
             {% set ns = namespace(o=[]) %}
             {% for s in states.sensor
                  | selectattr('attributes.device_class','defined')
                  | selectattr('attributes.device_class','eq','battery')
+                 | rejectattr('entity_id','in', personal)
                  | rejectattr('entity_id','search','iphone|ipad|watch|macbook|phone') %}
               {% if s.state not in ['unavailable','unknown'] and s.state | float(101) <= warn %}
                 {% set ns.o = ns.o + [ (s.name | replace(' Battery','') | replace(' Aku',''))
@@ -91,11 +105,16 @@ template:
             {% endfor %}
             {{ ns.o | sort }}
           # Binary battery sensors report low as `on` rather than a percentage.
+          # Same two exclusions as above -- this loop had none, which was latent
+          # rather than broken only because nothing here reports battery that way.
           flagged_low: >
+            {% set personal = integration_entities('mobile_app') %}
             {% set ns = namespace(o=[]) %}
             {% for s in states.binary_sensor
                  | selectattr('attributes.device_class','defined')
-                 | selectattr('attributes.device_class','eq','battery') %}
+                 | selectattr('attributes.device_class','eq','battery')
+                 | rejectattr('entity_id','in', personal)
+                 | rejectattr('entity_id','search','iphone|ipad|watch|macbook|phone') %}
               {% if s.state == 'on' %}{% set ns.o = ns.o + [ s.name ] %}{% endif %}
             {% endfor %}
             {{ ns.o | sort }}
