@@ -37,6 +37,12 @@ template:
         hours: "/1"
       - platform: homeassistant
         event: start
+      # Also on a threshold change, so the count agrees with the Server dashboard's
+      # battery card immediately rather than at the next hourly tick -- the card reads
+      # the helper live, this sensor only re-evaluates when triggered. Cheap: it fires
+      # only when the slider actually moves.
+      - platform: state
+        entity_id: input_number.battery_warn_level
     sensor:
       - name: Battery attention count
         unique_id: battery_attention_count

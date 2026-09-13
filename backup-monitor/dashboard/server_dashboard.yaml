@@ -13,7 +13,8 @@
 #                size and borg growth
 #   Unraid     — array free gauge, entities, 30-day trend, flash backup strip
 #   VM         — VM disk gauge, host entities, 30-day trend, image updates
-#   Batteries  — the battery-state card, moved off the Ülevaade dashboard
+#   Batteries  — the battery-state card, moved off the Ülevaade dashboard,
+#                sharing battery_monitor.yaml's warn-level helper
 #
 # The array gauge severity is deliberately inverted (red 0 / yellow 150 /
 # green 400) because it shows FREE GB — low is bad, unlike every other gauge
@@ -365,15 +366,48 @@ views:
   sections:
   - type: grid
     cards:
+    # The same threshold the weekly digest and sensor.battery_attention_count use,
+    # exposed here so the dashboard and the notification cannot disagree about what
+    # "low" means. Changing the slider changes both. Note `initial: 40` in
+    # battery_monitor.yaml means a restart resets it.
+    - type: entities
+      title: Threshold
+      entities:
+      - entity: input_number.battery_warn_level
+        name: Warn at or below
+      - entity: sensor.battery_attention_count
+        name: Needs attention
     - type: custom:battery-state-card
       title: Batteries
       filter:
         include:
         - name: attributes.device_class
           value: battery
+        # Both rules, because they catch different things and the card ORs its
+        # excludes: `entity.platform` catches anything from the companion app
+        # whatever it is called, the regex mirrors battery_monitor.yaml's own
+        # rejectattr and catches an Apple device fed in by some other integration.
+        #
+        # This used to read `display.platform`, which is not a field the card can
+        # resolve -- it silently returned undefined, never matched, and every phone
+        # and watch was listed here while the digest excluded them. Resolvable
+        # prefixes are entity./device./area./computed., a bare state path, or a
+        # real entity domain.
         exclude:
-        - name: display.platform
+        - name: entity.platform
           value: mobile_app
+        - name: entity_id
+          value: /iphone|ipad|watch|macbook|phone/
       sort:
         by: state
-      collapse: 5
+      # Not `collapse: 5` (an arbitrary count) but a threshold group, so what stays
+      # in view is exactly what the digest would name: at or below the warn level,
+      # plus anything unavailable -- a non-numeric state fails `>` and so falls out
+      # of the OK group. The `{...}` value is read live from the helper.
+      collapse:
+      - name: OK ({count})
+        icon: mdi:battery
+        filter:
+        - name: state
+          operator: '>'
+          value: '{input_number.battery_warn_level}'
