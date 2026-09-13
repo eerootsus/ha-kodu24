@@ -214,9 +214,7 @@ All five were reconfigured and the ids normalised. Counts 39 / 39 / 38 / 39 / 39
 **38 of 39 features common to all**, every id on the `trv_danfoss_<room>_<feature>`
 pattern, and no Estonian slugs anywhere. The single remaining difference:
 
-- `sensor:timestamp` missing on Lola (the eTRV clock readout). Did not return even
-  after a reconfigure. Harmless, nothing uses it — note the eTRV clock is not synced
-  by this project at all since `set_time` was removed.
+- `sensor:timestamp` missing on Lola. Accepted as an open gap — see below.
 
 Settled along the way, and worth not re-litigating:
 
@@ -227,6 +225,55 @@ Settled along the way, and worth not re-litigating:
   entity should use the bare form.
 - `prioritise` vs `prioritize` was a British/American split captured at pairing.
   Settled on `prioritize`, the spelling three of the five already carried.
+
+### Known gap: Lola has no `timestamp` sensor (accepted 2026-09-13)
+
+The one feature not on all five. **Do not re-investigate from scratch** — this is what
+was already ruled out.
+
+The entity is `sensor.trv_danfoss_<room>_timestamp`, `entity_category: diagnostic`,
+unique_id `<ieee>-1-513-setpoint_change_source_timestamp`. It reads Thermostat cluster
+`0x0032` **SetpointChangeSourceTimestamp** (decimal 50) — when the setpoint last
+changed. Its siblings are `0x0030` SetpointChangeSource and `0x0031`
+SetpointChangeAmount.
+
+`0x0032` was one of the three attributes uniquely marked unsupported on Lola in ZHA's
+cache, alongside `0x0010` (calibration) and `0x0001`, all from her bad interview at
+`rssi −93`. All three rows were deleted together. `0x0010` came back on the next
+reconfigure; `0x0032` did not, across **two** reconfigures.
+
+Checked and ruled out — after the reconfigures there is no recorded difference between
+Lola and the other four:
+
+| Check | Lola | Other four |
+|---|---|---|
+| `0x0032` in `unsupported_attributes_v12` | no (stayed deleted) | no |
+| `0x0032` in `attributes_cache_v12` | absent | **also absent** |
+| `0x0030` cached | `0` | `0` or `2` |
+| Time cluster `0x000A` in `in_clusters` | present | present |
+| anything marked unsupported on cluster 10 | none | none |
+| entry in `deleted_entities` for that unique_id | none | — |
+| any registry entry anywhere holding that unique_id | none | — |
+| duplicate / deleted device record for her ieee | none, exactly one | — |
+
+So nothing in the ZHA databases or the HA registries explains it. A read that *times
+out* does not populate the unsupported cache the way an explicit
+`UNSUPPORTED_ATTRIBUTE` response does, which was the working theory — but two
+reconfigures leaving no trace at all weakens it. More likely ZHA is not attempting that
+read for her, for a reason not visible in inspectable state.
+
+**Why it was dropped rather than fixed.** Nothing in this repo reads it; it is a
+diagnostic. It reports against the eTRV's internal clock, which this project stopped
+syncing when `set_time` was removed, so its timestamps would be against an unsynced
+clock anyway. The remaining routes are a re-pair — costing her entity ids, recorder
+history and the `sensor_weight_X` device labels, then another renaming pass — or
+reading ZHA's discovery source for the exact condition that gates this sensor. Neither
+is worth it for one diagnostic entity.
+
+**If it ever matters,** the next thing to try is reading `0x0032` directly during a
+known wake window and watching whether ZHA logs a failure, since that is the one
+observation missing. There is no read service; use the websocket or
+`trv_debug.py`, which already dumps raw attributes.
 
 ### Language: two separate settings
 
