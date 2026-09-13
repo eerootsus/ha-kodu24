@@ -145,10 +145,51 @@ be rewritten**. See "Where control actually sits now" above.
 - **Firmware is already uniform and current:** all five report
   `sw_version = 0x00000020`, and every `update.*_firmware` entity is `off`
   (installed == latest). **No OTA update is needed or available** — don't chase one.
-- The differing entity names (EN "prioritise" / EN "prioritize" / Estonian for
-  Stairwell, plus extra `heat_available`/pre-heat entities on Lola & Ada) are **ZHA
-  quirk/locale variants at pairing time, not firmware** — cosmetic, no behavioural
-  effect. Re-interviewing a device *may* normalize names but is unnecessary.
+- **The hardware really is identical — verified 2026-09-13, not assumed.** All five
+  report `Danfoss` / `eTRV0103` / `sw 0x00000020`, and their Zigbee signatures are
+  byte-identical: endpoint 1, profile 260, device type 769, in-clusters
+  `0,1,3,10,32,513,516,2821`. No unit is a different model internally. So every
+  difference below is ZHA-side.
+- **But the entity sets are not identical:** Ada/Kitchen/Master expose 39, Lola 32,
+  Stairwell 26. Two separate causes, and only the cosmetic one is harmless:
+  - *Naming* — EN "prioritise" / EN "prioritize", Estonian on Stairwell
+    (`valine_temperatuuriandur`, `kasuta_koormuse_tasakaalustamist`), and a
+    `climate.<device>` vs `climate.<device>_thermostat` split. Captured at pairing
+    from HA's language and from entity-id collisions. Cosmetic, but note it makes
+    `switch.*_prioritise_*` un-templatable across devices.
+  - *Missing features* — Lola has no `local_temperature_offset`; Stairwell lacks 13
+    entities including both offsets. These are real gaps, not naming.
+
+### The ZHA unsupported-attribute cache (investigated 2026-09-13)
+
+ZHA caches attributes it believes a device does not support, in
+`unsupported_attributes_v12` in `/config/zigbee.db`. Across five identical TRVs the
+cache was inconsistent — `513/0x0010` (`LocalTemperatureCalibration`, the attribute
+behind `local_temperature_offset`) was marked unsupported **on Lola alone**, plus
+scattered singletons on Kitchen and Master. Identical firmware cannot genuinely
+differ that way; it is the signature of attribute reads timing out during interview
+and being recorded as unsupported. Lola was at `rssi −93` when she was interviewed.
+
+It is also self-sealing: zigpy short-circuits attributes it believes unsupported, so
+`zha.set_zigbee_cluster_attribute` on `0x0010` never reaches the radio. The cache can
+only be cleared in the database.
+
+**Done:** with core stopped and the DB backed up to `/config/zigbee.db.bak-20260913`,
+the 10 rows that were not unanimous across the five were deleted. All five now carry
+an identical 13 rows, and `0x0010` stayed deleted across a restart.
+
+**Result: necessary but not sufficient — the entity did not come back.** Lola still
+has no `local_temperature_offset`. Nor is a cached *value* the gate: no TRV has a
+cached `513/0x0010`, including the three that do have the entity. The remaining
+explanation is that ZHA discovers these config entities at **device interview**, not
+on every startup, so an already-initialised device keeps whatever entity set it was
+paired under — which is why years of restarts never fixed it.
+
+**Remaining step, needs the UI:** Settings → Devices & Services → ZHA → TRV Danfoss
+Lola → Reconfigure. There is no `zha.reconfigure_device` service, so it cannot be
+scripted from the REST API; the websocket command is `zha/devices/reconfigure`. Do it
+when the device is awake and expect it to take a few minutes on a sleepy end device.
+The cache clear means the `0x0010` read will at least be attempted this time.
 - **Behavioural config is unified across all five:** `prioritize external = off`,
   external sensor = `-8000`, load balancing off, min/max 5/35, valve orientation
   Horizontal, setpoint response "quick 5min", valve exercise Thu 11:00, adaptation
