@@ -7,6 +7,9 @@ housekeeping packages that have nowhere better to live:
 - **`trv-climate/` + `danfoss.py`** — pyscript climate sensors for Danfoss
   TRVs (documented below). They are observability, not control: Better Thermostat
   was trialled for control and removed, so the TRVs regulate themselves.
+- **`trv-climate/offset.yaml`** — measures how far each eTRV's own sensor sits
+  from the real room, so the per-room trim is a number rather than a guess.
+  Read the `_settled` sensors; see `BETTER_THERMOSTAT.md`.
 - **`battery-monitor/`** — weekly battery nudge, plus immediate alerts for
   safety devices.
 - **`backup-monitor/`** — push alerts for the off-site backups running on

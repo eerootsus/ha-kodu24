@@ -40,13 +40,50 @@ radiator, so it reads warm and the valve throttles early. That is the inaccuracy
 external-sensor feature exists to correct, and it is currently off on all five. The
 options, none of them taken yet:
 
-- **Leave it.** Simplest; accept whatever per-room offset the valves settle at, and
-  trim it with the setpoint. The room sensors make the error measurable.
+- **Leave it.** Simplest; accept whatever per-room error the valves settle at.
 - **Turn the external feed back on** (re-add something like the old
   `update_external_temperatures`). Accurate, but brings back the 1 % floor that
   started this whole thread — fine in winter, the summer problem again in June.
-- **Use `0x404B` Regulation SetPoint Offset** (±2.5 K) as a static per-room trim
-  from the room sensors. Small range, but it needs no continuous feed.
+- **Trim it with a static per-room offset.** Needs no continuous feed and no code,
+  just one number per room, which is why it is the one being prepared for.
+
+### Measuring the trim before setting it
+
+`trv-climate/offset.yaml` (added 2026-09-13) publishes, per room:
+
+    offset = TRV internal reading − true room temperature
+
+A **positive** offset means the TRV reads warm, so its room settles that much
+**colder** than the dial — and the same positive number is what to write as the
+trim. Read it off `sensor.trv_offset_<room>_settled`, never the raw sibling: the raw
+one is published all day including the many hours the valve is shut and the error is
+~0, so its mean is pulled toward zero and understates the trim. The settled one only
+publishes while the valve is modulating against a setpoint the room is near, which is
+the equilibrium the trim has to be right for. Both feed long-term statistics; give it
+a few genuinely cold weeks and read the mean off a statistics graph card
+(`trv-climate/dashboard/offset_card.yaml`).
+
+Nothing will appear until the heating actually runs — at summer setpoints the gate is
+never open, which is correct, not broken.
+
+### Which of the two offset knobs to use
+
+The eTRVs expose both, each ±2.5 K in 0.1 steps, and they reach the same place from
+opposite directions:
+
+| Entity | What it shifts | Effect |
+|---|---|---|
+| `number.trv_danfoss_<room>_regulation_setpoint_offset` (`0x404B`) | the PID's target, display unchanged | write **+offset**: the valve aims higher, the room lands on the displayed setpoint while the TRV keeps showing its own warm reading |
+| `number.trv_danfoss_<room>_local_temperature_offset` | the sensor reading itself | write **−offset**: the TRV's reported temperature becomes the true room temperature, so setpoint and display both become honest |
+
+The sensor one is conceptually cleaner — this *is* a sensor error — but **Lola has no
+`local_temperature_offset` entity** (the ZHA quirk/locale variance noted above), so
+only `regulation_setpoint_offset` is available on all four rooms. Use that one unless
+Lola is re-interviewed, and keep all four on the same knob so they stay comparable.
+
+Both are currently **0.0** on every TRV. Verify the sign on one room before rolling
+it out — set it, wait for the room to re-settle, and check the offset sensor moves
+toward zero rather than away.
 
 ## Target architecture that was planned (not built)
 

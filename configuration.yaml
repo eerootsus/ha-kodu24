@@ -63,6 +63,7 @@ homeassistant:
     chores_weekly_summary: !include chores/automations/weekly_summary.yaml
     chores_washer: !include chores/automations/washer_finished.yaml 
     climate_sensors: !include trv-climate/climate.yaml
+    climate_offset: !include trv-climate/offset.yaml
     backup_monitor: !include backup-monitor/backup_monitor.yaml
     battery_monitor: !include battery-monitor/battery_monitor.yaml
 

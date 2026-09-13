@@ -1,0 +1,36 @@
+# Paste-in card for the TRV sensor-error measurement (trv-climate/offset.yaml).
+# Not loaded by HA - both dashboards are storage mode. Add by hand in the UI editor.
+#
+# Read the SETTLED series, not the raw one. Pick "mean" and a long period: the
+# answer is the flat line each room settles on once the heating has been running
+# in genuinely cold weather, not any single reading.
+#
+# A positive mean means that TRV reads warm and its room runs cold by that much.
+# Write the same number into number.trv_danfoss_<room>_regulation_setpoint_offset.
+
+type: statistics-graph
+title: TRV sensor error (settled)
+chart_type: line
+period: hour
+days_to_show: 30
+stat_types:
+  - mean
+entities:
+  - entity: sensor.trv_offset_ada_settled
+    name: Ada
+  - entity: sensor.trv_offset_master_settled
+    name: Master
+  - entity: sensor.trv_offset_kitchen_settled
+    name: Kitchen
+  - entity: sensor.trv_offset_lola_settled
+    name: Lola
+
+# Companion card: the raw series plus valve demand, for checking that the settled
+# gate is actually letting data through once heating starts.
+#
+# type: history-graph
+# hours_to_show: 48
+# entities:
+#   - sensor.trv_offset_ada
+#   - sensor.trv_danfoss_ada_pi_heating_demand
+#   - climate.trv_danfoss_ada

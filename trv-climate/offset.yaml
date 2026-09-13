@@ -1,0 +1,184 @@
+# TRV sensor error - how far each eTRV's own reading sits from the real room.
+#
+# Why this exists: nothing applies room-based control since Better Thermostat was
+# dropped, and the external-sensor feed is still disabled (`0x4015 = -8000`), so
+# every eTRV regulates on its INTERNAL sensor. That sensor sits on the radiator, so
+# it reads warm, the PID reaches target early and the room settles cool. This package
+# measures that error instead of guessing it.
+#
+# The sign is chosen so the number is directly actionable:
+#
+#     offset = TRV internal reading - true room temperature
+#
+# A positive offset means the TRV reads WARM, so the room ends up that much COLDER
+# than the dial. Write the same positive number into
+# `number.trv_danfoss_<room>_regulation_setpoint_offset` (0x404B, +/-2.5 K) and the
+# PID aims that much higher, landing the room on the displayed setpoint.
+#
+# Two sensors per room, and the difference between them is the whole point:
+#
+#   trv_offset_<room>          raw, always published. Useful for watching a warm-up
+#                              spike, but its long-run mean is MISLEADING - most of
+#                              the day the valve is shut, the radiator is cold and
+#                              the error is ~0, which drags the average toward zero.
+#   trv_offset_<room>_settled  the same number, published ONLY while the valve is
+#                              actually modulating (0 < demand < 100) and the room is
+#                              within 1 K of the TRV's own setpoint. That is the
+#                              equilibrium the trim has to be right for, so THIS is
+#                              the one to read a value off.
+#
+# Both carry `state_class: measurement`, so HA long-term statistics keep hourly
+# mean/min/max indefinitely: plot the settled sensor on a statistics graph card after
+# a few genuinely cold weeks and read the mean. Expect nothing until then - with
+# summer setpoints at 5 C the settled condition is never true, which is correct.
+#
+# Stairwell is absent on purpose: it has no labelled external sensor, so there is no
+# truth to compare against.
+#
+# Install: part of trv-climate/, declared as `climate_offset:` in configuration.yaml.
+
+template:
+  - sensor:
+      # --- Ada ---
+      - name: "TRV offset Ada"
+        unique_id: trv_offset_ada
+        unit_of_measurement: "°C"
+        device_class: temperature
+        state_class: measurement
+        availability: >
+          {% set room = states('sensor.climate_ada_s_room_temperature') | float(-999) %}
+          {% set trv = state_attr('climate.trv_danfoss_ada','current_temperature') | float(-999) %}
+          {{ room > -900 and trv > -900 }}
+        state: >
+          {{ (state_attr('climate.trv_danfoss_ada','current_temperature') | float
+              - states('sensor.climate_ada_s_room_temperature') | float) | round(2) }}
+
+      - name: "TRV offset Ada settled"
+        unique_id: trv_offset_ada_settled
+        unit_of_measurement: "°C"
+        device_class: temperature
+        state_class: measurement
+        # Unavailable unless the valve is genuinely regulating against a setpoint the
+        # room is near. `demand > 0` drops the hours the valve is shut (error ~0);
+        # `demand < 100` drops flat-out warm-up, where the error is largest and least
+        # representative. Chained comparisons are avoided - Jinja does not treat
+        # `0 < x < 100` the way Python does.
+        availability: >
+          {% set room = states('sensor.climate_ada_s_room_temperature') | float(-999) %}
+          {% set trv = state_attr('climate.trv_danfoss_ada','current_temperature') | float(-999) %}
+          {% set sp = state_attr('climate.trv_danfoss_ada','temperature') | float(-999) %}
+          {% set dem = states('sensor.trv_danfoss_ada_pi_heating_demand') | float(-1) %}
+          {{ room > -900 and trv > -900 and sp > -900
+             and dem > 0 and dem < 100
+             and (room - sp) | abs <= 1.0 }}
+        state: >
+          {{ (state_attr('climate.trv_danfoss_ada','current_temperature') | float
+              - states('sensor.climate_ada_s_room_temperature') | float) | round(2) }}
+
+      # --- Master ---
+      - name: "TRV offset Master"
+        unique_id: trv_offset_master
+        unit_of_measurement: "°C"
+        device_class: temperature
+        state_class: measurement
+        availability: >
+          {% set room = states('sensor.climate_bedroom_temperature') | float(-999) %}
+          {% set trv = state_attr('climate.trv_danfoss_master_thermostat_4','current_temperature') | float(-999) %}
+          {{ room > -900 and trv > -900 }}
+        state: >
+          {{ (state_attr('climate.trv_danfoss_master_thermostat_4','current_temperature') | float
+              - states('sensor.climate_bedroom_temperature') | float) | round(2) }}
+
+      - name: "TRV offset Master settled"
+        unique_id: trv_offset_master_settled
+        unit_of_measurement: "°C"
+        device_class: temperature
+        state_class: measurement
+        # Unavailable unless the valve is genuinely regulating against a setpoint the
+        # room is near. `demand > 0` drops the hours the valve is shut (error ~0);
+        # `demand < 100` drops flat-out warm-up, where the error is largest and least
+        # representative. Chained comparisons are avoided - Jinja does not treat
+        # `0 < x < 100` the way Python does.
+        availability: >
+          {% set room = states('sensor.climate_bedroom_temperature') | float(-999) %}
+          {% set trv = state_attr('climate.trv_danfoss_master_thermostat_4','current_temperature') | float(-999) %}
+          {% set sp = state_attr('climate.trv_danfoss_master_thermostat_4','temperature') | float(-999) %}
+          {% set dem = states('sensor.trv_danfoss_master_pi_heating_demand') | float(-1) %}
+          {{ room > -900 and trv > -900 and sp > -900
+             and dem > 0 and dem < 100
+             and (room - sp) | abs <= 1.0 }}
+        state: >
+          {{ (state_attr('climate.trv_danfoss_master_thermostat_4','current_temperature') | float
+              - states('sensor.climate_bedroom_temperature') | float) | round(2) }}
+
+      # --- Kitchen ---
+      - name: "TRV offset Kitchen"
+        unique_id: trv_offset_kitchen
+        unit_of_measurement: "°C"
+        device_class: temperature
+        state_class: measurement
+        availability: >
+          {% set room = states('sensor.climate_kitchen_temperature') | float(-999) %}
+          {% set trv = state_attr('climate.trv_danfoss_kitchen_thermostat_5','current_temperature') | float(-999) %}
+          {{ room > -900 and trv > -900 }}
+        state: >
+          {{ (state_attr('climate.trv_danfoss_kitchen_thermostat_5','current_temperature') | float
+              - states('sensor.climate_kitchen_temperature') | float) | round(2) }}
+
+      - name: "TRV offset Kitchen settled"
+        unique_id: trv_offset_kitchen_settled
+        unit_of_measurement: "°C"
+        device_class: temperature
+        state_class: measurement
+        # Unavailable unless the valve is genuinely regulating against a setpoint the
+        # room is near. `demand > 0` drops the hours the valve is shut (error ~0);
+        # `demand < 100` drops flat-out warm-up, where the error is largest and least
+        # representative. Chained comparisons are avoided - Jinja does not treat
+        # `0 < x < 100` the way Python does.
+        availability: >
+          {% set room = states('sensor.climate_kitchen_temperature') | float(-999) %}
+          {% set trv = state_attr('climate.trv_danfoss_kitchen_thermostat_5','current_temperature') | float(-999) %}
+          {% set sp = state_attr('climate.trv_danfoss_kitchen_thermostat_5','temperature') | float(-999) %}
+          {% set dem = states('sensor.trv_danfoss_kitchen_pi_heating_demand') | float(-1) %}
+          {{ room > -900 and trv > -900 and sp > -900
+             and dem > 0 and dem < 100
+             and (room - sp) | abs <= 1.0 }}
+        state: >
+          {{ (state_attr('climate.trv_danfoss_kitchen_thermostat_5','current_temperature') | float
+              - states('sensor.climate_kitchen_temperature') | float) | round(2) }}
+
+      # --- Lola ---
+      - name: "TRV offset Lola"
+        unique_id: trv_offset_lola
+        unit_of_measurement: "°C"
+        device_class: temperature
+        state_class: measurement
+        availability: >
+          {% set room = states('sensor.climate_lola_s_room_temperature') | float(-999) %}
+          {% set trv = state_attr('climate.trv_danfoss_lola','current_temperature') | float(-999) %}
+          {{ room > -900 and trv > -900 }}
+        state: >
+          {{ (state_attr('climate.trv_danfoss_lola','current_temperature') | float
+              - states('sensor.climate_lola_s_room_temperature') | float) | round(2) }}
+
+      - name: "TRV offset Lola settled"
+        unique_id: trv_offset_lola_settled
+        unit_of_measurement: "°C"
+        device_class: temperature
+        state_class: measurement
+        # Unavailable unless the valve is genuinely regulating against a setpoint the
+        # room is near. `demand > 0` drops the hours the valve is shut (error ~0);
+        # `demand < 100` drops flat-out warm-up, where the error is largest and least
+        # representative. Chained comparisons are avoided - Jinja does not treat
+        # `0 < x < 100` the way Python does.
+        availability: >
+          {% set room = states('sensor.climate_lola_s_room_temperature') | float(-999) %}
+          {% set trv = state_attr('climate.trv_danfoss_lola','current_temperature') | float(-999) %}
+          {% set sp = state_attr('climate.trv_danfoss_lola','temperature') | float(-999) %}
+          {% set dem = states('sensor.trv_danfoss_lola_pi_heating_demand') | float(-1) %}
+          {{ room > -900 and trv > -900 and sp > -900
+             and dem > 0 and dem < 100
+             and (room - sp) | abs <= 1.0 }}
+        state: >
+          {{ (state_attr('climate.trv_danfoss_lola','current_temperature') | float
+              - states('sensor.climate_lola_s_room_temperature') | float) | round(2) }}
