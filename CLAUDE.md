@@ -107,6 +107,38 @@ Reload all), so a package can deploy cleanly and still show nothing until then.
 - A newly added `authorized_keys` entry needs the **add-on restarted**, not
   just the config saved.
 
+## Zigbee mesh topology
+
+`./zigbee-topology.sh` prints who parents whom and at what **first-hop LQI**,
+read from ZHA's neighbour table in `/config/zigbee.db` over the same ssh
+transport as `deploy.sh` (no HA token needed). `--save` stores a snapshot under
+`topology/` (tracked, so before/after evidence outlives one workstation),
+`--diff` compares the two most recent.
+
+**Do not use `sensor.*_lqi` to judge a device's link.** LQI is a MAC-layer
+measurement taken by the receiving radio, so the coordinator's number describes
+only the *last hop into the coordinator*. For anything behind a router that is
+a different radio link: on 2026-09-13 the Ada TRV's sensor read a comfortable
+178 while its actual hop to its parent was 45, and Lola's sensor *fell* from
+~155 to ~118 when she re-parented onto the new ZBMINIR2 — her own link had in
+fact improved to 217. Only the neighbour table carries the real number, and
+nothing historises it, which is why this script exists.
+
+Two facts that govern any mesh work here:
+
+- **End devices never migrate on their own.** A sleepy device keeps its parent
+  until polling fails; there is no periodic "is there a better parent?" check.
+  Adding a router changes nothing for already-joined devices. To move one,
+  power-cycle its *current* parent — the eTRVs poll every 7 s
+  (`long_poll_interval` = 28 quarter-seconds, which is also the firmware floor),
+  so they orphan and rejoin within roughly a minute. This is also why a core
+  update re-parents things: the coordinator restarts and its direct children
+  scatter onto routers.
+- **The neighbour table only refreshes on a topology scan**, so a snapshot taken
+  right after a re-parent can still show the old parent. A device listed as a
+  child by two routers at once (the script's "RECENTLY MOVED" section) is one
+  that moved and whose old parent has not been rescanned.
+
 This is not a standalone Python project - it runs within Home Assistant's PyScript integration.
 
 **Installation:**
