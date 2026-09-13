@@ -107,10 +107,10 @@ sensor.climate_<area>_temperature        target temp + calibration            (a
 | Room | eTRV climate entity | BT external sensor input |
 |------|---------------------|--------------------------|
 | Ada | `climate.trv_danfoss_ada` | `sensor.climate_ada_s_room_temperature` |
-| Master/Bedroom | `climate.trv_danfoss_master_thermostat_4` | `sensor.climate_bedroom_temperature` |
-| Kitchen | `climate.trv_danfoss_kitchen_thermostat_5` | `sensor.climate_kitchen_temperature` |
+| Master/Bedroom | `climate.trv_danfoss_master` | `sensor.climate_bedroom_temperature` |
+| Kitchen | `climate.trv_danfoss_kitchen` | `sensor.climate_kitchen_temperature` |
 | Lola | `climate.trv_danfoss_lola` | `sensor.climate_lola_s_room_temperature` |
-| Stairwell | `climate.trv_danfoss_stairwell_thermostat_3` | (no external sensor — TRV internal only) |
+| Stairwell | `climate.trv_danfoss_stairwell` | (no external sensor — TRV internal only) |
 
 ## Setup steps (not to be followed — kept for what they changed on the devices)
 
@@ -204,10 +204,40 @@ to the `trv_danfoss_<room>_<feature>` pattern over the websocket API
 (`config/entity_registry/update`; there is no REST equivalent). **Expect to redo this
 after any future reconfigure.**
 
-**Stairwell is still divergent** and was left alone: 26 entities, no offsets, and two
-Estonian slugs (`valine_temperatuuriandur`, `kasuta_koormuse_tasakaalustamist`). The
-same two-step fix should work on it. It has no external sensor, so it is outside the
-trim work and was not worth another interview.
+**Stairwell got the same treatment** and went 26 → 39, so four of the five now expose
+an identical entity set. It had no unique unsupported-cache rows, so the reconfigure
+alone was what it needed.
+
+### Where the five ended up (2026-09-13)
+
+Counts 39 / 39 / 38 / 39 / 39, with 36 features common to all and **no Estonian slugs
+left anywhere**. What is still not uniform:
+
+- `sensor:timestamp` is missing on Lola (the eTRV clock readout). Genuinely absent,
+  harmless, nothing uses it — the 38 rather than 39.
+
+Settled along the way, and worth not re-litigating:
+
+- `climate.trv_danfoss_<room>_thermostat_N` on Kitchen/Master/Stairwell were dedup
+  artefacts from earlier re-pairings. Renamed to the bare `climate.trv_danfoss_<room>`
+  that Ada and Lola already used. **`trv-climate/offset.yaml`, the curve-test package
+  and this file were updated to match** — anything new referencing a TRV climate
+  entity should use the bare form.
+- `prioritise` vs `prioritize` was a British/American split captured at pairing.
+  Settled on `prioritize`, the spelling three of the five already carried.
+
+### Language: two separate settings
+
+Entity **IDs** are slugged from the translated name at creation, using the *instance*
+language (`Settings → System → General`), which was `et`. Entity **display** names are
+translated at runtime, and each user's *profile* language controls what they see —
+Eero's was already `en-GB`, which is why the UI looked English while new entities were
+being created with Estonian ids.
+
+The instance language is now `en-GB`. **It did not take effect immediately**: Stairwell
+was reconfigured after the change and still produced Estonian ids, because HA caches
+translations at load. Assume a restart is required before the setting actually governs
+new ids, and check the first entity a reconfigure produces rather than trusting it.
 
 ## Status — 2026-09-13
 

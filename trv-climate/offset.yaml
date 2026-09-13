@@ -83,10 +83,10 @@ template:
         state_class: measurement
         availability: >
           {% set room = states('sensor.climate_bedroom_temperature') | float(-999) %}
-          {% set trv = state_attr('climate.trv_danfoss_master_thermostat_4','current_temperature') | float(-999) %}
+          {% set trv = state_attr('climate.trv_danfoss_master','current_temperature') | float(-999) %}
           {{ room > -900 and trv > -900 }}
         state: >
-          {{ (state_attr('climate.trv_danfoss_master_thermostat_4','current_temperature') | float
+          {{ (state_attr('climate.trv_danfoss_master','current_temperature') | float
               - states('sensor.climate_bedroom_temperature') | float) | round(2) }}
 
       - name: "TRV offset Master settled"
@@ -101,14 +101,14 @@ template:
         # `0 < x < 100` the way Python does.
         availability: >
           {% set room = states('sensor.climate_bedroom_temperature') | float(-999) %}
-          {% set trv = state_attr('climate.trv_danfoss_master_thermostat_4','current_temperature') | float(-999) %}
-          {% set sp = state_attr('climate.trv_danfoss_master_thermostat_4','temperature') | float(-999) %}
+          {% set trv = state_attr('climate.trv_danfoss_master','current_temperature') | float(-999) %}
+          {% set sp = state_attr('climate.trv_danfoss_master','temperature') | float(-999) %}
           {% set dem = states('sensor.trv_danfoss_master_pi_heating_demand') | float(-1) %}
           {{ room > -900 and trv > -900 and sp > -900
              and dem > 0 and dem < 100
              and (room - sp) | abs <= 1.0 }}
         state: >
-          {{ (state_attr('climate.trv_danfoss_master_thermostat_4','current_temperature') | float
+          {{ (state_attr('climate.trv_danfoss_master','current_temperature') | float
               - states('sensor.climate_bedroom_temperature') | float) | round(2) }}
 
       # --- Kitchen ---
@@ -119,10 +119,10 @@ template:
         state_class: measurement
         availability: >
           {% set room = states('sensor.climate_kitchen_temperature') | float(-999) %}
-          {% set trv = state_attr('climate.trv_danfoss_kitchen_thermostat_5','current_temperature') | float(-999) %}
+          {% set trv = state_attr('climate.trv_danfoss_kitchen','current_temperature') | float(-999) %}
           {{ room > -900 and trv > -900 }}
         state: >
-          {{ (state_attr('climate.trv_danfoss_kitchen_thermostat_5','current_temperature') | float
+          {{ (state_attr('climate.trv_danfoss_kitchen','current_temperature') | float
               - states('sensor.climate_kitchen_temperature') | float) | round(2) }}
 
       - name: "TRV offset Kitchen settled"
@@ -137,14 +137,14 @@ template:
         # `0 < x < 100` the way Python does.
         availability: >
           {% set room = states('sensor.climate_kitchen_temperature') | float(-999) %}
-          {% set trv = state_attr('climate.trv_danfoss_kitchen_thermostat_5','current_temperature') | float(-999) %}
-          {% set sp = state_attr('climate.trv_danfoss_kitchen_thermostat_5','temperature') | float(-999) %}
+          {% set trv = state_attr('climate.trv_danfoss_kitchen','current_temperature') | float(-999) %}
+          {% set sp = state_attr('climate.trv_danfoss_kitchen','temperature') | float(-999) %}
           {% set dem = states('sensor.trv_danfoss_kitchen_pi_heating_demand') | float(-1) %}
           {{ room > -900 and trv > -900 and sp > -900
              and dem > 0 and dem < 100
              and (room - sp) | abs <= 1.0 }}
         state: >
-          {{ (state_attr('climate.trv_danfoss_kitchen_thermostat_5','current_temperature') | float
+          {{ (state_attr('climate.trv_danfoss_kitchen','current_temperature') | float
               - states('sensor.climate_kitchen_temperature') | float) | round(2) }}
 
       # --- Lola ---

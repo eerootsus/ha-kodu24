@@ -201,7 +201,7 @@ template:
         unique_id: curve_test_blind_zones
         state: >
           {% set l = state_attr('climate.trv_danfoss_lola', 'current_temperature') %}
-          {% set s = state_attr('climate.trv_danfoss_stairwell_thermostat_3', 'current_temperature') %}
+          {% set s = state_attr('climate.trv_danfoss_stairwell', 'current_temperature') %}
           Lola {{ l if l is not none else '?' }} / Trepihall {{ s if s is not none else '?' }}
 
       # Confounder discriminator. The slope was set by hand, without a controlled
