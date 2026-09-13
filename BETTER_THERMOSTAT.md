@@ -210,11 +210,13 @@ alone was what it needed.
 
 ### Where the five ended up (2026-09-13)
 
-Counts 39 / 39 / 38 / 39 / 39, with 36 features common to all and **no Estonian slugs
-left anywhere**. What is still not uniform:
+All five were reconfigured and the ids normalised. Counts 39 / 39 / 38 / 39 / 39,
+**38 of 39 features common to all**, every id on the `trv_danfoss_<room>_<feature>`
+pattern, and no Estonian slugs anywhere. The single remaining difference:
 
-- `sensor:timestamp` is missing on Lola (the eTRV clock readout). Genuinely absent,
-  harmless, nothing uses it — the 38 rather than 39.
+- `sensor:timestamp` missing on Lola (the eTRV clock readout). Did not return even
+  after a reconfigure. Harmless, nothing uses it — note the eTRV clock is not synced
+  by this project at all since `set_time` was removed.
 
 Settled along the way, and worth not re-litigating:
 
@@ -236,8 +238,19 @@ being created with Estonian ids.
 
 The instance language is now `en-GB`. **It did not take effect immediately**: Stairwell
 was reconfigured after the change and still produced Estonian ids, because HA caches
-translations at load. Assume a restart is required before the setting actually governs
-new ids, and check the first entity a reconfigure produces rather than trusting it.
+translations at load. After a restart the display names did flip to English
+(`'TRV Danfoss Ada Local temperature offset'`, `'... Battery'`), which is the proxy for
+translations having reloaded.
+
+**Still unproven for ids, though.** Reconfiguring all five after the restart created no
+new entities — they already had their full sets — so nothing was slugged and the fix
+was never exercised. Check the first entity the next reconfigure produces rather than
+assuming; if it comes out Estonian, the instance language is not the slug source and
+this section is wrong.
+
+A cosmetic leftover: `switch.trv_danfoss_<room>_prioritize_external_temperature_sensor`
+now displays as "Prioritise" — en-GB in the translated name, US spelling in the id that
+was settled on. Ids are what matter for templating, so this was left alone.
 
 ## Status — 2026-09-13
 
