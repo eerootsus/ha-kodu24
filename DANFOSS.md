@@ -58,10 +58,14 @@ control path, not from the setpoint.
 
 The reliable lever is to stop feeding the external room sensor (`0x4015 = -8000`).
 The eTRV then controls on its internal sensor and idles (0 %) once the room is
-above setpoint — exactly the Stairwell behavior. **This is the summer mechanism**
-(`update_heating_season`): disable external sensors above 18 °C outdoor, resume
-below 16 °C, with the 16–18 °C band left unchanged (hysteresis), driven by
-`sensor.vicare_outside_temperature`. Setpoints are left to the user/schedule.
+above setpoint — exactly the Stairwell behavior.
+
+This *was* the summer mechanism, as `update_heating_season`: disable external
+sensors above 18 °C outdoor, resume below 16 °C, hysteresis in between, driven by
+`sensor.vicare_outside_temperature`. **That function no longer exists.** The feed is
+now off permanently — `0x4015 = -8000` is written once, by hand, on all five — so
+Better Thermostat can own the setpoint without the eTRV's own control path fighting
+it. The outdoor-threshold job moved into BT's own summer-off setting.
 
 Caveat: with the external sensor off, a valve will still open if the room drops
 below its setpoint (e.g. a cool summer morning against a winter setpoint). In
@@ -70,21 +74,34 @@ so valves stay closed.
 
 ### How this automation drives the eTRVs
 
-- **Room temperature feed** — every 5 min we push a weighted room temperature into
-  each TRV's external room sensor (`0x4015`). When a room has no external sensor —
-  or in summer mode — we write `-8000` to disable the feature so the eTRV falls
-  back to its internal estimate (sparing radio/battery too, ≈650 msgs/day, §1.1).
-- **Seasonal external-sensor toggle** — `update_heating_season` as above.
-- **Config maintenance** — weekly: time sync (`0x000A`), `Radiator Covered`
-  (`0x4016`, from device label → selects §2.3 vs §2.4), and load balancing disabled
-  (`0x4032`, since every room here has a single TRV).
+**It does not.** As of the Better Thermostat cutover `danfoss.py` writes nothing to
+the TRVs at all — it publishes `sensor.climate_<area>_temperature` / `_humidity`
+and stops there. Setpoint, on/off and calibration belong to Better Thermostat
+(`BETTER_THERMOSTAT.md`); the eTRVs are actuators.
+
+What that removed, and what replaced it:
+
+| Was | Did | Now |
+|---|---|---|
+| `update_external_temperatures()` | pushed weighted room temp to `0x4015` every 5 min | gone — `0x4015 = -8000` written once by hand on all five, permanently |
+| `update_heating_season()` | toggled the feed on outdoor temp for summer | gone — BT's outdoor threshold |
+| `set_time()` | weekly Time cluster `0x000A` sync | gone — affects only valve-exercise/adaptation timing; sync by hand via ZHA if wanted |
+| `radiator_covered()` | wrote `0x4016` from a device label | gone — the label is inert; all five sit at `FALSE` |
+| `disable_load_balancing()` | wrote `0x4032 = FALSE` | gone — already FALSE on all five, and single-TRV rooms don't need it re-asserted |
+| `queue_zigbee_write()` | retried sleepy-device writes | gone — see the gotcha below |
+
+The sections below are the **device** reference — how the eTRV behaves, and which
+attribute does what — and remain accurate regardless of who is driving it. They are
+also what you need if the control logic is ever revived from git history.
 
 ### Operational gotchas we hit
 
 - **Sleepy device:** eTRVs are battery end-devices with a ~5 min wake (check-in)
-  interval. A single direct write to a sleeping eTRV fails — every write goes
-  through `queue_zigbee_write`, which retries with exponential backoff until it
-  lands during a wake window. One-shot REST/service calls are *not* reliable.
+  interval. A single direct write to a sleeping eTRV fails, so one-shot
+  REST/service calls are *not* reliable — always read the value back before
+  believing a write landed. `queue_zigbee_write` used to handle this automatically;
+  it went with the rest of the control logic, so anything writing to a TRV today
+  (`trv_debug.py`, `trv_unstick.py`, a manual ZHA call) must retry for itself.
 - **Manufacturer code only for `0x4000+`:** Danfoss manufacturer-specific
   attributes (`0x4015/0x4016/0x4032/…`) require the manufacturer code; **standard**
   ZCL attributes (Time `0x0000`, SystemMode `0x001C`, setpoint, demand) must be
@@ -118,8 +135,11 @@ the spurious heat request:
 > value. Room setpoint may be `OccupiedHeatingSetpoint` or the room-sensor setpoint.
 > Note: inhibiting deprives the PID of authority and can reduce control accuracy.
 
-**To fully stop heating (e.g. summer): set `system_mode = off`** — this halts the
-PID entirely and is cleaner than inhibiting individual heat requests.
+The catalogue's own advice here is **"to fully stop heating, set
+`system_mode = off`"**. On these devices that does not work: writing `SystemMode = 0`
+is not honoured (verified across many attempts — see "off is 5 °C anti-freeze"
+above, where the mode stays `heat` and only the setpoint drops). Removing the
+external-sensor feed is the lever that actually closes the valve.
 
 ## External room sensor — two distinct modes (selected by Radiator Covered)
 
@@ -208,15 +228,16 @@ Battery via Power cluster `0x0001 / 0x0021` BatteryPercentageRemaining (0–200)
 0x00 Quarantine, 0x01 Closed, 0x02 maybe opening, 0x03 open detected, 0x04 open
 from external but locally closed. Disabled in Covered Radiator mode.
 
-## How this maps to the current automation (`danfoss.py`)
+## What reads this document
 
-- `set_time()` → Time cluster `0x000A` (weekly + on join, per §1.2).
-- `radiator_covered()` → `0x4016` from device label (selects §2.3 vs §2.4 mode).
-- `disable_load_balancing()` → `0x4032 = FALSE` (correct: single-eTRV rooms).
-- `update_external_temperatures()` → `0x4015` (room temp, or `-8000` to disable).
-  Skips TRVs currently in `off` mode to save radio/battery (§1.1).
-- `update_heating_season()` → `system_mode` (`0x001C`): off above 18 °C outdoor,
-  heat below 16 °C (hysteresis band in between), driven by
-  `sensor.vicare_outside_temperature`. This is what addresses the persistent
-  summer `pi_heating_demand = 1` — turning the eTRV off halts the anticipatory
-  PID demand entirely (cleaner than the §2.6 heat-request inhibit).
+`danfoss.py` no longer maps onto any of it — see "How this automation drives the
+eTRVs" above. The attribute reference is here for three consumers:
+
+- **Better Thermostat**, indirectly: its Target-Temperature-Based calibration exists
+  because `0x404B` (Regulation SetPoint Offset) is capped at ±2.5 K, too small to
+  calibrate with.
+- **`trv_debug.py` / `trv_unstick.py`**, which address `0x4016`, `0x4032` and friends
+  raw. Note the manufacturer-code rule in the gotchas — it is the usual reason a
+  read or write raises instead of returning.
+- **`HEATING_CURVE_TEST.md`**, whose whole pass/fail design turns on §2.6: the
+  residual ~1 % demand means `pi_heating_demand` cannot be read as "needs heat".

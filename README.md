@@ -15,6 +15,9 @@ housekeeping packages that have nowhere better to live:
   its history intact.
 - **`themes/`** — HA themes; currently the e-ink serif theme the chores
   dashboard is built around.
+- **`zigbee-topology.sh` + `topology/`** — reads ZHA's neighbour table to print
+  who parents whom and at what first-hop LQI, and stores tracked snapshots.
+  `sensor.*_lqi` measures a different hop and will mislead you; see `CLAUDE.md`.
 - **`configuration.yaml`** — HA's root config, tracked here since 2026-09-05.
   Its `packages:` block decides what HA actually loads, so a package directory
   in this repo does nothing until it is listed there.
@@ -42,19 +45,27 @@ from the shell and keep the record in step.
 
 Pyscript-based climate control for Danfoss TRVs in Home Assistant.
 
+`danfoss.py` is **sensor aggregation only**. It performs no writes to the TRVs;
+heating control belongs to Better Thermostat (`BETTER_THERMOSTAT.md`).
+
 ### Features
 
-- Reads temperature from Danfoss eTRV0103 climate entities
-- Creates virtual room temperature sensors (weighted average when multiple TRVs per room)
-- Supports external temperature sensors with configurable weights (label devices with `sensor_weight_X`)
-- Updates TRV external temperature sensors from virtual room sensors
-- Syncs time on TRVs (weekly)
-- Manages radiator covered attribute based on device labels
-- Automatic retry queue for failed Zigbee writes (exponential backoff)
+- Publishes one weighted virtual temperature/humidity sensor per area
+  (`sensor.climate_{area_id}_temperature` / `_humidity`), for Better Thermostat
+  to consume as its per-room input
+- Weights come from device labels (`sensor_weight_X`); TRVs find the areas but
+  their own temperatures are **excluded**, so heating does not skew the average
+
+Removed in the Better Thermostat cutover, and **not** coming back while BT owns
+control: the external-sensor feed, weekly time sync, radiator-covered writes,
+load-balancing disable, and the Zigbee retry queue. Git history has them if the
+reasoning is ever needed again.
 
 ## Home Assistant Setup
 
-### Step 1: Copy Files to HA Config
+`./deploy.sh` does all of this — `danfoss.py` and `trv-climate/` are both in its
+manifest and `climate_sensors:` is already declared in the tracked
+`configuration.yaml`. What lands where:
 
 ```
 config/
@@ -65,17 +76,8 @@ config/
 └── configuration.yaml
 ```
 
-### Step 2: Include in configuration.yaml
-
-```yaml
-homeassistant:
-  packages:
-    climate_sensors: !include trv-climate/climate.yaml
-```
-
-### Step 3: Restart Home Assistant
-
-Settings → System → Restart
+Pyscript picks up a changed module on `pyscript.reload`; the template sensors need
+`template.reload` or a restart.
 
 ---
 
@@ -84,12 +86,18 @@ Settings → System → Restart
 ### Virtual Temperature Sensors
 
 The pyscript creates virtual sensors (`sensor.climate_{area_id}_temperature`) by:
-1. Finding all TRVs assigned to each area
-2. Reading `current_temperature` from each TRV's climate entity
-3. Calculating weighted average (TRVs have weight 0.5, external sensors use their label weight)
+1. Finding all TRVs assigned to each area — this decides *which* areas get a sensor
+2. Reading the labelled external sensors in those areas
+3. Calculating the weighted average from those sensors alone. **TRV temperatures
+   are not in it at all** (an earlier version gave them weight 0.5); a valve's own
+   reading tracks the radiator, not the room
 4. Creating virtual sensor entities
 
-The template sensors in `sensors/climate.yaml` wrap these with proper `unique_id` for UI management (area assignment, customization).
+An area whose external sensors are all missing gets no usable value, and the
+wrapping template sensor goes `unavailable`.
+
+The template sensors in `trv-climate/climate.yaml` wrap these with proper
+`unique_id` for UI management (area assignment, customization).
 
 ### External Temperature Sensors
 
@@ -99,12 +107,16 @@ To add external temperature sensors (e.g., a separate Zigbee sensor):
 
 ### Device Labels
 
-- `radiator_covered` - Sets the TRV's radiator covered attribute (for TRVs behind furniture/curtains)
 - `sensor_weight_X` - Includes device's temperature sensor in room average with weight X
+
+`radiator_covered` used to be read from a label and written to the TRV; that write
+went with the rest of the control logic. The label is inert now.
 
 ### Enable History Graphs for Load Estimates
 
-The TRV load estimate sensors don't have `state_class` set by default, so Home Assistant won't record history. To enable graphs, add to `configuration.yaml`:
+**Already done** — this block is in the tracked `configuration.yaml`. Kept here as
+the reason it is there: the TRV load estimate sensors carry no `state_class`, so HA
+records no history for them without it.
 
 ```yaml
 homeassistant:
@@ -127,40 +139,18 @@ homeassistant:
 
 | Schedule | Function | Description |
 |----------|----------|-------------|
-| Startup | `startup` | Runs all init tasks sequentially (avoids Zigbee congestion) |
-| Sunday 3:00 AM | `set_time` | Weekly time sync on all TRVs |
-| Monday 3:00 AM | `radiator_covered` | Weekly radiator covered attribute check |
-| Tuesday 3:00 AM | `disable_load_balancing` | Weekly load balancing disable (for single-TRV rooms) |
-| Every 5 min | `update_room_climate_sensors` | Update virtual sensor values |
-| Every 5 min | `update_external_temperatures` | Push room temp to TRVs |
-| Every 1 min | `process_pending_writes` | Retry failed Zigbee writes |
+| Startup + every 5 min | `update_room_climate_sensors` | Publish the virtual room sensors |
 
----
+That is the whole schedule. `set_time`, `radiator_covered`,
+`disable_load_balancing`, `update_external_temperatures`, `update_heating_season`
+and `process_pending_writes` were all removed in the Better Thermostat cutover,
+and with them the Zigbee retry queue and its `pyscript.get_pending_writes` debug
+service. Nothing in this repo writes to a TRV any more.
 
-## Zigbee Message Queue
-
-All Zigbee writes go through a retry queue. If a write fails (timeout or error), it's queued for retry with exponential backoff:
-
-| Retry | Delay |
-|-------|-------|
-| 1 | 1 min |
-| 2 | 2 min |
-| 3 | 4 min |
-| 4 | 8 min |
-| 5 | 16 min |
-| 6 | 32 min |
-| 7 | ~1 hour |
-| 8 | ~2 hours |
-| 9-10 | 4 hours (max) |
-
-After 10 retries, the write is abandoned and logged as an error.
-
-**Key behaviors:**
-- Newer writes for the same device+attribute replace pending ones (stale values discarded)
-- Queue is in-memory only (cleared on HA restart)
-- Battery-powered TRVs often sleep, causing timeouts—the queue handles this gracefully
-
-**Debug service:** Call `pyscript.get_pending_writes` from Developer Tools → Services to inspect the current queue.
+The queue existed because eTRVs are sleepy end-devices that miss one-shot writes
+(`DANFOSS.md` §1.1). That constraint still holds for anything that *does* write to
+them — `trv_debug.py` and `trv_unstick.py` included — so re-read a value back
+before trusting that a write landed.
 
 ---
 

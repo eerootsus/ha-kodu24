@@ -58,8 +58,9 @@ sensor.climate_<area>_temperature        target temp + calibration            (a
 4. **Verify:** with a room above target, BT should drive the eTRV to its off/5 °C
    state and `pi_heating_demand` should reach **0** (the thing native mode never did).
 
-danfoss.py has already been trimmed to sensor-aggregation only — no further code
-changes needed for the cutover.
+danfoss.py has been trimmed to sensor-aggregation only, but it is **not** currently
+working — see Status below. Its output is step 3's temperature sensor, so fix it
+before starting the UI flow.
 
 ## Firmware & config baseline (verified)
 
@@ -74,21 +75,33 @@ changes needed for the cutover.
   external sensor = `-8000`, load balancing off, min/max 5/35, valve orientation
   Horizontal, setpoint response "quick 5min", valve exercise Thu 11:00, adaptation
   enabled.
-- **Watch item:** Lola's Zigbee link is weak (`lqi`/`rssi` unknown; writes needed
-  several retries). Improve placement / add a nearby router so BT commands land.
+- **Watch item (resolved 2026-09-13):** Lola's Zigbee link was weak (`lqi`/`rssi`
+  unknown; writes needed several retries). The ZBMINIR2 routers went in and Lola
+  re-parented onto one — LQI 217 to her parent. Use `./zigbee-topology.sh`, not
+  `sensor.*_lqi`, to check this: the sensor reads the wrong hop and went *down* to
+  ~118 as her actual link improved.
 - **Note:** the eTRV clock is no longer synced by this project (set_time was
   removed). It only affects valve-exercise/adaptation timing, not BT control; sync
   once manually via ZHA if desired.
 
-## Status
+## Status — checked against the live system 2026-09-13
 
-- **Kitchen** BT created and healthy (`climate.kitchen_better_thermostat`): reads
-  `sensor.climate_kitchen_temperature`, no errors, target driven to 5 °C, BT idle.
-  Confirming the underlying valve reaches `pi_heating_demand = 0` (sleepy-device
-  lag; Stairwell with identical config already idles, so it should follow).
-- Remaining rooms (Ada, Master, Lola) to be added via the UI flow (config-flow
-  integrations can't be created via the REST API). Stairwell: optional — it has no
-  external sensor and already idles natively.
+**The cutover has not happened.** Nothing below step 1 is done:
+
+- **Better Thermostat is not installed.** `/config/custom_components/` holds only
+  `hacs` and `pyscript`, and there is no `climate.*_better_thermostat` entity. An
+  earlier version of this file recorded a healthy Kitchen BT; that entity does not
+  exist — treat the claim as withdrawn, not as something that regressed.
+- **The room sensors BT would consume are all `unavailable`**, so BT could not be
+  configured today even after installing it. The ten `trv-climate` template sensors
+  have nothing behind them because `danfoss.py` throws on every run. This is the
+  blocker, and it is upstream of everything else on this page.
+- **The TRVs are running unmanaged.** Four sit at `pi_heating_demand = 1` and
+  Stairwell at 0 — the same split as when this document was written. Ada, Master,
+  Kitchen and Stairwell are at a 5 °C setpoint, Lola at 18.5 °C.
+
+So step 1 (install BT via HACS) is still the next action, and it is blocked on the
+room sensors coming back.
 
 ## Open issue: radiator TRVs stuck at 1 % (summer warmth)
 
@@ -104,10 +117,18 @@ cycle + setpoint nudge (z2m #19495). Even on Ada (best link) nothing moved. A ra
 attribute dump showed the four configured identically to Stairwell
 (`radiator_covered = False`, external `−8000`, offsets 0, adaptation done).
 
-**Most likely confounder: a thin Zigbee mesh.** 29 sleepy end-devices, Lola at
-`rssi −93`, a corner at −100, and router-capable TRADFRI bulbs `unavailable` (lost
-hops). Writes routinely fail/retry and can't be verified as landed (fresh reads
-time out), so "fix didn't work" may = "write never arrived."
+**Suspected confounder at the time: a thin Zigbee mesh.** 29 sleepy end-devices,
+Lola at `rssi −93`, a corner at −100, and router-capable TRADFRI bulbs `unavailable`
+(lost hops). Writes routinely fail/retry and can't be verified as landed (fresh
+reads time out), so "fix didn't work" may = "write never arrived."
+
+**That theory is now weak.** ZBMINIR2 routers went in, Lola re-parented onto one and
+her link improved (LQI 217 to her parent; `rssi −81`, and see `CLAUDE.md` on why the
+`sensor.*_lqi` number misleads). The mesh is materially better and **the four are
+still at 1 %** — while Stairwell, the healthy one, is a coordinator child on the same
+kind of link as the stuck ones. Whatever holds the valve open is not the radio. The
+external-sensor control path (§2.6) remains the best explanation, which is consistent
+with Stairwell being the one TRV never fed an external sensor.
 
 **Chosen resolution:** physically **close the manual lockshield valve** on the
 radiators where possible for summer — bulletproof, independent of TRV/mesh. Accepted

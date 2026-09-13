@@ -141,20 +141,26 @@ Two facts that govern any mesh work here:
 
 This is not a standalone Python project - it runs within Home Assistant's PyScript integration.
 
-**Installation:**
-1. Copy `danfoss.py` to `config/pyscript/`
-2. Copy `trv-climate/climate.yaml` to `config/trv-climate/`
-3. Include in `configuration.yaml`:
-   ```yaml
-   homeassistant:
-     packages:
-       climate_sensors: !include trv-climate/climate.yaml
-   ```
-4. Restart Home Assistant
+**Installation:** none of it is manual any more. `danfoss.py` and `trv-climate/` are
+both in `deploy.sh`'s manifest and `climate_sensors:` is declared in the tracked
+`configuration.yaml`, so `./deploy.sh` is the whole procedure. A changed module is
+picked up by `pyscript.reload`; the template sensors need `template.reload`.
 
 No build step required. Dependencies in `requirements.txt` are Home Assistant's own packages.
 
 ## Architecture
+
+> **Broken as of 2026-09-13, and everything climate depends on it.**
+> `get_all_climate_devices()` iterates `dr.devices` expecting device *ids*; current
+> HA returns a `_DeprecatedDeviceRegistryItemsView` that yields `DeviceEntry`
+> objects, so `dr.async_get(device_id)` raises
+> `TypeError: cannot use 'DeviceEntry' as a dict key (unhashable type: 'set')` on
+> every run. No `sensor.climate_*` entity is published, all ten `trv-climate`
+> template sensors are `unavailable`, and both the Better Thermostat cutover and
+> the heating-curve test are blocked behind it. Verified fix:
+> `for device in dr.devices.values():`, dropping the `async_get` call.
+> The failure is silent from the UI - it only shows in `ha core logs`, since this
+> install writes no `home-assistant.log`.
 
 **danfoss.py** - Main PyScript module containing:
 

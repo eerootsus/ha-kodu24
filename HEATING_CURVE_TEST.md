@@ -15,8 +15,11 @@ WH-MDC07J3E5 (7 kW air-to-water, on site):
 | W35  | 4.18               | — (underfloor only)    |
 | W55  | 2.98               | ~344 €/yr saved vs gas |
 
-The boiler currently runs **slope 1.2, shift 0** — a gas-boiler curve that pushes
-flow into the 60s on a cold day. Radiators sized for a boiler are commonly oversized
+The boiler ran **slope 1.2, shift 0** for years — a gas-boiler curve that pushes
+flow into the 60s on a cold day. It was moved to **0.9** by hand in Aug 2026 and is
+still there (`number.vitodens_100_heating_curve_slope`), so the ascend-only mode
+below is the live plan and 1.2 is the historical baseline the savings are measured
+against. Radiators sized for a boiler are commonly oversized
 enough to run 10–15 K cooler. If 80 m² of top-floor radiators hold temperature at
 45–50 °C instead of 60–65 °C, the radiator leg moves from SCOP ~3.0 toward ~3.8 —
 roughly **another 150–200 €/yr**, for no hardware spend.
@@ -40,11 +43,16 @@ pump is ever finished. If 1.2 was never justified, that has been leaking money f
 2. **Heating season.** The revert automation only evaluates below 12 °C outside;
    step-down does not check this, so starting in September wastes steps on mild
    weather. Start when the heating is genuinely working.
-3. **Two blind zones.** `sensor.climate_lola_s_room_temperature` and
-   `sensor.climate_trepihall_temperature` are `unavailable` — no external sensor
-   fitted. Those rooms are *not* monitored. Fitting a sensor in Lola's room (also the
-   worst-linked node, rssi −93) closes the biggest gap and is already on the Zigbee
-   router shopping list.
+3. **Blind zones — one now, not two.** Lola's room has since been fitted with two
+   labelled sensors (`TH01 Sonoff Lola` and `Lola Alt`, both `sensor_weight_2`), so
+   only **Stairwell/Trepihall** has no external sensor and stays unmonitored. It is
+   also the one TRV that idles correctly, which makes it the least urgent gap.
+
+   **But every room is blind today:** all ten `trv-climate` sensors read
+   `unavailable` because `danfoss.py` is erroring on each run (see
+   `BETTER_THERMOSTAT.md` → Status). The test cannot be enabled until that is fixed
+   — with every monitored room unavailable, nothing can ever register a shortfall
+   and the descent would run unopposed to `curve_test_min_slope`.
 
 ## Design
 
@@ -130,7 +138,10 @@ homeassistant:
 ```
 
 Restart HA, then run `script.curve_test_start` (sets defaults, stamps the step, and
-enables). `script.curve_test_abort` disables the test and restores slope 1.2.
+enables). `script.curve_test_abort` disables the test and restores slope **1.2** —
+note that is the old gas-boiler curve, not the 0.9 the boiler runs today, so an
+abort *raises* the slope. Check the hard-coded value in
+`curve-test/heating_curve_test.yaml` before relying on it.
 
 ## Entities
 

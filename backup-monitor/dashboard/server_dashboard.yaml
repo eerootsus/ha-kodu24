@@ -7,10 +7,16 @@
 # Note HA requires a hyphen in dashboard url_paths, hence `home-server`.
 #
 # Views:
-#   Overview   — internet + the four backup uptime strips, then the four
+#   Overview   — internet + four backup uptime strips, then the four
 #                numbers that matter: array free, VM disk, Hetzner box, updates
 #   Backups    — the strips again with detail: last run, last status, off-site
 #                size and borg growth
+#
+#   GAP: backup_monitor.yaml defines FIVE jobs — media, borg, flash, pool and
+#   zpool — but `zpool` (the glottis ZFS pool, added 2026-09-12) has no strip on
+#   either view, and none on the Ülevaade dashboard either. Its alerts fire; it is
+#   simply invisible. Adding it means a strip in both grids below, mirroring the
+#   `Pool to array` pair.
 #   Unraid     — array free gauge, entities, 30-day trend, flash backup strip
 #   VM         — VM disk gauge, host entities, 30-day trend, image updates
 #   Batteries  — the battery-state card, moved off the Ülevaade dashboard,

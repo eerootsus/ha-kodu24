@@ -1,8 +1,10 @@
 #!/usr/bin/env bash
 # Deploy this repo's packages to Home Assistant.
 #
-# Requires the "Advanced SSH & Web Terminal" add-on (port 22222) with this
-# workstation's public key in its `authorized_keys` option.
+# Requires an SSH add-on with this workstation's public key in its
+# `authorized_keys` option, listening on HA_PORT (default 22 -- ours does;
+# the "Advanced SSH & Web Terminal" add-on defaults to 22222 instead, so set
+# HA_PORT if you move to it).
 #
 # Always over the tailnet: HA sits on a network segment this workstation
 # cannot reach directly (its LAN address does not even ping from the wifi),
