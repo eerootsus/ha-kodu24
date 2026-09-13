@@ -175,10 +175,17 @@ It is also self-sealing: zigpy short-circuits attributes it believes unsupported
 only be cleared in the database.
 
 **Done:** with core stopped and the DB backed up to `/config/zigbee.db.bak-20260913`,
-the 10 rows that were not unanimous across the five were deleted. All five now carry
-an identical 13 rows, and `0x0010` stayed deleted across a restart.
+the 10 rows that were not unanimous across the five were deleted.
 
-**Result: necessary but not sufficient — the entity did not come back.** Lola still
+> **If you are reading this because you queried `zigbee.db` and found all five TRVs
+> at an identical 13 unsupported rows — that tidiness is this edit, not a fix that
+> worked.** The entity it was meant to restore is still missing. Do not take the
+> matching counts as evidence the problem is solved.
+
+**Result: necessary but not sufficient — the entity did not come back.** The edit
+itself held (`0x0010` stayed deleted across a restart), which is worth something: it
+separates "the cache *was* the problem" from "the cache was *a* problem", and it
+means a re-interview now tests one variable instead of two. Lola still
 has no `local_temperature_offset`. Nor is a cached *value* the gate: no TRV has a
 cached `513/0x0010`, including the three that do have the entity. The remaining
 explanation is that ZHA discovers these config entities at **device interview**, not

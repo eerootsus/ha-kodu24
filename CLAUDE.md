@@ -138,6 +138,14 @@ Two facts that govern any mesh work here:
   right after a re-parent can still show the old parent. A device listed as a
   child by two routers at once (the script's "RECENTLY MOVED" section) is one
   that moved and whose old parent has not been rescanned.
+- **ZHA's `unsupported_attributes_v12` cache lies after a bad interview.** A device
+  interviewed over a weak link gets attributes recorded as unsupported that the
+  same firmware supports elsewhere, and the entity behind them is never created.
+  zigpy then refuses to read or write those attributes at all, so it can only be
+  cleared in `zigbee.db`. Diffing the table across identical devices is how you
+  spot it. Note this was done on the five TRVs on 2026-09-13 and **did not** bring
+  the missing entity back — they are identical now, which is not the same as fixed.
+  See `BETTER_THERMOSTAT.md`.
 
 This is not a standalone Python project - it runs within Home Assistant's PyScript integration.
 
