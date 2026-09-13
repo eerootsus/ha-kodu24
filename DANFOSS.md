@@ -74,10 +74,12 @@ so valves stay closed.
 
 ### How this automation drives the eTRVs
 
-**It does not.** As of the Better Thermostat cutover `danfoss.py` writes nothing to
-the TRVs at all — it publishes `sensor.climate_<area>_temperature` / `_humidity`
-and stops there. Setpoint, on/off and calibration belong to Better Thermostat
-(`BETTER_THERMOSTAT.md`); the eTRVs are actuators.
+**It does not, and neither does anything else.** As of the Better Thermostat
+cutover `danfoss.py` writes nothing to the TRVs — it publishes
+`sensor.climate_<area>_temperature` / `_humidity` and stops there. BT was then
+trialled and removed (`BETTER_THERMOSTAT.md`), so each eTRV now runs its own PID on
+its **internal** sensor, with the external feed still disabled from the BT prep.
+Setpoints are set by hand.
 
 What that removed, and what replaced it:
 
@@ -233,9 +235,10 @@ from external but locally closed. Disabled in Covered Radiator mode.
 `danfoss.py` no longer maps onto any of it — see "How this automation drives the
 eTRVs" above. The attribute reference is here for three consumers:
 
-- **Better Thermostat**, indirectly: its Target-Temperature-Based calibration exists
-  because `0x404B` (Regulation SetPoint Offset) is capped at ±2.5 K, too small to
-  calibrate with.
+- **Whatever replaces room-based control**, if anything does. Note `0x404B`
+  (Regulation SetPoint Offset) is capped at ±2.5 K — too small for Better
+  Thermostat to calibrate with, which is why it drove the setpoint instead, but
+  possibly enough as a static per-room trim now that BT is gone.
 - **`trv_debug.py` / `trv_unstick.py`**, which address `0x4016`, `0x4032` and friends
   raw. Note the manufacturer-code rule in the gotchas — it is the usual reason a
   read or write raises instead of returning.

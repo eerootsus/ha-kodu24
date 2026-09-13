@@ -5,7 +5,8 @@ which is why most of it is still TRVs, and now also carries the general
 housekeeping packages that have nowhere better to live:
 
 - **`trv-climate/` + `danfoss.py`** — pyscript climate sensors for Danfoss
-  TRVs (documented below). Heating control itself belongs to Better Thermostat.
+  TRVs (documented below). They are observability, not control: Better Thermostat
+  was trialled for control and removed, so the TRVs regulate themselves.
 - **`battery-monitor/`** — weekly battery nudge, plus immediate alerts for
   safety devices.
 - **`backup-monitor/`** — push alerts for the off-site backups running on
@@ -45,21 +46,25 @@ from the shell and keep the record in step.
 
 Pyscript-based climate control for Danfoss TRVs in Home Assistant.
 
-`danfoss.py` is **sensor aggregation only**. It performs no writes to the TRVs;
-heating control belongs to Better Thermostat (`BETTER_THERMOSTAT.md`).
+`danfoss.py` is **sensor aggregation only** — it performs no writes to the TRVs.
+It was trimmed that way for Better Thermostat, which was then trialled and removed
+(`BETTER_THERMOSTAT.md`). So nothing applies room-based control today: each eTRV
+runs its own PID on its own internal sensor, and these sensors feed the dashboard
+and the heating-curve test.
 
 ### Features
 
 - Publishes one weighted virtual temperature/humidity sensor per area
-  (`sensor.climate_{area_id}_temperature` / `_humidity`), for Better Thermostat
-  to consume as its per-room input
+  (`sensor.climate_{area_id}_temperature` / `_humidity`). An area with no usable
+  external sensor is published as `unavailable` rather than omitted — that is
+  Stairwell's normal state, not a fault
 - Weights come from device labels (`sensor_weight_X`); TRVs find the areas but
   their own temperatures are **excluded**, so heating does not skew the average
 
-Removed in the Better Thermostat cutover, and **not** coming back while BT owns
-control: the external-sensor feed, weekly time sync, radiator-covered writes,
-load-balancing disable, and the Zigbee retry queue. Git history has them if the
-reasoning is ever needed again.
+Removed in the Better Thermostat cutover: the external-sensor feed, weekly time
+sync, radiator-covered writes, load-balancing disable, and the Zigbee retry queue.
+BT is gone now too, so **git history is the only copy** — that is where to look if
+room-based control is ever wanted back.
 
 ## Home Assistant Setup
 

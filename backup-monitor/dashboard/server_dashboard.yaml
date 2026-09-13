@@ -7,16 +7,14 @@
 # Note HA requires a hyphen in dashboard url_paths, hence `home-server`.
 #
 # Views:
-#   Overview   — internet + four backup uptime strips, then the four
+#   Overview   — internet + the five monitored-job strips, then the four
 #                numbers that matter: array free, VM disk, Hetzner box, updates
 #   Backups    — the strips again with detail: last run, last status, off-site
 #                size and borg growth
 #
-#   GAP: backup_monitor.yaml defines FIVE jobs — media, borg, flash, pool and
-#   zpool — but `zpool` (the glottis ZFS pool, added 2026-09-12) has no strip on
-#   either view, and none on the Ülevaade dashboard either. Its alerts fire; it is
-#   simply invisible. Adding it means a strip in both grids below, mirroring the
-#   `Pool to array` pair.
+#   `zpool` (pool health, added 2026-09-12) was monitored and alerting but on no
+#   dashboard until 2026-09-13. It is a health check rather than a backup, so its
+#   strip reads Healthy/Degraded where the other four read Backed up/Failing.
 #   Unraid     — array free gauge, entities, 30-day trend, flash backup strip
 #   VM         — VM disk gauge, host entities, 30-day trend, image updates
 #   Batteries  — the battery-state card, moved off the Ülevaade dashboard,
@@ -105,6 +103,20 @@ views:
       alias:
         ok: Backed up
         ko: Failing
+    - type: custom:uptime-card
+      title_template: Pool health
+      entity: binary_sensor.backup_zpool_healthy
+      hours_to_show: 168
+      icon: mdi:harddisk
+      severity: 10
+      update_interval: 300
+      title_adaptive_color: false
+      status_adaptive_color: true
+      icon_adaptive_color: false
+      tooltip_adaptive_color: true
+      alias:
+        ok: Healthy
+        ko: Degraded
   - type: grid
     cards:
     - type: gauge
@@ -206,6 +218,20 @@ views:
       alias:
         ok: Backed up
         ko: Failing
+    - type: custom:uptime-card
+      title_template: Pool health
+      entity: binary_sensor.backup_zpool_healthy
+      hours_to_show: 168
+      icon: mdi:harddisk
+      severity: 10
+      update_interval: 300
+      title_adaptive_color: false
+      status_adaptive_color: true
+      icon_adaptive_color: false
+      tooltip_adaptive_color: true
+      alias:
+        ok: Healthy
+        ko: Degraded
     - type: entities
       title: Backups
       entities:
@@ -219,6 +245,8 @@ views:
         name: Unraid flash
       - entity: input_datetime.backup_pool_last_ok
         name: Pool to array
+      - entity: input_datetime.backup_zpool_last_ok
+        name: Pool health check
       - type: section
         label: Last reported status
       - entity: input_text.backup_media_status
@@ -229,6 +257,8 @@ views:
         name: Unraid flash
       - entity: input_text.backup_pool_status
         name: Pool to array
+      - entity: input_text.backup_zpool_status
+        name: Pool health check
       - type: section
         label: Off-site capacity
       - entity: sensor.hetzner_box_used

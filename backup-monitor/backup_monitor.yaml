@@ -1,10 +1,14 @@
 # Backup monitor — alerts for the backup jobs protecting the server.
 #
-# Three run on the VM (alpine-docker) and are off-site: media, borg, flash.
-# One runs on the Unraid host and is local: `pool` (ZFS pool -> parity array,
-# added 2026-09-05) — it is host-side because the consistent snapshot needs
-# zfs, and because the VM's own vdisk is part of what it backs up, so a
-# VM-side cron would be circular. Both report through the same webhook.
+# Five jobs. Three run on the VM (alpine-docker) and are off-site: media, borg,
+# flash. Two run on the Unraid host, both defined in the `unraid` repo:
+#   `pool`  — ZFS pool -> parity array, nightly (added 2026-09-05). Host-side
+#             because the consistent snapshot needs zfs, and because the VM's own
+#             vdisk is part of what it copies, so a VM-side cron would be circular.
+#   `zpool` — pool health, daily at 06:00 via zpool-check.sh (added 2026-09-12).
+#             Not a backup; it rides this machinery because a dead-man switch is
+#             exactly what a health check wants.
+# All five report through the same webhook.
 #
 # Not climate-related, but it lives here for the same reason battery-monitor
 # does: this is the de facto HA config repo. The backup jobs themselves and
@@ -599,8 +603,13 @@ automation:
       job keeps refreshing last_seen, so the dead-man switch never sees it and
       the only other signal is the nightly failure push. This asks a blunter
       question once a morning: has every job actually *succeeded* since
-      yesterday? Silent when all three are healthy, so it stays a signal rather
+      yesterday? Silent when everything is healthy, so it stays a signal rather
       than furniture.
+
+      Covers all five jobs. It listed only the three VM ones until 2026-09-13,
+      which left `pool` and `zpool` with no safety net at all: a job stuck in
+      `fail` keeps refreshing last_seen, so the dead-man switch never sees it and
+      the immediate push is the only other signal.
     mode: single
     trigger:
       - platform: time
@@ -609,7 +618,7 @@ automation:
       - variables:
           problems: >
             {% set ns = namespace(p=[]) %}
-            {% for j in ['media', 'borg', 'flash'] %}
+            {% for j in ['media', 'borg', 'flash', 'pool', 'zpool'] %}
               {% set ok = state_attr('input_datetime.backup_' ~ j ~ '_last_ok', 'timestamp') | float(0) %}
               {% set age = (now().timestamp() - ok) / 3600 %}
               {% if age > 26 %}

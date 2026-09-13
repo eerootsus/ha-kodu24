@@ -48,11 +48,11 @@ pump is ever finished. If 1.2 was never justified, that has been leaking money f
    only **Stairwell/Trepihall** has no external sensor and stays unmonitored. It is
    also the one TRV that idles correctly, which makes it the least urgent gap.
 
-   **But every room is blind today:** all ten `trv-climate` sensors read
-   `unavailable` because `danfoss.py` is erroring on each run (see
-   `BETTER_THERMOSTAT.md` → Status). The test cannot be enabled until that is fixed
-   — with every monitored room unavailable, nothing can ever register a shortfall
-   and the descent would run unopposed to `curve_test_min_slope`.
+   (Between some HA upgrade and 2026-09-13 *every* room was blind: `danfoss.py`
+   threw on each run and all ten sensors read `unavailable`. Fixed. Worth
+   re-checking before enabling the test, because with every monitored room
+   unavailable nothing can register a shortfall and the descent runs unopposed to
+   `curve_test_min_slope`.)
 
 ## Design
 
@@ -66,9 +66,11 @@ pump is ever finished. If 1.2 was never justified, that has been leaking money f
 - The TRVs are candidates for replacement (Sonoff TRVZB). Room sensors are
   brand-agnostic, so the test survives a valve swap.
 
-**Target is a fixed number, not a TRV/BT setpoint.** Better Thermostat moves
-setpoints and applies calibration offsets; `input_number.curve_test_target_temp`
-(default 21.0 °C) is the comfort line being defended, independent of all that.
+**Target is a fixed number, not a TRV setpoint.** This was written when Better
+Thermostat was expected to move setpoints and apply calibration offsets. BT was
+dropped, but the reasoning holds for the eTRVs' own setpoints too:
+`input_number.curve_test_target_temp` (default 21.0 °C) is the comfort line being
+defended, independent of whatever any valve is currently aiming at.
 
 **Optimistic descent, automatic recovery.** Step down 0.1 every
 `curve_test_step_days` (default 7). If any monitored room sits more than

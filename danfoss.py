@@ -1,18 +1,20 @@
-"""Room climate sensor aggregation for Better Thermostat.
+"""Weighted room climate sensor aggregation.
 
 This module's sole job is to publish a weighted virtual temperature/humidity
 sensor per area (`sensor.climate_<area_id>_temperature` / `_humidity`) from the
-external sensors labelled `sensor_weight_X`, for Better Thermostat to consume as
-its per-room temperature input (BT takes a single sensor and does not do weighted
-averaging itself).
+external sensors labelled `sensor_weight_X`.
 
-It deliberately performs NO writes to the TRVs. Heating control — setpoint,
-on/off, calibration — is owned entirely by Better Thermostat (see
-BETTER_THERMOSTAT.md). The previous Zigbee control logic (time sync, radiator
-covered, load balancing, external-sensor feed, retry queue) was removed so this
-script can never interfere with what BT controls. See DANFOSS.md for the eTRV
-behaviour that led here (§2.6: the native external-sensor feed holds an
-anticipatory ~1% valve opening, so it was retired).
+It deliberately performs NO writes to the TRVs. That was done to make room for
+Better Thermostat, which was then trialled and removed (2026-09-13) — so nothing
+applies room-based control now, and each eTRV runs its own PID on its internal
+sensor. These sensors are therefore observability plus the input to the
+heating-curve test; see BETTER_THERMOSTAT.md for the decision and the options for
+getting room-based control back.
+
+The previous Zigbee control logic (time sync, radiator covered, load balancing,
+external-sensor feed, retry queue) lives only in git history now. See DANFOSS.md
+for the eTRV behaviour that led here (§2.6: the native external-sensor feed holds
+an anticipatory ~1% valve opening, so it was retired).
 """
 
 from logging import Logger
@@ -41,9 +43,15 @@ def get_all_climate_devices() -> tuple[dict[str, list[DeviceEntry]], dict[str, l
     trv_devices_by_area: dict[str, list[DeviceEntry]] = {}
     weighted_devices_by_area: dict[str, list[tuple[DeviceEntry, float]]] = {}
 
-    for device_id in dr.devices:
-        device: DeviceEntry | None = dr.async_get(device_id)
-        if device is None or device.area_id is None:
+    # `dr.devices.values()`, not `for device_id in dr.devices`: that used to yield
+    # ids, but HA now hands back a _DeprecatedDeviceRegistryItemsView whose __iter__
+    # yields DeviceEntry objects. Feeding one of those to `dr.async_get()` raised
+    # `TypeError: cannot use 'DeviceEntry' as a dict key` on every run from some HA
+    # release until 2026-09-13, which silently published no sensors at all -- and
+    # nothing downstream noticed, because an absent sensor and a sensor that is
+    # merely `unavailable` look the same from a template.
+    for device in dr.devices.values():
+        if device.area_id is None:
             continue
 
         area_id = device.area_id
@@ -171,7 +179,8 @@ async def update_room_climate_sensors():
 
     Runs at startup and every 5 min. TRV temperatures are excluded so heating
     doesn't skew the average. If an area has no usable external sensors the virtual
-    sensor is set to unavailable (Better Thermostat then handles the missing input).
+    sensor is set to unavailable rather than omitted, so a consumer can tell
+    "no sensor fitted" from "module never ran".
     """
     log.info("Updating room climate sensors")
 
@@ -200,7 +209,7 @@ async def update_room_climate_sensors():
             )
             log.info(f"Area {area_name}: set virtual temperature sensor to {temperature:.1f}°C")
         else:
-            # No external sensors - mark unavailable so Better Thermostat sees no input
+            # No external sensors - mark unavailable rather than leaving it absent
             state.set(
                 f"sensor.climate_{area_id}_temperature",
                 value="unavailable",

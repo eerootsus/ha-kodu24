@@ -150,31 +150,33 @@ No build step required. Dependencies in `requirements.txt` are Home Assistant's 
 
 ## Architecture
 
-> **Broken as of 2026-09-13, and everything climate depends on it.**
-> `get_all_climate_devices()` iterates `dr.devices` expecting device *ids*; current
-> HA returns a `_DeprecatedDeviceRegistryItemsView` that yields `DeviceEntry`
-> objects, so `dr.async_get(device_id)` raises
-> `TypeError: cannot use 'DeviceEntry' as a dict key (unhashable type: 'set')` on
-> every run. No `sensor.climate_*` entity is published, all ten `trv-climate`
-> template sensors are `unavailable`, and both the Better Thermostat cutover and
-> the heating-curve test are blocked behind it. Verified fix:
-> `for device in dr.devices.values():`, dropping the `async_get` call.
-> The failure is silent from the UI - it only shows in `ha core logs`, since this
-> install writes no `home-assistant.log`.
+> **Fixed 2026-09-13, worth knowing about.** `get_all_climate_devices()` iterated
+> `dr.devices` expecting device *ids*, but HA now returns a
+> `_DeprecatedDeviceRegistryItemsView` that yields `DeviceEntry` objects, so
+> `dr.async_get(device_id)` raised `TypeError: cannot use 'DeviceEntry' as a dict
+> key` on every run. No `sensor.climate_*` was published and all ten `trv-climate`
+> template sensors sat `unavailable` — for an unknown length of time, because
+> **the failure is invisible from the UI**: an absent sensor and an `unavailable`
+> one look identical from a template, and this install writes no
+> `home-assistant.log`, so the traceback only ever appeared in `ha core logs`.
+> If climate goes quiet again, read `ha core logs | grep danfoss` first.
 
 **danfoss.py** - Main PyScript module containing:
 
-danfoss.py is now **sensor-aggregation only** — it performs **no writes to the
-TRVs** and does not control heating. Heating control (setpoint, on/off,
-calibration) is owned entirely by **Better Thermostat** (see `BETTER_THERMOSTAT.md`).
+danfoss.py is **sensor-aggregation only** — it performs **no writes to the TRVs**
+and does not control heating. It was trimmed that way to make room for Better
+Thermostat; **BT was then trialled and removed** (2026-09-13, it offered nothing
+meaningful — see `BETTER_THERMOSTAT.md`), so nothing applies room-based control
+now. Each eTRV regulates on its own internal sensor with the external feed still
+disabled, and these sensors are observability plus the heating-curve test's input.
 
 - **Weighted Calculation**: `calculate_weighted_climate()` computes a per-area
   weighted average from external sensors labelled `sensor_weight_X` (TRV
   temperatures are excluded so heating doesn't skew it).
 - **`update_room_climate_sensors()`** (PyScript, at startup + every 5 min):
   publishes `sensor.climate_{area_id}_temperature` / `_humidity`. These are the
-  single per-room sensors Better Thermostat consumes (BT does not do weighted
-  averaging itself).
+  single per-room sensors. Nothing consumes them for control since BT was dropped;
+  they feed the dashboard and `HEATING_CURVE_TEST.md`.
 
 That's the whole module. The previous Zigbee control logic — time sync,
 radiator-covered, load-balancing, external-sensor feed/disable, and the
@@ -183,14 +185,19 @@ history and `DANFOSS.md` if that logic is ever needed again.)
 
 **trv-climate/climate.yaml** - Template sensor definitions wrapping pyscript-created sensors for proper HA UI management.
 
-## Why control moved to Better Thermostat
+## Why nothing controls the TRVs right now
 
 The Danfoss eTRV's native external-sensor feature holds an anticipatory ~1% valve
 opening and never fully closes when fed an external sensor (confirmed across all
 externally-fed TRVs; only an unfed one idles — see `DANFOSS.md` §2.6, and note
 "off" is only 5°C anti-freeze, not a real off). Control was therefore handed to
-Better Thermostat, which drives the setpoint with the native external sensor
-disabled. `DANFOSS.md` is the curated eTRV Zigbee/feature reference.
+Better Thermostat — which was then **trialled and removed** as not worth it.
+
+What that leaves, and it matters with heating season coming: the external feed is
+still disabled on all five TRVs (`0x4015 = -8000`), so each one regulates on its
+**internal** sensor, which sits on the radiator and reads warm. Nothing corrects
+for that. `BETTER_THERMOSTAT.md` lists the three options; none has been chosen.
+`DANFOSS.md` is the curated eTRV Zigbee/feature reference.
 
 ## Device Labels
 
