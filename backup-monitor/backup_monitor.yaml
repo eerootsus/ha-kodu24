@@ -6,6 +6,8 @@
 #             because the consistent snapshot needs zfs, and because the VM's own
 #             vdisk is part of what it copies, so a VM-side cron would be circular.
 #   `zpool` — pool health, daily at 06:00 via zpool-check.sh (added 2026-09-12).
+#   `mail` — outbound relay health, daily at 02:00 via mail-relay-check on the
+#   VM (added 2026-10-04).
 #             Not a backup; it rides this machinery because a dead-man switch is
 #             exactly what a health check wants.
 # All five report through the same webhook.
@@ -70,6 +72,15 @@ input_text:
   backup_zpool_status:
     name: Backup zpool status
     max: 120
+
+  # Outbound mail, not a backup either -- same reasoning as zpool. Reported
+  # daily by /etc/periodic/daily/mail-relay-check on the VM: `fail` when the
+  # Linode relay refused anything DMS handed it in the last 24 h. Added
+  # 2026-10-04 after the relay silently rejected every outbound message for
+  # 17 days (2026-09-17 reboot; DMS's tailnet IP fell outside its mynetworks).
+  backup_mail_status:
+    name: Backup mail status
+    max: 200
 
 input_number:
   # Recorded rather than merely alerted on, because capacity is a slope, not a
@@ -200,6 +211,15 @@ input_datetime:
     has_date: true
     has_time: true
 
+  backup_mail_last_seen:
+    name: Backup mail last seen
+    has_date: true
+    has_time: true
+  backup_mail_last_ok:
+    name: Backup mail last ok
+    has_date: true
+    has_time: true
+
 # ---------------------------------------------------------------------------
 # Template entities exist for the dashboard, and for one property input_* lack:
 # long-term statistics. HA keeps statistics for sensors carrying a state_class,
@@ -278,6 +298,14 @@ template:
                   and (now().timestamp()
                        - (state_attr('input_datetime.backup_zpool_last_ok', 'timestamp') | float(0))) < 93600) }}
 
+      # Outbound mail via the Linode relay; daily at 02:00 from the VM.
+      - name: Backup mail healthy
+        unique_id: backup_mail_healthy
+        state: >
+          {{ (states('input_text.backup_mail_status') == 'ok'
+                  and (now().timestamp()
+                       - (state_attr('input_datetime.backup_mail_last_ok', 'timestamp') | float(0))) < 93600) }}
+
 automation:
   - id: backup_job_report
     alias: Backup - report from alpine-docker
@@ -297,7 +325,7 @@ automation:
       # Ignore unexpected job names rather than failing on a templated
       # entity_id that doesn't resolve.
       - condition: template
-        value_template: "{{ trigger.json.job in ['media', 'borg', 'flash', 'pool', 'zpool'] }}"
+        value_template: "{{ trigger.json.job in ['media', 'borg', 'flash', 'pool', 'zpool', 'mail'] }}"
     action:
       - service: input_datetime.set_datetime
         target:
@@ -347,7 +375,7 @@ automation:
         hours: "/1"
     action:
       - repeat:
-          for_each: ["media", "borg", "flash", "pool", "zpool"]
+          for_each: ["media", "borg", "flash", "pool", "zpool", "mail"]
           sequence:
             - variables:
                 seen_entity: "input_datetime.backup_{{ repeat.item }}_last_seen"
@@ -606,7 +634,7 @@ automation:
       yesterday? Silent when everything is healthy, so it stays a signal rather
       than furniture.
 
-      Covers all five jobs. It listed only the three VM ones until 2026-09-13,
+      Covers all six jobs. It listed only the three VM ones until 2026-09-13,
       which left `pool` and `zpool` with no safety net at all: a job stuck in
       `fail` keeps refreshing last_seen, so the dead-man switch never sees it and
       the immediate push is the only other signal.
@@ -618,7 +646,7 @@ automation:
       - variables:
           problems: >
             {% set ns = namespace(p=[]) %}
-            {% for j in ['media', 'borg', 'flash', 'pool', 'zpool'] %}
+            {% for j in ['media', 'borg', 'flash', 'pool', 'zpool', 'mail'] %}
               {% set ok = state_attr('input_datetime.backup_' ~ j ~ '_last_ok', 'timestamp') | float(0) %}
               {% set age = (now().timestamp() - ok) / 3600 %}
               {% if age > 26 %}
