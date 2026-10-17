@@ -81,7 +81,7 @@ sections:
       columns: 8
   - type: custom:mushroom-template-card
     entity: climate.trv_danfoss_master
-    primary: Kätlyni & Eero tuba
+    primary: Kätlyni tuba
     secondary: '{{ states(''sensor.climate_bedroom_temperature'') }} °C · {{ states(''sensor.climate_bedroom_humidity'')
       | round(0) }} % niiskus'
     icon: mdi:radiator
@@ -219,9 +219,9 @@ sections:
   - type: markdown
     content: "{% set rooms = [\n  ('Köök', 'kitchen', 'sensor.climate_kitchen_temperature'),\n  ('Ada',\
       \ 'ada', 'sensor.climate_ada_s_room_temperature'),\n  ('Lola', 'lola', 'sensor.climate_lola_s_room_temperature'),\n\
-      \  ('Magamistuba', 'master', 'sensor.climate_bedroom_temperature'),\n  ('Trepihall', 'stairwell',\
-      \ '')] %}\n{% macro n(v, f='%.1f') %}{{ f | format(v) if v is not none else '–' }}{% endmacro %}\n\
-      | Ruum | Tuba | TRV | Siht | Tuba−siht | TRV−tuba | Trimm | Klapp |\n|:--|--:|--:|--:|--:|--:|--:|--:|\n\
+      \  ('Kätlyn', 'master', 'sensor.climate_bedroom_temperature'),\n  ('Trepihall', 'stairwell', '')]\
+      \ %}\n{% macro n(v, f='%.1f') %}{{ f | format(v) if v is not none else '–' }}{% endmacro %}\n| Ruum\
+      \ | Tuba | TRV | Siht | Tuba−siht | TRV−tuba | Trimm | Klapp |\n|:--|--:|--:|--:|--:|--:|--:|--:|\n\
       {%- for name, s, r in rooms %}\n{%- set c = 'climate.trv_danfoss_' ~ s %}\n{%- set room = (states(r)\
       \ | float(none)) if r else none %}\n{%- set trv = state_attr(c, 'current_temperature') | float(none)\
       \ %}\n{%- set sp = state_attr(c, 'temperature') | float(none) %}\n{%- set settled = states('sensor.trv_offset_'\
@@ -255,7 +255,7 @@ sections:
     - entity: sensor.trv_offset_lola_settled
       name: Lola tuba
     - entity: sensor.trv_offset_master_settled
-      name: Kätlyni & Eero tuba
+      name: Kätlyni tuba
     grid_options:
       columns: full
       rows: 6
@@ -276,7 +276,7 @@ sections:
     - entity: sensor.climate_lola_s_room_temperature
       name: Lola tuba
     - entity: sensor.climate_bedroom_temperature
-      name: Kätlyni & Eero tuba
+      name: Kätlyni tuba
     - entity: sensor.ikea_of_sweden_vindstyrka_temperature
       name: Töökoda
     grid_options:
