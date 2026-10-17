@@ -91,3 +91,52 @@ automation:
                   entity_id: climate.workshop_hvac
                 data:
                   hvac_mode: "off"
+
+  # Fail-safe. The automation above only acts on a numeric reading, so if the
+  # VINDSTYRKA goes silent while the unit is heating, nothing would ever send
+  # "off" and the split would run flat out at its 25 C setpoint indefinitely.
+  #
+  # Two ways the sensor can fail, and ZHA only flags one of them quickly:
+  #   - unavailable: ZHA marks a mains device unavailable only after ~2 h without
+  #     contact, so this alone is slow - hence the second trigger.
+  #   - stale: the VINDSTYRKA reports temperature only when it CHANGES (whole
+  #     degrees). Idle, hours of silence are normal; while heating, the reading
+  #     moves within minutes (17 -> 19 C took ~15 min on 2026-10-17). So 60 min
+  #     with no report while heating means a dead sensor, or a unit that is not
+  #     actually warming the room. Either way, off is the safe state.
+  # Heating resumes by itself once the sensor reports 17 or below again.
+  - id: workshop_heating_failsafe
+    alias: "Workshop - heating fail-safe"
+    description: "Turns the workshop HVAC off if its temperature sensor goes silent while heating. Source: ha-kodu24/workshop-heating."
+    mode: single
+    triggers:
+      - trigger: template
+        id: unavailable
+        value_template: >
+          {{ is_state('climate.workshop_hvac', 'heat')
+             and states('sensor.ikea_of_sweden_vindstyrka_temperature') | float(none) is none }}
+        for: "00:30:00"
+      - trigger: template
+        id: stale
+        value_template: >
+          {% set s = states.sensor.ikea_of_sweden_vindstyrka_temperature %}
+          {{ is_state('climate.workshop_hvac', 'heat') and s is not none
+             and (now() - (s.last_reported or s.last_updated)) > timedelta(minutes=60) }}
+    actions:
+      - action: climate.set_hvac_mode
+        target:
+          entity_id: climate.workshop_hvac
+        data:
+          hvac_mode: "off"
+      - action: notify.mobile_app_eeros_iphone_17
+        data:
+          title: "Workshop heating stopped"
+          message: >
+            {% if trigger.id == 'unavailable' %}The workshop temperature sensor
+            (VINDSTYRKA) has been unavailable for 30 min while heating.{% else %}No
+            temperature report from the workshop sensor for 60 min while heating -
+            the sensor may be dead, or the unit is not warming the room.{% endif %}
+            Switched the HVAC off; heating resumes once the sensor reports 17 °C or below.
+          data:
+            push:
+              thread-id: heating
