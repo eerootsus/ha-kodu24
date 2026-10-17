@@ -1,4 +1,4 @@
-# Workshop heating - keeps the workshop between 15 and 17 C with the HVAC
+# Workshop heating - keeps the workshop between 17 and 19 C with the HVAC
 # (climate.workshop_hvac, a split unit) as an on/off heater, measured by the
 # VINDSTYRKA on the wall.
 #
@@ -21,7 +21,7 @@
 # The outdoor gate's job - no heating in summer - is now a date gate: heat is
 # only switched ON October to April. May to September it never starts heating
 # - deliberately: an odd cold night is not worth starting the heating for. The
-# OFF branch is not gated, so heat left running into May still stops at 17.
+# OFF branch is not gated, so heat left running into May still stops at 19.
 # Neither branch overrides cool/dry/fan: heat goes ON only from "off", and the
 # unit goes OFF only from "heat", so summer cooling is left alone.
 #
@@ -29,12 +29,18 @@
 # band is written as integers: the old "below 16" / "above 16.9" already meant
 # exactly 15 / 17 in practice.
 #
+# Band raised from 15-17 to 17-19 on 2026-10-17. The kitchen sits directly above
+# the workshop and runs the coldest room in the house; a warmer workshop keeps
+# the kitchen floor warmer. Raised the same day as the kitchen TRV trim, and with
+# outdoor temperatures in flux the two effects are not separable - judged only by
+# whether the kitchen ends up near its setpoint.
+#
 # The HVAC's own setpoint stays high (25 C) on purpose - it makes the unit run
 # flat out while on and leaves the on/off decision to this automation. Its own
 # sensor reads ~2 K below the VINDSTYRKA and is not used.
 #
 # Season on/off: disable automation.workshop_heating. Turning the HVAC off by
-# hand while the room is at 15 or below does NOT stick - it comes back on within
+# hand while the room is at 17 or below does NOT stick - it comes back on within
 # 15 minutes. Disable the automation for that.
 #
 # Install: declared as `workshop_heating:` in configuration.yaml.
@@ -42,7 +48,7 @@
 automation:
   - id: workshop_heating
     alias: "Workshop - heating"
-    description: "Bang-bang heating of the workshop between 15 and 17 C. Source: ha-kodu24/workshop-heating."
+    description: "Bang-bang heating of the workshop between 17 and 19 C. Source: ha-kodu24/workshop-heating."
     mode: single
     max_exceeded: silent
     triggers:
@@ -56,8 +62,8 @@ automation:
       - trigger: time_pattern
         minutes: "/15"
     variables:
-      heat_below_or_at: 15
-      off_at_or_above: 17
+      heat_below_or_at: 17
+      off_at_or_above: 19
       # Heating season: October-April. May-September never switches heat on.
       in_season: "{{ now().month not in [5, 6, 7, 8, 9] }}"
       room: "{{ states('sensor.ikea_of_sweden_vindstyrka_temperature') | float(none) }}"

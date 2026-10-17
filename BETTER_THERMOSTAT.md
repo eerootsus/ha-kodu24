@@ -38,7 +38,8 @@ sensors, but nothing consumes them for control — they are for the dashboard an
 Worth knowing before the heating season: an eTRV's internal sensor sits on the
 radiator, so it reads warm and the valve throttles early. That is the inaccuracy the
 external-sensor feature exists to correct, and it is currently off on all five. The
-options, none of them taken yet:
+options — **the static trim was chosen and set on 2026-10-17**, see "Trims in force"
+below:
 
 - **Leave it.** Simplest; accept whatever per-room error the valves settle at.
 - **Turn the external feed back on** (re-add something like the old
@@ -46,6 +47,37 @@ options, none of them taken yet:
   started this whole thread — fine in winter, the summer problem again in June.
 - **Trim it with a static per-room offset.** Needs no continuous feed and no code,
   just one number per room, which is why it is the one being prepared for.
+
+### Trims in force (set 2026-10-17)
+
+The goal is that the dial means the room: at 22 the room should be about 22. Set
+from the first cold fortnight, as each room's shortfall below its setpoint, before
+the `_settled` sensors had any data:
+
+| Room | `regulation_setpoint_offset` | Room vs setpoint before | Note |
+|---|---|---|---|
+| Ada | +1.4 | −1.2 … −1.4 | |
+| Master | +1.5 | −1.3 … −1.6 | |
+| Lola | +2.0 | −1.8 … −2.2 | |
+| Kitchen | +2.5 (max) | −2.1 … −2.5; TRV reads ~3 K warm | Still ~0.5 K short at best |
+| Stairwell | 0 | no room sensor | Sheltered, small outer wall; stable without it |
+
+Expect a second pass: a warmer radiator warms the TRV head more, so the offset
+grows a little once the trim makes the valve open further. Re-read
+`sensor.trv_offset_<room>_settled` after a week or two and adjust.
+
+**Kitchen** is the outlier because its TRV sits at the radiator end boxed in
+between a couch and the wall, so the head reads a trapped warm pocket — the offset
+stayed ~3 K for days with demand pinned at 1 %, never decaying the way an exposed
+TRV's does when the valve shuts. Curtained radiators in the other rooms fare
+better: a curtain is open top and bottom and closed only at night. Covered mode
+(`0x4016 = TRUE` + external feed) is Danfoss's answer for this case and was used
+last winter, but the house ran hot with it, so it is not the fix being pursued. If
++2.5 is not enough, the remaining lever is physical — a gap behind the couch.
+
+Write gotcha: `number.set_value` with `1.4` landed as **1.3** (the value is sent in
+0.1 K units and 1.4 × 10 truncates to 13). `1.41` gave 14. Read the entity back
+after writing.
 
 ### Measuring the trim before setting it
 
