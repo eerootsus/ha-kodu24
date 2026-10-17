@@ -230,7 +230,13 @@ values and rationale in `BETTER_THERMOSTAT.md` "Trims in force").
 ## Device Labels
 
 Configure in Home Assistant UI on devices:
-- `sensor_weight_X` - External sensors with weight X for the room average
+- `sensor_weight_X` - External sensors with weight X for the room average.
+  **`sensor_weight_0` = shown, not counted.** Since 2026-10-17 the room reference is
+  the sensor at the door; the "Alt" sensors sit on the outer wall (the coldest
+  spot, on purpose) and carry weight 0, so they still appear in the dashboard's
+  Diagnostika table but do not drag the room value down. Lola's two may have been
+  swapped at the 2026-09-12 battery change - unverified (hold one, watch which
+  column jumps).
 
 ## Adding New Areas
 

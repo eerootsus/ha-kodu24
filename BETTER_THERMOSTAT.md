@@ -80,6 +80,11 @@ same afternoon. Ada and the kitchen sat at ~100 % instead — limited by the ~33
 supply (heating curve slope 0.9), not by the trim. Re-read
 `sensor.trv_offset_<room>_settled` after a week or two and adjust.
 
+**Room reference changed the same day (~17:15):** the room temperature is now the
+door sensor alone; the outer-wall Alts went to `sensor_weight_0`. Rooms read
+0.2–0.6 °C warmer from that alone (Ada 20.8 → 21.4, Lola 20.8 → 21.2, Master
+21.2 → 21.8), so the trims above were sized against a slightly cold reference.
+
 **Alert:** `trv-climate/heating_alerts.yaml` pushes a notification when a room stays
 more than 0.5 °C under its own target for 3 h in heating weather, naming the likely
 cause from the valve: ≥ 80 % open → raise the heating curve; partly open → the trim

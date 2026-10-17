@@ -36,6 +36,12 @@ TZ = ZoneInfo("Europe/Tallinn")
 
 # The week before the 2026-10-17 tweaks: trims were written at 13:01 local, so
 # the baseline stops at 13:00. Rooms ran 1.2-2.5 C under setpoint in it.
+#
+# DEFINITION CHANGE, 2026-10-17 ~17:15: the room temperature became the door
+# sensor alone (the outer-wall "Alt" sensors went to weight 0). The baseline
+# was computed with door+Alt averages, which read 0.1-0.3 C colder (Ada, Lola)
+# and ~0.2 C colder (Master, 2:1). So part of any improvement vs the baseline in
+# Ada / Lola / Master is just the new reference - discount it by that much.
 BASELINE = ("2026-10-10 00:00", "2026-10-17 13:00")
 
 HDD_BASE = 17.0  # C; heating degree-day base
