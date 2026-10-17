@@ -1,0 +1,89 @@
+# Heating shortfall alert - tells Eero when a TRV room stays below its target,
+# and which knob it points at. Alert only: nothing here writes to the boiler or
+# the TRVs. The curve and the trims are adjusted by hand.
+#
+# Why alert-only instead of curve-test/ (which raises the slope by itself): the
+# trims went in on 2026-10-17 and every room is now meant to land on its own
+# target (22 on the dial = ~22 in the room). A shortfall can then have three
+# different causes, and only one of them is the curve - see the Diagnostika table
+# on the Küte dashboard, which this mirrors:
+#
+#   valve >= 80 %  -> the TRV is calling flat out and the room is still short:
+#                     the radiator cannot deliver at this supply temperature.
+#                     Raise the heating curve slope (by 0.1).
+#   valve 2-79 %   -> the TRV believes it has reached target + trim: its own
+#                     (radiator-warmed) sensor error outgrew the trim. Raise the
+#                     trim, or it is at +2.5 and the TRV needs another approach.
+#   valve <= 1 %   -> not calling at all: stuck valve or a mesh fault.
+#
+# Each room's own TRV target is the line, not a fixed number, so a room set to 20
+# is judged against 20. Heating weather is met.no (not the sunlit Vitodens
+# sensor, see HEATING_CURVE_TEST.md). 3 hours is long enough to ride out the
+# warm-up after someone raises a target; one alert per episode (the trigger only
+# re-arms once the room is back within 0.5).
+#
+# Install: declared as `climate_alerts:` in configuration.yaml.
+
+automation:
+  - id: heating_shortfall_alert
+    alias: "Heating - room below target"
+    description: "Alerts when a TRV room stays >0.5 C under its own target for 3 h in heating weather. Alert only. Source: ha-kodu24/trv-climate/heating_alerts.yaml."
+    mode: queued
+    triggers:
+      - trigger: template
+        id: kitchen
+        value_template: >
+          {% set room = states('sensor.climate_kitchen_temperature') | float(none) %}
+          {% set sp = state_attr('climate.trv_danfoss_kitchen', 'temperature') | float(none) %}
+          {{ room is not none and sp is not none
+             and state_attr('weather.forecast_kodu', 'temperature') | float(99) < 12
+             and sp - room > 0.5 }}
+        for: "03:00:00"
+      - trigger: template
+        id: ada
+        value_template: >
+          {% set room = states('sensor.climate_ada_s_room_temperature') | float(none) %}
+          {% set sp = state_attr('climate.trv_danfoss_ada', 'temperature') | float(none) %}
+          {{ room is not none and sp is not none
+             and state_attr('weather.forecast_kodu', 'temperature') | float(99) < 12
+             and sp - room > 0.5 }}
+        for: "03:00:00"
+      - trigger: template
+        id: lola
+        value_template: >
+          {% set room = states('sensor.climate_lola_s_room_temperature') | float(none) %}
+          {% set sp = state_attr('climate.trv_danfoss_lola', 'temperature') | float(none) %}
+          {{ room is not none and sp is not none
+             and state_attr('weather.forecast_kodu', 'temperature') | float(99) < 12
+             and sp - room > 0.5 }}
+        for: "03:00:00"
+      - trigger: template
+        id: master
+        value_template: >
+          {% set room = states('sensor.climate_bedroom_temperature') | float(none) %}
+          {% set sp = state_attr('climate.trv_danfoss_master', 'temperature') | float(none) %}
+          {{ room is not none and sp is not none
+             and state_attr('weather.forecast_kodu', 'temperature') | float(99) < 12
+             and sp - room > 0.5 }}
+        for: "03:00:00"
+    variables:
+      rooms: "{{ {'kitchen': ['Köök', 'sensor.climate_kitchen_temperature'], 'ada': ['Ada tuba', 'sensor.climate_ada_s_room_temperature'], 'lola': ['Lola tuba', 'sensor.climate_lola_s_room_temperature'], 'master': ['Kätlyni tuba', 'sensor.climate_bedroom_temperature']} }}"
+      name: "{{ rooms[trigger.id][0] }}"
+      room: "{{ states(rooms[trigger.id][1]) | float(0) }}"
+      sp: "{{ state_attr('climate.trv_danfoss_' ~ trigger.id, 'temperature') | float(0) }}"
+      trv: "{{ state_attr('climate.trv_danfoss_' ~ trigger.id, 'current_temperature') }}"
+      trim: "{{ states('number.trv_danfoss_' ~ trigger.id ~ '_regulation_setpoint_offset') | float(0) }}"
+      valve: "{{ states('sensor.trv_danfoss_' ~ trigger.id ~ '_pi_heating_demand') | float(-1) }}"
+      cause: >
+        {% if valve >= 80 %}Valve {{ valve | int }} % open and still short: the radiator cannot deliver at {{ states('sensor.vicare_supply_temperature') }} °C supply. Raise the heating curve slope (now {{ states('number.vitodens_100_heating_curve_slope') }}) by 0.1.
+        {% elif valve > 1 %}Valve only {{ valve | int }} % open: the TRV is throttling, reading {{ trv }} °C against target + trim {{ sp + trim }}. Its sensor error outgrew the trim{{ ' - and the trim is already at the +2.5 maximum' if trim >= 2.5 else '; raise the trim' }}.
+        {% elif valve >= 0 %}Valve not calling ({{ valve | int }} %) while the room is cold: stuck valve or mesh fault.
+        {% else %}Valve demand unavailable: check the TRV.{% endif %}
+    actions:
+      - action: notify.mobile_app_eeros_iphone_17
+        data:
+          title: "{{ name }} {{ '%.1f' | format(room) }} °C, target {{ sp }}"
+          message: "Short by {{ '%.1f' | format(sp - room) }} °C for 3 h. {{ cause | trim }}"
+          data:
+            push:
+              thread-id: heating

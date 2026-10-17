@@ -210,6 +210,8 @@ history and `DANFOSS.md` if that logic is ever needed again.)
 
 **trv-climate/climate.yaml** - Template sensor definitions wrapping pyscript-created sensors for proper HA UI management.
 
+**trv-climate/heating_alerts.yaml** - Push alert when a TRV room stays under its own target, with the likely cause (curve / trim / valve). Alert only.
+
 ## Why nothing controls the TRVs right now
 
 The Danfoss eTRV's native external-sensor feature holds an anticipatory ~1% valve

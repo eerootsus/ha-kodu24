@@ -71,6 +71,11 @@ same afternoon. Ada and the kitchen sat at ~100 % instead — limited by the ~33
 supply (heating curve slope 0.9), not by the trim. Re-read
 `sensor.trv_offset_<room>_settled` after a week or two and adjust.
 
+**Alert:** `trv-climate/heating_alerts.yaml` pushes a notification when a room stays
+more than 0.5 °C under its own target for 3 h in heating weather, naming the likely
+cause from the valve: ≥ 80 % open → raise the heating curve; partly open → the trim
+is too small; ≤ 1 % → stuck valve or mesh. Alert only — nothing is adjusted.
+
 **Check with `./heating-check.py`** — it prints, per room, setpoint, room average,
 shortfall vs setpoint (hour by hour against the setpoint in force), valve demand,
 settled offset and trim, side by side with a fixed pre-trim baseline

@@ -5,6 +5,15 @@ know whether the top-floor radiators can run at heat-pump flow temperatures.
 
 `curve-test/heating_curve_test.yaml` is a self-contained HA package.
 
+> **Not deployed — alert-only chosen instead (2026-10-17).** With per-room trims in
+> force and every room meant to hit its *own* target, a shortfall can be the curve,
+> the trim or the valve, and an automatic raise would blur which. Eero raises the
+> slope by hand; `trv-climate/heating_alerts.yaml` pushes an alert that names the
+> likely cause from the valve opening (>= 80 % = curve). Before ever enabling this
+> package: its start script defends a fixed 21.0 °C, checks the living room against
+> that same line, still lists Lola as unmonitored (her sensors work now), gates on
+> the sunlit Vitodens sensor, and `curve_test_abort` restores 1.2, not today's 0.9.
+
 ## Why this matters
 
 A heat pump's COP is set almost entirely by flow temperature. For the Panasonic
