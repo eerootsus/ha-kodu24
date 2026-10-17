@@ -66,6 +66,7 @@ homeassistant:
     climate_offset: !include trv-climate/offset.yaml
     backup_monitor: !include backup-monitor/backup_monitor.yaml
     battery_monitor: !include battery-monitor/battery_monitor.yaml
+    workshop_heating: !include workshop-heating/workshop_heating.yaml
 
 
 pyscript:

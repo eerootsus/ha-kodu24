@@ -22,10 +22,17 @@
 #                              the day the valve is shut, the radiator is cold and
 #                              the error is ~0, which drags the average toward zero.
 #   trv_offset_<room>_settled  the same number, published ONLY while the valve is
-#                              actually modulating (0 < demand < 100) and the room is
-#                              within 1 K of the TRV's own setpoint. That is the
+#                              actually modulating (0 < demand < 100) and the TRV's
+#                              OWN reading is within 1 K of its setpoint. That is the
 #                              equilibrium the trim has to be right for, so THIS is
 #                              the one to read a value off.
+#
+#                              Until 2026-10-17 the gate compared the ROOM to the
+#                              setpoint, which is self-defeating: without a trim the
+#                              room settles exactly one offset below setpoint, so any
+#                              offset over 1 K (all four rooms in October) kept the
+#                              sensor unavailable forever. The TRV's own reading is
+#                              what its PID drives to setpoint, so that is the test.
 #
 # Both carry `state_class: measurement`, so HA long-term statistics keep hourly
 # mean/min/max indefinitely: plot the settled sensor on a statistics graph card after
@@ -58,8 +65,8 @@ template:
         unit_of_measurement: "°C"
         device_class: temperature
         state_class: measurement
-        # Unavailable unless the valve is genuinely regulating against a setpoint the
-        # room is near. `demand > 0` drops the hours the valve is shut (error ~0);
+        # Unavailable unless the valve is genuinely regulating against a setpoint its
+        # own reading is near. `demand > 0` drops the hours the valve is shut (error ~0);
         # `demand < 100` drops flat-out warm-up, where the error is largest and least
         # representative. Chained comparisons are avoided - Jinja does not treat
         # `0 < x < 100` the way Python does.
@@ -70,7 +77,7 @@ template:
           {% set dem = states('sensor.trv_danfoss_ada_pi_heating_demand') | float(-1) %}
           {{ room > -900 and trv > -900 and sp > -900
              and dem > 0 and dem < 100
-             and (room - sp) | abs <= 1.0 }}
+             and (trv - sp) | abs <= 1.0 }}
         state: >
           {{ (state_attr('climate.trv_danfoss_ada','current_temperature') | float
               - states('sensor.climate_ada_s_room_temperature') | float) | round(2) }}
@@ -94,8 +101,8 @@ template:
         unit_of_measurement: "°C"
         device_class: temperature
         state_class: measurement
-        # Unavailable unless the valve is genuinely regulating against a setpoint the
-        # room is near. `demand > 0` drops the hours the valve is shut (error ~0);
+        # Unavailable unless the valve is genuinely regulating against a setpoint its
+        # own reading is near. `demand > 0` drops the hours the valve is shut (error ~0);
         # `demand < 100` drops flat-out warm-up, where the error is largest and least
         # representative. Chained comparisons are avoided - Jinja does not treat
         # `0 < x < 100` the way Python does.
@@ -106,7 +113,7 @@ template:
           {% set dem = states('sensor.trv_danfoss_master_pi_heating_demand') | float(-1) %}
           {{ room > -900 and trv > -900 and sp > -900
              and dem > 0 and dem < 100
-             and (room - sp) | abs <= 1.0 }}
+             and (trv - sp) | abs <= 1.0 }}
         state: >
           {{ (state_attr('climate.trv_danfoss_master','current_temperature') | float
               - states('sensor.climate_bedroom_temperature') | float) | round(2) }}
@@ -130,8 +137,8 @@ template:
         unit_of_measurement: "°C"
         device_class: temperature
         state_class: measurement
-        # Unavailable unless the valve is genuinely regulating against a setpoint the
-        # room is near. `demand > 0` drops the hours the valve is shut (error ~0);
+        # Unavailable unless the valve is genuinely regulating against a setpoint its
+        # own reading is near. `demand > 0` drops the hours the valve is shut (error ~0);
         # `demand < 100` drops flat-out warm-up, where the error is largest and least
         # representative. Chained comparisons are avoided - Jinja does not treat
         # `0 < x < 100` the way Python does.
@@ -142,7 +149,7 @@ template:
           {% set dem = states('sensor.trv_danfoss_kitchen_pi_heating_demand') | float(-1) %}
           {{ room > -900 and trv > -900 and sp > -900
              and dem > 0 and dem < 100
-             and (room - sp) | abs <= 1.0 }}
+             and (trv - sp) | abs <= 1.0 }}
         state: >
           {{ (state_attr('climate.trv_danfoss_kitchen','current_temperature') | float
               - states('sensor.climate_kitchen_temperature') | float) | round(2) }}
@@ -166,8 +173,8 @@ template:
         unit_of_measurement: "°C"
         device_class: temperature
         state_class: measurement
-        # Unavailable unless the valve is genuinely regulating against a setpoint the
-        # room is near. `demand > 0` drops the hours the valve is shut (error ~0);
+        # Unavailable unless the valve is genuinely regulating against a setpoint its
+        # own reading is near. `demand > 0` drops the hours the valve is shut (error ~0);
         # `demand < 100` drops flat-out warm-up, where the error is largest and least
         # representative. Chained comparisons are avoided - Jinja does not treat
         # `0 < x < 100` the way Python does.
@@ -178,7 +185,7 @@ template:
           {% set dem = states('sensor.trv_danfoss_lola_pi_heating_demand') | float(-1) %}
           {{ room > -900 and trv > -900 and sp > -900
              and dem > 0 and dem < 100
-             and (room - sp) | abs <= 1.0 }}
+             and (trv - sp) | abs <= 1.0 }}
         state: >
           {{ (state_attr('climate.trv_danfoss_lola','current_temperature') | float
               - states('sensor.climate_lola_s_room_temperature') | float) | round(2) }}

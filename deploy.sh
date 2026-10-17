@@ -58,6 +58,7 @@ MANIFEST=(
   "trv-climate/       trv-climate/          yes"
   "backup-monitor/    backup-monitor/       yes"
   "battery-monitor/   battery-monitor/      yes"
+  "workshop-heating/  workshop-heating/     yes"
   "chores/            chores/               yes"
   "themes/            themes/               no"
 )

@@ -1,0 +1,87 @@
+# Workshop heating - keeps the workshop between 15 and 17 C with the HVAC
+# (climate.workshop_hvac, a split unit) as an on/off heater, measured by the
+# VINDSTYRKA on the wall.
+#
+# Replaces two UI automations, "Workshop HVAC On" / "Workshop HVAC Off"
+# (ids 1742044334477 / 1742044294259), which had two flaws that together left
+# the workshop at 13-15 C unheated for 13 days in April 2026:
+#
+#   1. Numeric-state triggers fire only on a CROSSING. If the condition fails at
+#      that one moment, nothing re-checks until the sensor crosses again - and a
+#      room sitting at 14-15 C never crosses "below 16" again.
+#   2. The condition that failed was the season gate, `vicare_outside_temperature
+#      < 16`. That sensor is sunlit: 5 C at night and 22 C by mid-morning on
+#      2026-04-21, 25.9 C on 2026-10-07. On 2026-04-20 10:38 the workshop dropped
+#      to 15 while it read 16.4, and the heat never came on.
+#
+# So this one decides from STATE, re-evaluated on every reading, every 15 min,
+# at startup and whenever the HVAC comes back from unavailable (it drops off
+# the network across restarts and returns "off").
+#
+# The outdoor gate's job - no heating in summer - is now a date gate: heat is
+# only switched ON October to April. May to September it never starts heating
+# - deliberately: an odd cold night is not worth starting the heating for. The
+# OFF branch is not gated, so heat left running into May still stops at 17.
+# Neither branch overrides cool/dry/fan: heat goes ON only from "off", and the
+# unit goes OFF only from "heat", so summer cooling is left alone.
+#
+# The VINDSTYRKA reports whole degrees only (13.0, 14.0 ... never 15.5), so the
+# band is written as integers: the old "below 16" / "above 16.9" already meant
+# exactly 15 / 17 in practice.
+#
+# The HVAC's own setpoint stays high (25 C) on purpose - it makes the unit run
+# flat out while on and leaves the on/off decision to this automation. Its own
+# sensor reads ~2 K below the VINDSTYRKA and is not used.
+#
+# Season on/off: disable automation.workshop_heating. Turning the HVAC off by
+# hand while the room is at 15 or below does NOT stick - it comes back on within
+# 15 minutes. Disable the automation for that.
+#
+# Install: declared as `workshop_heating:` in configuration.yaml.
+
+automation:
+  - id: workshop_heating
+    alias: "Workshop - heating"
+    description: "Bang-bang heating of the workshop between 15 and 17 C. Source: ha-kodu24/workshop-heating."
+    mode: single
+    max_exceeded: silent
+    triggers:
+      - trigger: state
+        entity_id: sensor.ikea_of_sweden_vindstyrka_temperature
+      - trigger: state
+        entity_id: climate.workshop_hvac
+        from: "unavailable"
+      - trigger: homeassistant
+        event: start
+      - trigger: time_pattern
+        minutes: "/15"
+    variables:
+      heat_below_or_at: 15
+      off_at_or_above: 17
+      # Heating season: October-April. May-September never switches heat on.
+      in_season: "{{ now().month not in [5, 6, 7, 8, 9] }}"
+      room: "{{ states('sensor.ikea_of_sweden_vindstyrka_temperature') | float(none) }}"
+      hvac: "{{ states('climate.workshop_hvac') }}"
+    conditions:
+      - condition: template
+        value_template: "{{ room is not none }}"
+    actions:
+      - choose:
+          - conditions:
+              - condition: template
+                value_template: "{{ in_season and room <= heat_below_or_at and hvac == 'off' }}"
+            sequence:
+              - action: climate.set_hvac_mode
+                target:
+                  entity_id: climate.workshop_hvac
+                data:
+                  hvac_mode: heat
+          - conditions:
+              - condition: template
+                value_template: "{{ room >= off_at_or_above and hvac == 'heat' }}"
+            sequence:
+              - action: climate.set_hvac_mode
+                target:
+                  entity_id: climate.workshop_hvac
+                data:
+                  hvac_mode: "off"
