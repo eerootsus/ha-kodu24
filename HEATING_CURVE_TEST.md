@@ -30,6 +30,16 @@ adds the same everywhere. The shortfall was in mild weather, so +2 shift: 35 °C
 +12, 46 °C at 0, 61 °C at −20 — still ~11 °C under the old 1.2 curve in real cold.
 At these low radiator temperatures +2 °C is worth roughly +25–30 % emitter output.
 
+**Low and flat is also easier to balance** (Eero's observation, 2026-10-17: the old
+steep curve may be why rooms felt unbalanced - "23 too hot, 22 too cold"). Hot water
+crowds a radiator's whole output into the first few % of valve travel, so the TRV
+over- and undershoots; cool water spreads it over a wider stroke. The eTRV's
+sensor error also grows with radiator temperature (seen within an hour on
+2026-10-17), so a steep curve makes every cold snap shift the trims. And 1.2/0 has
+the wrong shape across the weather - short in mild weather, hot in a cold snap.
+So the efficiency goal and the balancing goal point the same way: as low a slope
+as holds the house, with shift covering the mild end.
+
 ## Why this matters
 
 A heat pump's COP is set almost entirely by flow temperature. For the Panasonic
