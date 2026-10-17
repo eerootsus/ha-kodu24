@@ -107,6 +107,13 @@ Reload all), so a package can deploy cleanly and still show nothing until then.
 - A newly added `authorized_keys` entry needs the **add-on restarted**, not
   just the config saved.
 
+## Heating check
+
+`./heating-check.py` compares how each room holds its setpoint over a window
+(default: last 7 days) against the fixed pre-trim baseline week, with weather and
+gas-per-degree-day for context. Same ssh transport; see `BETTER_THERMOSTAT.md`
+"Trims in force".
+
 ## Zigbee mesh topology
 
 `./zigbee-topology.sh` prints who parents whom and at what **first-hop LQI**,

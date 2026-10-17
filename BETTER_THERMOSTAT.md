@@ -66,6 +66,13 @@ Expect a second pass: a warmer radiator warms the TRV head more, so the offset
 grows a little once the trim makes the valve open further. Re-read
 `sensor.trv_offset_<room>_settled` after a week or two and adjust.
 
+**Check with `./heating-check.py`** — it prints, per room, setpoint, room average,
+shortfall vs setpoint (hour by hour against the setpoint in force), valve demand,
+settled offset and trim, side by side with a fixed pre-trim baseline
+(2026-10-10 → 2026-10-17 13:00), plus the window's weather (met.no degree-days)
+and gas per degree-day so different weeks can be compared. Everything but the
+weather comes from long-term statistics, so any window can be recomputed later.
+
 **Kitchen** is the outlier because its TRV sits at the radiator end boxed in
 between a couch and the wall, so the head reads a trapped warm pocket — the offset
 stayed ~3 K for days with demand pinned at 1 %, never decaying the way an exposed
