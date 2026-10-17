@@ -221,28 +221,29 @@ sections:
       \  ('Ada', 'ada', 'sensor.climate_ada_s_room_temperature', 'ada_s_room'),\n  ('Lola', 'lola', 'sensor.climate_lola_s_room_temperature',\
       \ 'lola_s_room'),\n  ('Kätlyn', 'master', 'sensor.climate_bedroom_temperature', 'bedroom'),\n  ('Trepihall',\
       \ 'stairwell', '', 'trepihall')] %}\n{% set wlabels = labels() | select('match', 'sensor_weight_')\
-      \ | list %}\n{% macro n(v, f='%.1f') %}{{ f | format(v) if v is not none else '–' }}{% endmacro\
-      \ %}\n{% macro grey(t) %}<font color=\"gray\">{{ t }}</font>{% endmacro %}\n{% macro gap(d) %}{%\
-      \ if d is none %}–{% else %}<font color=\"{{ 'dodgerblue' if d < -0.5 else ('darkorange' if d >\
-      \ 0.5 else 'mediumseagreen') }}\"><b>{{ '%+.1f' | format(d) }}</b></font>{% endif %}{% endmacro\
-      \ %}\n| Ruum | Tuba | Andur | Alt | TRV | Siht | Tuba−siht | TRV−tuba | Trimm | Klapp |\n|:--|--:|--:|--:|--:|--:|--:|--:|--:|--:|\n\
-      {%- for name, s, r, area in rooms %}\n{%- set c = 'climate.trv_danfoss_' ~ s %}\n{%- set room =\
-      \ (states(r) | float(none)) if r else none %}\n{%- set trv = state_attr(c, 'current_temperature')\
-      \ | float(none) %}\n{%- set sp = state_attr(c, 'temperature') | float(none) %}\n{%- set settled\
-      \ = states('sensor.trv_offset_' ~ s ~ '_settled') | float(none) %}\n{%- set raw = (trv - room) if\
-      \ (trv is not none and room is not none) else none %}\n{#- The room's weighted sensors: a name containing\
-      \ \"Alt\" goes to the Alt column. #}\n{%- set ns = namespace(main=none, alt=none) %}\n{%- for l\
-      \ in wlabels %}{% for d in label_devices(l) if area_id(d) == area %}\n{%- set t = namespace(v=none)\
-      \ %}\n{%- for e in device_entities(d) if is_state_attr(e, 'device_class', 'temperature') and t.v\
-      \ is none %}{% set t.v = states(e) | float(none) %}{% endfor %}\n{%- if 'Alt' in (device_attr(d,\
-      \ 'name_by_user') or device_attr(d, 'name') or '') %}{% set ns.alt = t.v %}{% else %}{% set ns.main\
-      \ = t.v %}{% endif %}\n{%- endfor %}{% endfor %}\n| **{{ name }}** | **{{ n(room) }}** | {{ grey(n(ns.main))\
-      \ if ns.main is not none else '' }} | {{ grey(n(ns.alt)) if ns.alt is not none else '' }} | {{ n(trv)\
-      \ }} | {{ n(sp) }} | {{ gap((room - sp) if (room is not none and sp is not none) else none) }} |\
-      \ {{ n(settled, '%+.1f') if settled is not none else ('~' ~ n(raw, '%+.1f') if raw is not none else\
-      \ '–') }} | {{ n(states('number.trv_danfoss_' ~ s ~ '_regulation_setpoint_offset') | float(none),\
-      \ '%+.1f') }} | {{ states('sensor.trv_danfoss_' ~ s ~ '_pi_heating_demand') }} % |\n{%- endfor %}\n\
-      \n**Tuba** = toa andurite (Andur, Alt) kaalutud keskmine.\n**TRV−tuba** = TRV-anduri viga (~ = hetkeväärtus,\
+      \ | list %}\n{% macro n(v, f='%.1f') %}{{ (f | format(v)) | replace('-', '−') if v is not none else\
+      \ '–' }}{% endmacro %}\n{% macro grey(t) %}<font color=\"gray\">{{ t }}</font>{% endmacro %}\n{%\
+      \ macro gap(d) %}{% if d is none %}–{% else %}<font color=\"{{ 'dodgerblue' if d < -0.5 else ('darkorange'\
+      \ if d > 0.5 else 'mediumseagreen') }}\"><b>{{ ('%+.1f' | format(d)) | replace('-', '−') }}</b></font>{%\
+      \ endif %}{% endmacro %}\n| Ruum | Tuba | Andur | Alt | TRV | Siht | Tuba−siht | TRV−tuba | Trimm\
+      \ | Klapp |\n|:--|--:|--:|--:|--:|--:|--:|--:|--:|--:|\n{%- for name, s, r, area in rooms %}\n{%-\
+      \ set c = 'climate.trv_danfoss_' ~ s %}\n{%- set room = (states(r) | float(none)) if r else none\
+      \ %}\n{%- set trv = state_attr(c, 'current_temperature') | float(none) %}\n{%- set sp = state_attr(c,\
+      \ 'temperature') | float(none) %}\n{%- set settled = states('sensor.trv_offset_' ~ s ~ '_settled')\
+      \ | float(none) %}\n{%- set raw = (trv - room) if (trv is not none and room is not none) else none\
+      \ %}\n{#- The room's weighted sensors: a name containing \"Alt\" goes to the Alt column. #}\n{%-\
+      \ set ns = namespace(main=none, alt=none) %}\n{%- for l in wlabels %}{% for d in label_devices(l)\
+      \ if area_id(d) == area %}\n{%- set t = namespace(v=none) %}\n{%- for e in device_entities(d) if\
+      \ is_state_attr(e, 'device_class', 'temperature') and t.v is none %}{% set t.v = states(e) | float(none)\
+      \ %}{% endfor %}\n{%- if 'Alt' in (device_attr(d, 'name_by_user') or device_attr(d, 'name') or '')\
+      \ %}{% set ns.alt = t.v %}{% else %}{% set ns.main = t.v %}{% endif %}\n{%- endfor %}{% endfor %}\n\
+      | **{{ name }}** | **{{ n(room) }}** | {{ grey(n(ns.main)) if ns.main is not none else '' }} | {{\
+      \ grey(n(ns.alt)) if ns.alt is not none else '' }} | {{ n(trv) }} | {{ n(sp) }} | {{ gap((room -\
+      \ sp) if (room is not none and sp is not none) else none) }} | {{ n(settled, '%+.1f') if settled\
+      \ is not none else ('~' ~ n(raw, '%+.1f') if raw is not none else '–') }} | {{ n(states('number.trv_danfoss_'\
+      \ ~ s ~ '_regulation_setpoint_offset') | float(none), '%+.1f') }} | {{ states('sensor.trv_danfoss_'\
+      \ ~ s ~ '_pi_heating_demand') }} % |\n{%- endfor %}\n\n**Tuba** = ukse juures olev andur (Andur);\
+      \ Alt on välisseina ääres ja ei lähe arvesse.\n**TRV−tuba** = TRV-anduri viga (~ = hetkeväärtus,\
       \ muidu settled). Trimm peaks sellega\nühtima, et tuba jõuaks sihini. Võrdlus nädalate kaupa: `./heating-check.py`."
     grid_options:
       columns: full
