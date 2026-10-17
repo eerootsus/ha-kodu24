@@ -1,0 +1,47 @@
+# ZHA topology  2026-10-17 17:01:06 EEST  from root@homeassistant.tail7c95c3.ts.net:/config/zigbee.db
+# first_hop_lqi = the parent's measurement of the child. NOT sensor.*_lqi,
+# which measures the last hop into the coordinator and says nothing about
+# a device that sits behind a router.
+
+== END DEVICES  (first-hop LQI is the number that matters) ==
+device        model        parent        parent_model         first_hop_lqi
+------  -----------------  ------  -------------------------  -------------
+cb:f2   Remote Control N2  ce:4e   TS0601                                69
+84:19   SNZB-02P           76:db   EZSP                                 168
+16:a7   TH01               35:a3   VINDSTYRKA                           141
+50:4e   TH01               1d:a9   ZBMINIR2                             191
+6f:be   TH01               1d:a9   ZBMINIR2                             122
+e4:8d   TH01               1d:a9   ZBMINIR2                             255
+f0:e3   TH01               1d:a9   ZBMINIR2                             219
+f2:03   TH01               35:a3   VINDSTYRKA                           117
+25:5f   TS0201             76:db   EZSP                                 109
+7f:aa   TS0201             35:a3   VINDSTYRKA                            86
+ef:30   TS0201             ec:78   TRADFRI Driver 10W                   160
+61:0d   TS0207             76:db   EZSP                                 120
+f2:72   TS0207             87:71   TRADFRI bulb E27 WW 806lm             47
+03:b4   eTRV0103           76:db   EZSP                                 131
+15:86   eTRV0103           1d:a9   ZBMINIR2                             175
+26:0f   eTRV0103           76:db   EZSP                                 197
+38:17   eTRV0103           06:1c   TS011F                                91
+38:17   eTRV0103           35:a3   VINDSTYRKA                           212
+62:90   eTRV0103           b4:40   TS011F                               142
+
+== ROUTERS  (uplink LQI as the coordinator hears them, and child load) ==
+router            model                  mfr         lqi_at_coord  children
+------  -------------------------  ----------------  ------------  --------
+1d:a9   ZBMINIR2                   SONOFF                     121         5
+33:02   TS011F                     _TZ3000_w0qqde0g           147         3
+35:a3   VINDSTYRKA                 IKEA of Sweden             105         4
+61:c3   01MINIZB                   SONOFF                     148         0
+76:2a   01MINIZB                   SONOFF                     144         0
+87:71   TRADFRI bulb E27 WW 806lm  IKEA of Sweden             101         1
+90:7d   01MINIZB                   SONOFF                     143         0
+b4:40   TS011F                     _TZ3000_w0qqde0g            83         1
+ce:4e   TS0601                     _TZE204_t1blo2bj           169         1
+d4:e7   01MINIZB                   SONOFF                      99         0
+ec:78   TRADFRI Driver 10W         IKEA of Sweden              88         1
+
+== RECENTLY MOVED  (claimed by >1 router; one row is stale) ==
+device   model         claimed_by
+------  --------  ---------------------
+38:17   eTRV0103  06:1c(91)  35:a3(212)
