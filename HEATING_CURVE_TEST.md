@@ -172,6 +172,33 @@ numeric, so HA long-term statistics retain hourly means indefinitely — the act
 achieved curve can be plotted from history afterwards without extra logging. Recorder
 retention is short, so use the statistics graph card, not the history panel.
 
+**The outside sensor sits in the sun, and that is deliberate.** It faces roughly
+south-east, like most of the windows, so on clear days it reads far above air
+temperature (5 °C at night → 22 °C mid-morning on 2026-04-21; 25.9 °C on
+2026-10-07). The weather compensation therefore drops the supply temperature exactly
+when solar gain enters the main glazing — an accidental solar correction, kept on
+purpose (decided 2026-10-17). Do not shade or move it without reason. The reason to
+watch for: on a cold clear day, a TRV at ~100 % demand while its room falls below
+setpoint, most likely in the morning (the sensor warms in minutes, the rooms in
+hours) and in rooms facing away from the sun.
+
+Measured against met.no (`weather.forecast_kodu`, a model, not a measurement) over
+Apr–Oct 2026, Vitodens minus met.no: the sun bias peaks at **09:00** (mean +3.4 °C,
+worst tenth +8 °C, max +16.5 °C), fades by ~16:00, and scales with cloud — clear
+mornings +4.0 °C on average, overcast +1.7 °C. It is strongest in **April** (morning
+mean +6.3 °C), +3.7 °C in May and only +1.2–1.8 °C June–October. The fall-off tracks
+the **trees leafing out** in front of the sensor, so expect bare-branch winter
+mornings with low south-east sun to look like April or stronger. Separately there is
+a **night bias** of +0.4 °C in summer rising to +1.3–1.7 °C in the heated months —
+most likely heat leaking from the wall behind the sensor, so all winter the boiler
+sees a night ~1.5–2 °C milder than it is. Both are baked into whatever slope is
+validated here.
+
+For this test it matters less than it looks: `curve_test_step_min_outside` records the
+*coldest* reading, which comes at night when the sensor is shaded, so "held down to
+−11 °C" stays honest. Hourly-mean plots of outside vs supply are what get skewed —
+read them from overcast days or nights.
+
 The number that matters for the heat pump is flow temperature at design outdoor
 temperature (Tallinn ≈ −22 °C, but −15 °C is a realistic worst tested case). Map the
 validated slope to flow temp at that outdoor temperature, then read the COP off the
