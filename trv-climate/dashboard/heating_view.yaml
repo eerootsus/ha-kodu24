@@ -159,12 +159,12 @@ sections:
     icon: mdi:water-boiler
   - type: tile
     entity: sensor.vicare_outside_temperature
-    name: Väljas (katla andur)
+    name: Õues (katla andur)
     grid_options:
       columns: 6
   - type: tile
     entity: weather.forecast_kodu
-    name: Väljas (met.no)
+    name: Õues (met.no)
     state_content:
     - temperature
     - state
