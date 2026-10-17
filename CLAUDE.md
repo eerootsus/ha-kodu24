@@ -74,7 +74,11 @@ reaching for:
    **The restart is required** — HA holds the config in memory and would
    otherwise rewrite your edit on the next UI change.
 2. **Websocket API `lovelace/config/save`** — the supported route, applies live
-   with no restart, but needs a long-lived access token.
+   with no restart, but needs a long-lived access token. **`./dashboard.py`**
+   wraps it per view: `check` (diff live vs record), `apply` (record → live, asks
+   first, verifies), `pull` (live → record after UI edits). Views it knows are in
+   its `VIEWS` map; add one there to manage another. Used for the Küte view
+   (`trv-climate/dashboard/heating_view.yaml`).
 3. **Convert the dashboard to YAML mode** (declare it under `lovelace:` in
    `configuration.yaml`). This makes it a plain file that `deploy.sh` can own,
    and removes the record/live duplication entirely — at the cost of losing UI

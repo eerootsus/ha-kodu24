@@ -20,6 +20,8 @@ housekeeping packages that have nowhere better to live:
   view (storage mode; the live copy is in `/config/.storage`): room cards, boiler
   tiles, and the live Diagnostika table (room vs TRV vs target, sensors, trim,
   valve).
+- **`dashboard.py`** — keeps a storage-mode dashboard view and its YAML record in
+  step: `check`, `apply`, `pull` (see `CLAUDE.md` "Dashboards").
 - **`workshop-heating/`** — on/off heating of the workshop with its split unit,
   17–19 °C, October–April, with a fail-safe that switches it off if its sensor
   goes silent.
