@@ -57,13 +57,18 @@ the `_settled` sensors had any data:
 | Room | `regulation_setpoint_offset` | Room vs setpoint before | Note |
 |---|---|---|---|
 | Ada | +1.4 | −1.2 … −1.4 | |
-| Master | +1.5 | −1.3 … −1.6 | |
-| Lola | +2.0 | −1.8 … −2.2 | |
+| Master | +1.5 → **+2.2** | −1.3 … −1.6 | Raised 16:03: TRV satisfied at 23.5 with the room still −0.7 |
+| Lola | +2.0 → **+2.5** (max) | −1.8 … −2.2 | Raised 16:03: TRV satisfied at 24.0 with the room still −0.8 |
 | Kitchen | +2.5 (max) | −2.1 … −2.5; TRV reads ~3 K warm | Still ~0.5 K short at best |
 | Stairwell | 0 | no room sensor | Sheltered, small outer wall; stable without it |
 
 Expect a second pass: a warmer radiator warms the TRV head more, so the offset
-grows a little once the trim makes the valve open further. Re-read
+grows once the trim makes the valve open further. **It grew a lot, fast:** within
+an hour of the first trims (and all targets set to 22.0 at 13:43) Lola's error went
+~+2.0 → +3.2, Kätlyn's (Master) ~+1.5 → +2.4, the kitchen's ~+3.0 → +3.8. Lola and
+Master throttled to ~45 % while still 0.7–0.8 short, so their trims were raised the
+same afternoon. Ada and the kitchen sat at ~100 % instead — limited by the ~33 °C
+supply (heating curve slope 0.9), not by the trim. Re-read
 `sensor.trv_offset_<room>_settled` after a week or two and adjust.
 
 **Check with `./heating-check.py`** — it prints, per room, setpoint, room average,
