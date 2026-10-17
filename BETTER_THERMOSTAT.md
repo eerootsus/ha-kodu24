@@ -143,7 +143,16 @@ opposite directions:
 | `number.trv_danfoss_<room>_regulation_setpoint_offset` (`0x404B`) | the PID's target, display unchanged | write **+offset**: the valve aims higher, the room lands on the displayed setpoint while the TRV keeps showing its own warm reading |
 | `number.trv_danfoss_<room>_local_temperature_offset` | the sensor reading itself | write **−offset**: the TRV's reported temperature becomes the true room temperature, so setpoint and display both become honest |
 
-**Use `local_temperature_offset`.** It is the conceptually right one — this *is* a
+**Tested 2026-10-17 — and the trim (`regulation_setpoint_offset`) is what is used.**
+On Ada, `local_temperature_offset` = −1.4 with the setpoint offset at 0 kept the
+valve calling (92–94 %), so the calibration *is* applied internally — but the eTRV
+keeps **reporting its raw temperature** (attr `0x0000` stayed at ~23.2 °C with
+`0x0010` = −14). So it does not make the display honest, which was the only reason
+to prefer it; both knobs are equivalent for control and share the ±2.5 limit. Ada
+was put back on the setpoint offset so all rooms use one knob. The original
+reasoning, kept for the record:
+
+~~**Use `local_temperature_offset`.**~~ It is the conceptually right one — this *is* a
 sensor error, so correct the sensor and both the setpoint and the display become
 honest. It was unavailable on Lola until 2026-09-13; it is now on all four rooms that
 have an external sensor, under matching entity ids. Keep all four on the same knob so
