@@ -14,6 +14,22 @@ know whether the top-floor radiators can run at heat-pump flow temperatures.
 > that same line, still lists Lola as unmonitored (her sensors work now), gates on
 > the sunlit Vitodens sensor, and `curve_test_abort` restores 1.2, not today's 0.9.
 
+## Curve in force
+
+| Since | Slope | Shift | Why |
+|---|---|---|---|
+| years until 2026-08-13 | 1.2 | 0 | gas-boiler default |
+| 2026-08-13 | 0.9 | 0 | start-low-and-raise plan |
+| 2026-10-17 | 0.9 | **+2** | kitchen and Ada fully open on ~33 °C supply at +12 °C outside |
+
+Why the shift and not the slope: the Viessmann curve (`VT = RT + shift − slope ×
+DAR × (1.4347 + 0.021·DAR + 247.9e-6·DAR²)`, `DAR = outside − RT`, RT = the boiler's
+room setting, 22) reproduces the observed 33 °C at +12 °C outside. A slope step
+mostly adds heat in deep cold (+0.1 → ~+1 °C at +12, ~+4 °C at −20), a shift step
+adds the same everywhere. The shortfall was in mild weather, so +2 shift: 35 °C at
++12, 46 °C at 0, 61 °C at −20 — still ~11 °C under the old 1.2 curve in real cold.
+At these low radiator temperatures +2 °C is worth roughly +25–30 % emitter output.
+
 ## Why this matters
 
 A heat pump's COP is set almost entirely by flow temperature. For the Panasonic

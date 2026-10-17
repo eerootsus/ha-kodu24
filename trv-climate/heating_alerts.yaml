@@ -10,7 +10,10 @@
 #
 #   valve >= 80 %  -> the TRV is calling flat out and the room is still short:
 #                     the radiator cannot deliver at this supply temperature.
-#                     Raise the heating curve slope (by 0.1).
+#                     Raise the heating curve - the SHIFT (+1) for mild-weather
+#                     shortfalls, the slope only for real-cold ones (a slope step
+#                     adds ~1 C at +12 outside but ~4 C at -20; a shift step adds
+#                     the same everywhere). Goal: stay below previous years' 1.2.
 #   valve 2-79 %   -> the TRV believes it has reached target + trim: its own
 #                     (radiator-warmed) sensor error outgrew the trim. Raise the
 #                     trim, or it is at +2.5 and the TRV needs another approach.
@@ -98,7 +101,7 @@ automation:
       trim: "{{ states('number.trv_danfoss_' ~ key ~ '_regulation_setpoint_offset') | float(0) }}"
       valve: "{{ states('sensor.trv_danfoss_' ~ key ~ '_pi_heating_demand') | float(-1) }}"
       cause: >
-        {% if valve >= 80 %}Valve {{ valve | int }} % open and still short: the radiator cannot deliver at {{ states('sensor.vicare_supply_temperature') }} °C supply. Raise the heating curve slope (now {{ states('number.vitodens_100_heating_curve_slope') }}) by 0.1.
+        {% if valve >= 80 %}Valve {{ valve | int }} % open and still short: the radiator cannot deliver at {{ states('sensor.vicare_supply_temperature') }} °C supply. Raise the heating curve: shift +1 (now {{ states('number.vitodens_100_heating_curve_shift') }}, slope {{ states('number.vitodens_100_heating_curve_slope') }}). Use the shift for mild-weather shortfalls; the slope only if rooms fall short in real cold.
         {% elif valve > 1 %}Valve only {{ valve | int }} % open: the TRV is throttling, reading {{ trv }} °C against target + trim {{ sp + trim }}. Its sensor error outgrew the trim{{ ' - and the trim is already at the +2.5 maximum' if trim >= 2.5 else '; raise the trim' }}.
         {% elif valve >= 0 %}Valve not calling ({{ valve | int }} %) while the room is cold: stuck valve or mesh fault.
         {% else %}Valve demand unavailable: check the TRV.{% endif %}
