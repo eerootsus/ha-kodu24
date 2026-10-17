@@ -10,6 +10,19 @@ housekeeping packages that have nowhere better to live:
 - **`trv-climate/offset.yaml`** — measures how far each eTRV's own sensor sits
   from the real room, so the per-room trim is a number rather than a guess.
   Read the `_settled` sensors; see `BETTER_THERMOSTAT.md`.
+- **`trv-climate/heating_alerts.yaml`** — push alert when a TRV room stays under
+  its own target, naming the likely knob (curve shift / trim / valve fault), plus
+  an alert when a room's sensors go silent. Alert only; nothing is adjusted.
+- **`heating-check.py`** — per-room "how well does each room hold its target"
+  over a week, against a fixed pre-trim baseline, with degree-days and gas per
+  degree-day so different weeks compare.
+- **`trv-climate/dashboard/heating_view.yaml`** — record of the Küte dashboard
+  view (storage mode; the live copy is in `/config/.storage`): room cards, boiler
+  tiles, and the live Diagnostika table (room vs TRV vs target, sensors, trim,
+  valve).
+- **`workshop-heating/`** — on/off heating of the workshop with its split unit,
+  17–19 °C, October–April, with a fail-safe that switches it off if its sensor
+  goes silent.
 - **`battery-monitor/`** — weekly battery nudge, plus immediate alerts for
   safety devices.
 - **`backup-monitor/`** — push alerts for the off-site backups running on
