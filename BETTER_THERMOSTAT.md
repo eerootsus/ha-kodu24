@@ -2,7 +2,16 @@
 
 **Outcome (2026-09-13): Better Thermostat was installed, trialled and removed.** It
 offered nothing meaningful over the eTRVs' own control, so the integration is gone
-and there is no `climate.*_better_thermostat` entity. This file is kept as the
+and there is no `climate.*_better_thermostat` entity.
+
+**The real reason, in Eero's words (2026-10-17):** it "seemed like another
+obfuscation layer on top of everything, making balancing even harder". With BT,
+the curve, the external feeds and the TRVs' own logic all in play, a cold room had
+too many suspects. Everything was reset to a plain baseline instead (curve 0.9, no
+external feeds, TRVs on their own sensors). **Design rule since:** automation here
+*advises* and a human adjusts - the heating alert names the knob, it does not turn
+it. Any future automatic loop must be slow, bounded, logged with its reasons on the
+dashboard, and switchable off in one place. This file is kept as the
 record of why it was tried, what was changed on the TRVs for it, and — below — what
 that leaves us with, because several of those device changes are **still in force**.
 
