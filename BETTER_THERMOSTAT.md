@@ -58,7 +58,7 @@ the `_settled` sensors had any data:
 |---|---|---|---|
 | Ada | +1.4 | −1.2 … −1.4 | |
 | Master | +1.5 → **+2.2** | −1.3 … −1.6 | Raised 16:03: TRV satisfied at 23.5 with the room still −0.7 |
-| Lola | +2.0 → **+2.5** (max) | −1.8 … −2.2 | Raised 16:03: TRV satisfied at 24.0 with the room still −0.8 |
+| Lola | +2.0 → **+2.5** (max) | −1.8 … −2.2 | Raised 16:03: TRV satisfied at 24.0 with the room still −0.8. Partly boxed in: pushed-aside curtains on one side, a cloth-covered headboard close on the other |
 | Kitchen | +2.5 (max) | −2.1 … −2.5; TRV reads ~3 K warm | Still ~0.5 K short at best |
 | Stairwell | 0 | no room sensor | Sheltered, small outer wall; stable without it |
 
@@ -90,7 +90,11 @@ TRV's does when the valve shuts. Curtained radiators in the other rooms fare
 better: a curtain is open top and bottom and closed only at night. Covered mode
 (`0x4016 = TRUE` + external feed) is Danfoss's answer for this case and was used
 last winter, but the house ran hot with it, so it is not the fix being pursued. If
-+2.5 is not enough, the remaining lever is physical — a gap behind the couch.
++2.5 is not enough, the remaining lever is physical — a gap behind the couch. **Lola's** TRV is a milder case of the same thing (curtains + headboard), which is
+why her error jumped most when the valve opened. For both: try the physical fix
+first (curtains gathered away, a gap at the headboard / couch) and watch TRV−tuba in
+the Diagnostika table fall; if furniture cannot move, automatic offset mode (§2.3,
+external feed, `0x4016 = FALSE`) on just these two TRVs is the contained experiment.
 
 Write gotcha: `number.set_value` with `1.4` landed as **1.3** (the value is sent in
 0.1 K units and 1.4 × 10 truncates to 13). `1.41` gave 14. Read the entity back
