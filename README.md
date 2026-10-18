@@ -20,6 +20,10 @@ housekeeping packages that have nowhere better to live:
   view (storage mode; the live copy is in `/config/.storage`): room cards, boiler
   tiles, and the live Diagnostika table (room vs TRV vs target, sensors, trim,
   valve).
+- **`PLANS.md`** — everything not built yet: installs waiting for a visit
+  (lockshield balancing, routers, sensors), HA work, and the house background they
+  need. The repo is the source of truth for the Kodu 24 smart home; the Obsidian
+  note only points here.
 - **`dashboard.py`** — keeps a storage-mode dashboard view and its YAML record in
   step: `check`, `apply`, `pull` (see `CLAUDE.md` "Dashboards").
 - **`workshop-heating/`** — on/off heating of the workshop with its split unit,
