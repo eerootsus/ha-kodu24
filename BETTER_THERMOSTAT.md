@@ -65,7 +65,7 @@ the `_settled` sensors had any data:
 
 | Room | `regulation_setpoint_offset` | Room vs setpoint before | Note |
 |---|---|---|---|
-| Ada | +1.4 | −1.2 … −1.4 | |
+| Ada | +1.4 → **+2.0** | −1.2 … −1.4 | Raised 2026-10-18: reached 22.0 at 23:00, then throttled to ~20 % and settled 0.6 short overnight - TRV read exactly 22 + 1.4, settled error ~2.0 |
 | Master | +1.5 → **+2.2** | −1.3 … −1.6 | Raised 16:03: TRV satisfied at 23.5 with the room still −0.7 |
 | Lola | +2.0 → **+2.5** (max) | −1.8 … −2.2 | Raised 16:03: TRV satisfied at 24.0 with the room still −0.8. Partly boxed in: pushed-aside curtains on one side, a cloth-covered headboard close on the other |
 | Kitchen | +2.5 (max) | −2.1 … −2.5; TRV reads ~3 K warm | Still ~0.5 K short at best |
@@ -79,6 +79,16 @@ Master throttled to ~45 % while still 0.7–0.8 short, so their trims were raise
 same afternoon. Ada and the kitchen sat at ~100 % instead — limited by the ~33 °C
 supply (heating curve slope 0.9), not by the trim. Re-read
 `sensor.trv_offset_<room>_settled` after a week or two and adjust.
+
+**First night (2026-10-17 → 18), curve 0.9 / shift +2:** Lola and Master reached
+and held target. The kitchen reached 21.3 by 21:00 then slid to 20.8 as it got
+colder, valve 95 % all night - but its only sensor is on the outer wall (cold
+spot), so the kitchen's shortfall is overstated and its +2.5 trim was sized
+against that cold reading. **Curve shift held at +2** until the kitchen has a door
+sensor (then re-size its trim before deciding on the curve). Lola overshot in
+morning sun (22.6, valve still 94 %): her boxed-in TRV cannot feel the room
+warming - first room where automatic offset mode would clearly help, after the
+curtain/headboard fix.
 
 **Room reference changed the same day (~17:15):** the room temperature is now the
 door sensor alone; the outer-wall Alts went to `sensor_weight_0`. Rooms read
