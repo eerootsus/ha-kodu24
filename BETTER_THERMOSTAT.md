@@ -66,10 +66,15 @@ the `_settled` sensors had any data:
 | Room | `regulation_setpoint_offset` | Room vs setpoint before | Note |
 |---|---|---|---|
 | Ada | +1.4 → **+2.0** | −1.2 … −1.4 | Raised 2026-10-18: reached 22.0 at 23:00, then throttled to ~20 % and settled 0.6 short overnight - TRV read exactly 22 + 1.4, settled error ~2.0 |
-| Master | +1.5 → **+2.2** | −1.3 … −1.6 | Raised 16:03: TRV satisfied at 23.5 with the room still −0.7 |
+| Master | +1.5 → +2.2 → **+2.0** | −1.3 … −1.6 | +2.2 on 2026-10-17 16:03 (throttling 0.7 short). Back to +2.0 on 2026-10-18: held 22.0–22.6, i.e. a touch over. Tuning rule: err slightly under target, not over |
 | Lola | +2.0 → +2.5 → **0, room feed** | −1.8 … −2.2 | 2026-10-18: switched to automatic offset mode (`trv-climate/room_feed.yaml`) - boxed-in TRV overshot in morning sun with a fixed trim. To revert: disable the feed, `0x4015` = −80, trim back to 2.5 |
 | Kitchen | +2.5 (max) | −2.1 … −2.5; TRV reads ~3 K warm | Still ~0.5 K short at best. **Its only sensor is on the outer wall** (renamed `TH01 Sonoff Kitchen Alt` 2026-10-18; still weight 2 as the sole sensor) - trim sized against a cold reading; re-size once a door sensor exists |
 | Stairwell | 0 | no room sensor | Sheltered, small outer wall; stable without it |
+
+**Tuning rule (Eero, 2026-10-18): err slightly under, never over.** An overshoot
+is what people notice, and the reflex is to turn the dial far lower than needed,
+which then undershoots. So when a trim lands a room +0.3…+0.6 over, take it down
+a step; a room 0.2–0.4 under is acceptable.
 
 Expect a second pass: a warmer radiator warms the TRV head more, so the offset
 grows once the trim makes the valve open further. **It grew a lot, fast:** within
