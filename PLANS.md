@@ -25,6 +25,15 @@ master bedroom (nearest, plus heat from the en-suite floor) overshoots with its
 valve nearly shut, the kitchen (farthest) only rises once the others close.
 Without balance, the trims just hide the imbalance.
 
+**The master bedroom has three heat sources besides its radiator:** it is nearest
+the manifold (most flow), the en-suite floor loops warm it through the wall, and
+**the manifold itself sits inside the master bedroom wall** — distribution pipes
+give off heat whenever the system circulates, valve open or not. So the master
+needs the most throttled lockshield and the smallest trim of any room, and will
+never fully close its own heat off. If it still runs warm after balancing,
+insulating the manifold cavity/pipes is the remaining lever (it also keeps that
+heat for the rooms that need it).
+
 **Order from the manifold:** master → Lola → Ada → kitchen (check the plans if
 unsure).
 
