@@ -237,14 +237,16 @@ sections:
       \ is_state_attr(e, 'device_class', 'temperature') and t.v is none %}{% set t.v = states(e) | float(none)\
       \ %}{% endfor %}\n{%- if 'Alt' in (device_attr(d, 'name_by_user') or device_attr(d, 'name') or '')\
       \ %}{% set ns.alt = t.v %}{% else %}{% set ns.main = t.v %}{% endif %}\n{%- endfor %}{% endfor %}\n\
-      | **{{ name }}** | **{{ n(room) }}** | {{ grey(n(ns.main)) if ns.main is not none else '' }} | {{\
-      \ grey(n(ns.alt)) if ns.alt is not none else '' }} | {{ n(trv) }} | {{ n(sp) }} | {{ gap((room -\
-      \ sp) if (room is not none and sp is not none) else none) }} | {{ n(settled, '%+.1f') if settled\
-      \ is not none else ('~' ~ n(raw, '%+.1f') if raw is not none else '–') }} | {{ n(states('number.trv_danfoss_'\
+      | **{{ name }}**{{ ' ⇄' if states('number.trv_danfoss_' ~ s ~ '_external_temperature_sensor') |\
+      \ float(-80) > -80 else '' }} | **{{ n(room) }}** | {{ grey(n(ns.main)) if ns.main is not none else\
+      \ '' }} | {{ grey(n(ns.alt)) if ns.alt is not none else '' }} | {{ n(trv) }} | {{ n(sp) }} | {{\
+      \ gap((room - sp) if (room is not none and sp is not none) else none) }} | {{ n(settled, '%+.1f')\
+      \ if settled is not none else ('~' ~ n(raw, '%+.1f') if raw is not none else '–') }} | {{ n(states('number.trv_danfoss_'\
       \ ~ s ~ '_regulation_setpoint_offset') | float(none), '%+.1f') }} | {{ states('sensor.trv_danfoss_'\
       \ ~ s ~ '_pi_heating_demand') }} % |\n{%- endfor %}\n\n**Tuba** = ukse juures olev andur (Andur);\
       \ Alt on välisseina ääres ja ei lähe arvesse.\n**TRV−tuba** = TRV-anduri viga (~ = hetkeväärtus,\
-      \ muidu settled). Trimm peaks sellega\nühtima, et tuba jõuaks sihini. Võrdlus nädalate kaupa: `./heating-check.py`."
+      \ muidu settled). Trimm peaks sellega\nühtima, et tuba jõuaks sihini. **⇄** = TRV-le saadetakse\
+      \ toa temperatuuri (automaatne nihe, trimm 0). Võrdlus nädalate kaupa: `./heating-check.py`."
     grid_options:
       columns: full
 - type: grid

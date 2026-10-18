@@ -216,6 +216,12 @@ history and `DANFOSS.md` if that logic is ever needed again.)
 
 **trv-climate/heating_alerts.yaml** - Push alert when a TRV room stays under its own target, with the likely cause (curve / trim / valve). Alert only.
 
+**trv-climate/room_feed.yaml** - Feeds Lola's room temperature to her TRV every 30 min
+(Danfoss automatic offset mode, `0x4016` FALSE; her trim is 0), Oct–Apr only - the
+feed brings back the summer 1 % hold, so May–Sep it writes −80 (off). The one
+exception to "TRVs on their own sensors": her TRV is boxed in by curtains and a
+headboard and overshot in sun on a fixed trim. Shown as ⇄ in the Diagnostika table.
+
 ## Why nothing controls the TRVs right now
 
 The Danfoss eTRV's native external-sensor feature holds an anticipatory ~1% valve
@@ -238,7 +244,10 @@ Configure in Home Assistant UI on devices:
   **`sensor_weight_0` = shown, not counted.** Since 2026-10-17 the room reference is
   the sensor at the door; the "Alt" sensors sit on the outer wall (the coldest
   spot, on purpose) and carry weight 0, so they still appear in the dashboard's
-  Diagnostika table but do not drag the room value down. Lola's two may have been
+  Diagnostika table but do not drag the room value down. The table puts any
+  sensor whose name contains "Alt" in its Alt column; the kitchen's only sensor
+  is on the outer wall, so it is named `TH01 Sonoff Kitchen Alt` but keeps weight
+  2 until a door sensor is added. Lola's two may have been
   swapped at the 2026-09-12 battery change - unverified (hold one, watch which
   column jumps).
 

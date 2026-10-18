@@ -100,8 +100,12 @@ automation:
       trv: "{{ state_attr('climate.trv_danfoss_' ~ key, 'current_temperature') }}"
       trim: "{{ states('number.trv_danfoss_' ~ key ~ '_regulation_setpoint_offset') | float(0) }}"
       valve: "{{ states('sensor.trv_danfoss_' ~ key ~ '_pi_heating_demand') | float(-1) }}"
+      # Room fed to the TRV (room_feed.yaml, automatic offset mode): the trim is 0 on
+      # purpose there, so "raise the trim" would be wrong advice.
+      fed: "{{ states('number.trv_danfoss_' ~ key ~ '_external_temperature_sensor') | float(-80) > -80 }}"
       cause: >
         {% if valve >= 80 %}Valve {{ valve | int }} % open and still short: the radiator cannot deliver at {{ states('sensor.vicare_supply_temperature') }} °C supply. Raise the heating curve: shift +1 (now {{ states('number.vitodens_100_heating_curve_shift') }}, slope {{ states('number.vitodens_100_heating_curve_slope') }}). Use the shift for mild-weather shortfalls; the slope only if rooms fall short in real cold.
+        {% elif valve > 1 and fed %}Valve only {{ valve | int }} % open although the TRV is fed the room temperature (automatic offset): check that room_feed.yaml is still writing (last value {{ states('number.trv_danfoss_' ~ key ~ '_external_temperature_sensor') }} °C), then give the TRV's self-correction time - or go back to a fixed trim.
         {% elif valve > 1 %}Valve only {{ valve | int }} % open: the TRV is throttling, reading {{ trv }} °C against target + trim {{ sp + trim }}. Its sensor error outgrew the trim{{ ' - and the trim is already at the +2.5 maximum' if trim >= 2.5 else '; raise the trim' }}.
         {% elif valve >= 0 %}Valve not calling ({{ valve | int }} %) while the room is cold: stuck valve or mesh fault.
         {% else %}Valve demand unavailable: check the TRV.{% endif %}

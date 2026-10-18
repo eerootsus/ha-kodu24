@@ -65,6 +65,7 @@ homeassistant:
     climate_sensors: !include trv-climate/climate.yaml
     climate_offset: !include trv-climate/offset.yaml
     climate_alerts: !include trv-climate/heating_alerts.yaml
+    climate_room_feed: !include trv-climate/room_feed.yaml
     backup_monitor: !include backup-monitor/backup_monitor.yaml
     battery_monitor: !include battery-monitor/battery_monitor.yaml
     workshop_heating: !include workshop-heating/workshop_heating.yaml

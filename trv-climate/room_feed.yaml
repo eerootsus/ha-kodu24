@@ -1,0 +1,70 @@
+# Room temperature feed to a TRV - Danfoss "automatic offset" mode (DANFOSS.md §2.3).
+# Lola's room only, since 2026-10-18.
+#
+# Why Lola: her TRV is boxed in by pushed-aside curtains and a cloth headboard, so
+# its own sensor reads a warm pocket, and how warm depends on conditions a fixed
+# trim cannot follow. On the first night a +2.5 trim held 22 °C well, but on the
+# sunny morning of 2026-10-18 the room rose to 22.6 while the valve stayed 94 %
+# open: the sun warmed the room, not the pocket, so the TRV still saw itself short.
+#
+# What this mode is (and is not):
+#   - `0x4016` radiator covered = FALSE (already so on all TRVs) + room temperature
+#     written to `0x4015` => the TRV keeps regulating on its OWN sensor, corrected
+#     by an offset it derives itself from the room value, within +/-4 K, updated
+#     continuously. A self-maintaining trim.
+#   - NOT covered mode (0x4016 = TRUE, which regulates on the fed value directly
+#     and gives up after 35 min of silence). That is what ran hard-to-balance last
+#     winter, on a 1.2 curve.
+#   - The fixed trim (regulation_setpoint_offset) is set to 0 for this TRV, or the
+#     two corrections would stack.
+#
+# Cadence: Danfoss wants a value at least every 3 h and at most every 30 min. This
+# writes every 30 min, which satisfies both. A missing room reading is skipped,
+# not written: the TRV keeps its last offset and drops the feed by itself after
+# 3 h, and heating_alerts.yaml's "no room temperature" alert fires at 3 h too.
+#
+# Season: the feed engages the eTRV's anticipatory loop, which holds the valve ~1 %
+# open even far above setpoint (DANFOSS.md, the summer "stuck at 1 %" issue). So
+# May-September the feed is switched OFF (0x4015 = -80 °C = disabled), the same
+# calendar gate as workshop-heating. It resumes by itself in October.
+#
+# To go back to the fixed trim: disable this automation, set
+# number.trv_danfoss_lola_external_temperature_sensor to -80 and
+# number.trv_danfoss_lola_regulation_setpoint_offset back to 2.5.
+#
+# Install: declared as `climate_room_feed:` in configuration.yaml.
+
+automation:
+  - id: lola_room_feed
+    alias: "Lola - room temperature feed to TRV"
+    description: "Feeds Lola's room temperature to her TRV every 30 min (Danfoss automatic offset mode), Oct-Apr; disables the feed May-Sep. Source: ha-kodu24/trv-climate/room_feed.yaml."
+    mode: single
+    max_exceeded: silent
+    triggers:
+      - trigger: time_pattern
+        minutes: "/30"
+      - trigger: homeassistant
+        event: start
+      - trigger: state
+        entity_id: climate.trv_danfoss_lola
+        from: "unavailable"
+    variables:
+      in_season: "{{ now().month not in [5, 6, 7, 8, 9] }}"
+      room: "{{ states('sensor.climate_lola_s_room_temperature') | float(none) }}"
+      feed: "{{ states('number.trv_danfoss_lola_external_temperature_sensor') | float(-80) }}"
+    actions:
+      - choose:
+          - conditions: "{{ in_season and room is not none }}"
+            sequence:
+              - action: number.set_value
+                target:
+                  entity_id: number.trv_danfoss_lola_external_temperature_sensor
+                data:
+                  value: "{{ room | round(2) }}"
+          - conditions: "{{ not in_season and feed > -80 }}"
+            sequence:
+              - action: number.set_value
+                target:
+                  entity_id: number.trv_danfoss_lola_external_temperature_sensor
+                data:
+                  value: -80
