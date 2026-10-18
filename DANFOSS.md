@@ -89,7 +89,7 @@ What that removed, and what replaced it:
 | `update_heating_season()` | toggled the feed on outdoor temp for summer | gone — BT's outdoor threshold |
 | `set_time()` | weekly Time cluster `0x000A` sync | gone — affects only valve-exercise/adaptation timing; sync by hand via ZHA if wanted |
 | `radiator_covered()` | wrote `0x4016` from a device label | gone — the label is inert; all five sit at `FALSE` |
-| `disable_load_balancing()` | wrote `0x4032 = FALSE` | gone — already FALSE on all five, and single-TRV rooms don't need it re-asserted |
+| `disable_load_balancing()` | wrote `0x4032 = FALSE` | gone. The claim here that all five were already FALSE was **wrong**: on 2026-10-18 Lola and Kitchen read `0x4032 = 1` (HA `switch.trv_danfoss_<room>_use_load_balancing` on). Switched off then; all five now FALSE, verified on the devices. Inert while `0x4040 = -8000`, but Danfoss says single-eTRV rooms must not use it |
 | `queue_zigbee_write()` | retried sleepy-device writes | gone — see the gotcha below |
 
 The sections below are the **device** reference — how the eTRV behaves, and which
@@ -153,6 +153,16 @@ estimation). The behavior depends on `Radiator Covered` (`0x0201 / 0x4016`):
 |------|----------|----------------|----------|
 | **§2.3 Automatic Offset** (exposed radiators) | `FALSE` | ≥ every 3 h, ≤ every 30 min @ 0.1 K change; **disabled after 3 h** of silence | External value derives a dynamic **±4 K offset** to the eTRV's own measurement. eTRV still controls on its (offset-corrected) internal reading. |
 | **§2.4 Covered Radiators** (behind cover/curtain/furniture) | `TRUE` | ≥ every 30 min, ≤ every 5 min @ 0.1 K change; **disabled after 35 min** of silence | External value **directly drives the control algorithm**. Window-open detection is disabled in this mode. |
+
+**What the vendor catalogue (`AU417130778872en-000101.pdf`) adds on §2.3**, read
+2026-10-18 when Lola went onto it:
+- The derived offset is **not readable** — "the adjustment will not be visible for
+  the user on the eTRV display", and no attribute exposes it. Infer it from TRV
+  reading − room temperature once the valve settles.
+- It is **"not suitable for covered radiators"**: behind "a heavy curtain or
+  furniture" the enclosure "is not simply an offset" and covered mode (§2.4) is
+  the recommended mode. Lola's curtains + headboard sit between the two cases, so
+  automatic offset was tried first; covered mode or a physical fix is the fallback.
 
 Constraints (both modes): the external sensor **must be in the same room** as the
 eTRV (hallway sensor + bedroom eTRV is NOT valid). Feeding an external sensor
