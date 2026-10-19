@@ -218,11 +218,10 @@ history and `DANFOSS.md` if that logic is ever needed again.)
 
 **trv-climate/heating_alerts.yaml** - Push alert when a TRV room stays under its own target, with the likely cause (curve / trim / valve). Alert only.
 
-**trv-climate/room_feed.yaml** - Feeds Lola's room temperature to her TRV every 30 min
-(Danfoss automatic offset mode, `0x4016` FALSE; her trim is 0), Oct–Apr only - the
-feed brings back the summer 1 % hold, so May–Sep it writes −80 (off). The one
-exception to "TRVs on their own sensors": her TRV is boxed in by curtains and a
-headboard and overshot in sun on a fixed trim. Shown as ⇄ in the Diagnostika table.
+**trv-climate/room_feed.yaml** - **Parked, not loaded** (2026-10-19). Fed Lola's room
+temperature to her TRV (Danfoss automatic offset mode) for two nights; the valve
+barely responded, so she is back on a fixed trim. Kept as the record and for reuse
+(covered mode would need a 10-min cadence). Every TRV now runs on its own sensor + trim.
 
 ## Why nothing controls the TRVs right now
 

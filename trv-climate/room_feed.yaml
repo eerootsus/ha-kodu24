@@ -1,5 +1,14 @@
+# PARKED 2026-10-19 - NOT LOADED (removed from configuration.yaml's packages).
+# Two nights on this mode: Lola's valve sat at ~25-35 % whatever the room did
+# (20.8 C on a cold night, 22.6 C in sun) - the automatic offset barely responded,
+# matching Danfoss's caveat that the mode does not suit a boxed-in TRV. Back to the
+# fixed +2.5 trim, feed written to -80. Kept as the record of the experiment and
+# for reuse (e.g. with 0x4016 = TRUE covered mode, which would need writes every
+# <=30 min - make the cadence 10 min). Next options: free the TRV physically, then
+# the Sonoff TRVZB on her radiator (PLANS.md §3).
+#
 # Room temperature feed to a TRV - Danfoss "automatic offset" mode (DANFOSS.md §2.3).
-# Lola's room only, since 2026-10-18.
+# Lola's room only, 2026-10-18 -> 19.
 #
 # Why Lola: her TRV is boxed in by pushed-aside curtains and a cloth headboard, so
 # its own sensor reads a warm pocket, and how warm depends on conditions a fixed

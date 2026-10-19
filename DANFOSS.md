@@ -85,7 +85,7 @@ What that removed, and what replaced it:
 
 | Was | Did | Now |
 |---|---|---|
-| `update_external_temperatures()` | pushed weighted room temp to `0x4015` every 5 min | gone — `0x4015 = -8000` written by hand on all five; **since 2026-10-18 Lola is fed again** by `trv-climate/room_feed.yaml` (every 30 min, Oct–Apr, automatic offset mode, `0x4016` stays FALSE) |
+| `update_external_temperatures()` | pushed weighted room temp to `0x4015` every 5 min | gone — `0x4015 = -8000` written by hand on all five; Lola was fed again 2026-10-18 → 19 by `trv-climate/room_feed.yaml` (automatic offset mode); the valve barely responded and the feed is **parked** - `0x4015` back to −8000 on all five |
 | `update_heating_season()` | toggled the feed on outdoor temp for summer | gone — BT's outdoor threshold |
 | `set_time()` | weekly Time cluster `0x000A` sync | gone — affects only valve-exercise/adaptation timing; sync by hand via ZHA if wanted |
 | `radiator_covered()` | wrote `0x4016` from a device label | gone — the label is inert; all five sit at `FALSE` |

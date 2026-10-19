@@ -69,9 +69,18 @@ only then decide whether the curve needs another shift step.
 
 ### 3. Lola's room
 
-- **Curtains and headboard away from the TRV.** It is boxed in, which is why it
-  needs the room feed (`trv-climate/room_feed.yaml`). If it can be freed, try
-  going back to a plain trim.
+- **Curtains and headboard away from the TRV.** It is boxed in: on the fixed +2.5
+  trim it overshoots in morning sun, and the Danfoss automatic-offset room feed
+  (`trv-climate/room_feed.yaml`, parked 2026-10-19) did not help - the valve sat at
+  ~30 % whatever the room did. Free the TRV first; if the trim then holds in sun
+  and on cold nights, done.
+- **If not: the Sonoff TRVZB on her radiator** (doubles as §7's test). Regulating
+  on her door sensor as an external temperature, it sidesteps the pocket; it also
+  closes fully (no summer 1 % hold). Check before relying on it: which TRVZB
+  external-sensor settings ZHA exposes (Zigbee2MQTT supports them fully), and which
+  adapter her valve body needs (look at the one under the Danfoss). Do it **after**
+  the balancing, one lever at a time. Danfoss covered mode (`0x4016` = TRUE) is the
+  software-only alternative.
 - **Sensor swap check:** hold one of her TH01s in a hand for a minute and watch
   which Diagnostika column (Andur / Alt) jumps. If the door one shows as Alt, swap
   the two device names in HA. Suspected since the 2026-09-12 battery change.
