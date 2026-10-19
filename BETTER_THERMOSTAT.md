@@ -66,7 +66,7 @@ the `_settled` sensors had any data:
 | Room | `regulation_setpoint_offset` | Room vs setpoint before | Note |
 |---|---|---|---|
 | Ada | +1.4 → **+2.0** | −1.2 … −1.4 | Raised 2026-10-18: reached 22.0 at 23:00, then throttled to ~20 % and settled 0.6 short overnight - TRV read exactly 22 + 1.4, settled error ~2.0 |
-| Master | +1.5 → +2.2 → **+2.0** | −1.3 … −1.6 | +2.2 on 2026-10-17 16:03 (throttling 0.7 short). Back to +2.0 on 2026-10-18: held 22.0–22.6, i.e. a touch over. Tuning rule: err slightly under target, not over. Uncontrolled heat in: nearest the manifold, en-suite floor loops, and the **manifold is inside its wall** - expect it to need the smallest trim (`PLANS.md` §1) |
+| Master | +1.5 → +2.2 → +2.0 → **+1.5** | −1.3 … −1.6 | +2.2 on 2026-10-17 16:03 (throttling 0.7 short). Back to +2.0 on 2026-10-18: held 22.0–22.6, i.e. a touch over. Tuning rule: err slightly under target, not over. Uncontrolled heat in: nearest the manifold, en-suite floor loops, and the **manifold is inside its wall** - expect it to need the smallest trim (`PLANS.md` §1). 2026-10-19: 22.5–22.8 overnight with the valve at 6–7 % - uncontrolled heat dominates; 1.5 lets the valve close |
 | Lola | +2.0 → +2.5 → **0, room feed** | −1.8 … −2.2 | 2026-10-18: switched to automatic offset mode (`trv-climate/room_feed.yaml`) - boxed-in TRV overshot in morning sun with a fixed trim. To revert: disable the feed, `0x4015` = −80, trim back to 2.5 |
 | Kitchen | +2.5 (max) | −2.1 … −2.5; TRV reads ~3 K warm | Still ~0.5 K short at best. **Its only sensor is on the outer wall** (renamed `TH01 Sonoff Kitchen Alt` 2026-10-18; still weight 2 as the sole sensor) - trim sized against a cold reading; re-size once a door sensor exists |
 | Stairwell | 0 | no room sensor | Sheltered, small outer wall; stable without it |
@@ -94,6 +94,14 @@ sensor (then re-size its trim before deciding on the curve). Lola overshot in
 morning sun (22.6, valve still 94 %): her boxed-in TRV cannot feel the room
 warming - first room where automatic offset mode would clearly help, after the
 curtain/headboard fix.
+
+**Second night (2026-10-18 → 19), colder (7.8 → 2 °C):** Ada and the kitchen
+fully open all night and short (Ada 22.1 → 21.6 on her door sensor) → curve shift
++2 → **+3**. Lola on the room feed fell 22.0 → 20.8 with her valve stuck at
+23–32 % - automatic offset did not open the valve as the room cooled (Danfoss's
+own caveat for boxed-in TRVs); on the fixed +2.5 trim she had held 22.1–22.3 the
+night before. Feed kept for now (Eero's call). Master ran 22.5–22.8 with its valve
+at 6–7 % (manifold + en-suite heat) → trim +1.5.
 
 **Room reference changed the same day (~17:15):** the room temperature is now the
 door sensor alone; the outer-wall Alts went to `sensor_weight_0`. Rooms read

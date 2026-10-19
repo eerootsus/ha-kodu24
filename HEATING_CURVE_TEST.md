@@ -20,7 +20,8 @@ know whether the top-floor radiators can run at heat-pump flow temperatures.
 |---|---|---|---|
 | years until 2026-08-13 | 1.2 | 0 | gas-boiler default |
 | 2026-08-13 | 0.9 | 0 | start-low-and-raise plan |
-| 2026-10-17 | 0.9 | **+2** | kitchen and Ada fully open on ~33 °C supply at +12 °C outside |
+| 2026-10-17 | 0.9 | +2 | kitchen and Ada fully open on ~33 °C supply at +12 °C outside |
+| 2026-10-19 | 0.9 | **+3** | second, colder night (7.8 → 2 °C): Ada fully open (98–100 %) on her door sensor and still slid 22.1 → 21.6; kitchen the same |
 
 Why the shift and not the slope: the Viessmann curve (`VT = RT + shift − slope ×
 DAR × (1.4347 + 0.021·DAR + 247.9e-6·DAR²)`, `DAR = outside − RT`, RT = the boiler's
