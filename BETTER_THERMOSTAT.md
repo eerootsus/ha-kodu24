@@ -95,6 +95,14 @@ morning sun (22.6, valve still 94 %): her boxed-in TRV cannot feel the room
 warming - first room where automatic offset mode would clearly help, after the
 curtain/headboard fix.
 
+> **SETTINGS FROZEN since 2026-10-19 until the lockshield balancing visit**
+> (`PLANS.md` §1). Curve 0.9 / +3, trims Ada +2.0 · Master +1.5 · Kitchen +2.5 ·
+> Stairwell 0, Lola on the room feed. Too many levers moved at once already;
+> before the radiators are balanced every trim or curve change partly compensates
+> for the imbalance and would need redoing. Observe only (Diagnostika table,
+> alerts, `./heating-check.py`). Exceptions: safety, or a room clearly
+> uncomfortable for days - and then one lever, recorded here.
+
 **Second night (2026-10-18 → 19), colder (7.8 → 2 °C):** Ada and the kitchen
 fully open all night and short (Ada 22.1 → 21.6 on her door sensor) → curve shift
 +2 → **+3**. Lola on the room feed fell 22.0 → 20.8 with her valve stuck at

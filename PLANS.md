@@ -18,6 +18,9 @@ built and delete it from this file.
 
 ### 1. Hydraulic balance — radiator lockshields
 
+**Heating settings are frozen until this is done** (see `BETTER_THERMOSTAT.md`). The
+week of data until then is the "before" picture.
+
 **Why (2026-10-17/18):** all radiators share one pump and the lockshields are
 fully open, never balanced. The radiator nearest the manifold gets the easiest
 path and the most water, the farthest is starved. Exactly that pattern shows: the
