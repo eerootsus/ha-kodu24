@@ -403,13 +403,13 @@ views:
   - type: grid
     cards:
     # The same threshold the weekly digest and sensor.battery_attention_count use,
-    # exposed here so the dashboard and the notification cannot disagree about what
-    # "low" means. Changing the slider changes both. Note `initial: 40` in
-    # battery_monitor.yaml means a restart resets it.
+    # shown here so the dashboard and the notification cannot disagree about what
+    # "low" means. Read-only: it is set in battery_monitor.yaml (a slider was
+    # removed 2026-10-25, because a restart reset whatever it was moved to).
     - type: entities
       title: Threshold
       entities:
-      - entity: input_number.battery_warn_level
+      - entity: sensor.battery_warning_level
         name: Warn at or below
       - entity: sensor.battery_attention_count
         name: Needs attention
@@ -446,11 +446,11 @@ views:
       # Not `collapse: 5` (an arbitrary count) but a threshold group, so what stays
       # in view is exactly what the digest would name: at or below the warn level,
       # plus anything unavailable -- a non-numeric state fails `>` and so falls out
-      # of the OK group. The `{...}` value is read live from the helper.
+      # of the OK group. The `{...}` value is read live from the threshold sensor.
       collapse:
       - name: OK ({count})
         icon: mdi:battery
         filter:
         - name: state
           operator: '>'
-          value: '{input_number.battery_warn_level}'
+          value: '{sensor.battery_warning_level}'

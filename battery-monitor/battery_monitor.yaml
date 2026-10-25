@@ -15,20 +15,19 @@
 # Install: copy to config/battery-monitor/ and add under homeassistant: packages:
 #   battery_monitor: !include battery-monitor/battery_monitor.yaml
 
-input_number:
-  battery_warn_level:
-    name: Battery warning level
-    min: 5
-    max: 60
-    step: 5
-    initial: 40
-    unit_of_measurement: "%"
-    icon: mdi:battery-alert
-    # 40 rather than the usual 20-25: on a thin mesh these drain fast, so the extra
-    # lead time is the point. `initial` means a restart resets it — deliberate, as a
-    # threshold that silently restores to 5 % (the minimum) would monitor nothing.
-
 template:
+  # The warn threshold. Set HERE and nowhere else: a read-only sensor rather than an
+  # input_number, so there is no slider whose change a restart would silently undo.
+  # The count below and the Server dashboard's battery card both read it.
+  # 20 since 2026-10-25; it was 40 while the mesh was thin and devices drained fast,
+  # for the extra lead time.
+  - sensor:
+      - name: Battery warning level
+        unique_id: battery_warn_level
+        unit_of_measurement: "%"
+        icon: mdi:battery-alert
+        state: "20"
+
   # Trigger-based on purpose. A plain template sensor iterating `states.sensor` would
   # subscribe to every sensor in the system and recompute on each one's change; hourly
   # is far more than enough for battery levels.
@@ -37,12 +36,14 @@ template:
         hours: "/1"
       - platform: homeassistant
         event: start
-      # Also on a threshold change, so the count agrees with the Server dashboard's
-      # battery card immediately rather than at the next hourly tick -- the card reads
-      # the helper live, this sensor only re-evaluates when triggered. Cheap: it fires
-      # only when the slider actually moves.
+      # Also on a threshold change (i.e. a deploy + template reload), so the count
+      # agrees with the Server dashboard's battery card immediately rather than at
+      # the next hourly tick. It also covers startup, where the threshold sensor may
+      # not exist yet when the `start` trigger fires. Until it does, `float(0)` below
+      # counts nothing as low (dead devices still count) -- a deliberate non-number,
+      # so the threshold is not duplicated as a fallback.
       - platform: state
-        entity_id: input_number.battery_warn_level
+        entity_id: sensor.battery_warning_level
     sensor:
       - name: Battery attention count
         unique_id: battery_attention_count
@@ -53,7 +54,7 @@ template:
         # cycle (and None on first run).
         state: >
           {% set personal = integration_entities('mobile_app') %}
-          {% set warn = states('input_number.battery_warn_level') | float(25) %}
+          {% set warn = states('sensor.battery_warning_level') | float(0) %}
           {% set ns = namespace(n=0) %}
           {% for s in states.sensor
                | selectattr('attributes.device_class','defined')
@@ -91,7 +92,7 @@ template:
             {{ ns.o | sort }}
           low: >
             {% set personal = integration_entities('mobile_app') %}
-            {% set warn = states('input_number.battery_warn_level') | float(25) %}
+            {% set warn = states('sensor.battery_warning_level') | float(0) %}
             {% set ns = namespace(o=[]) %}
             {% for s in states.sensor
                  | selectattr('attributes.device_class','defined')

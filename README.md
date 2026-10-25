@@ -207,8 +207,9 @@ low batteries, plus an immediate alert when a **leak/smoke sensor** goes offline
 (a flat battery on those fails silently: no alert, and no warning that there is no
 alert). Copy to `config/battery-monitor/` and include as a package.
 
-Threshold `input_number.battery_warn_level` defaults to **40 %**, higher than the usual
-20–25 %, because of the feedback loop below.
+Threshold `sensor.battery_warning_level` is **20 %** (40 % until 2026-10-25, for lead
+time while the mesh was thin; see the feedback loop below). It is fixed in the YAML,
+not a slider: change it there and deploy.
 
 **Why batteries and the mesh are one problem:** a thin mesh makes sleepy devices retry
 transmissions, retries burn battery, dead devices remove what little routing exists, and
