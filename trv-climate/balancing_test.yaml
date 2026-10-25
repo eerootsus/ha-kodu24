@@ -139,7 +139,6 @@ script:
       - variables:
           started: "{{ now().isoformat() }}"
           outside: "{{ state_attr('weather.forecast_kodu', 'temperature') }}"
-          supply_start: "{{ states('sensor.vicare_supply_temperature') | float(none) }}"
           series: >
             {% set ns = namespace(d={}) %}
             {% for s in slugs %}{% set ns.d = dict(ns.d, **{s: [state_attr('climate.trv_danfoss_' ~ s, 'current_temperature') | float(none)]}) %}{% endfor %}
@@ -149,6 +148,11 @@ script:
           entity_id: "{{ trvs }}"
         data:
           temperature: 28
+      # Supply is sampled with the TRVs, from the first 5-min mark on. A single
+      # reading at the start is worthless: with every valve shut the boiler cycles
+      # 27-51 C every ~15 min, and the 2026-10-25 run caught a 48.7 peak that way.
+      - variables:
+          supply: []
       - repeat:
           count: "{{ (open / 5) | int }}"
           sequence:
@@ -159,8 +163,12 @@ script:
                   {% set ns = namespace(d={}) %}
                   {% for s in slugs %}{% set ns.d = dict(ns.d, **{s: series[s] + [state_attr('climate.trv_danfoss_' ~ s, 'current_temperature') | float(none)]}) %}{% endfor %}
                   {{ ns.d }}
+                supply: "{{ supply + [states('sensor.vicare_supply_temperature') | float(none)] }}"
       - variables:
-          supply_end: "{{ states('sensor.vicare_supply_temperature') | float(none) }}"
+          supply_ok: "{{ supply | select('number') | list }}"
+          supply_mean: "{{ (supply_ok | sum / supply_ok | count) | round(1) if supply_ok | count > 0 else none }}"
+          supply_min: "{{ supply_ok | min if supply_ok | count > 0 else none }}"
+          supply_max: "{{ supply_ok | max if supply_ok | count > 0 else none }}"
           valves: >
             {% set ns = namespace(d={}) %}
             {% for s in slugs %}{% set ns.d = dict(ns.d, **{s: states('sensor.trv_danfoss_' ~ s ~ '_pi_heating_demand') | float(none)}) %}{% endfor %}
@@ -186,8 +194,10 @@ script:
           cool_minutes: "{{ cool }}"
           open_minutes: "{{ open }}"
           outside: "{{ outside }}"
-          supply_start: "{{ supply_start }}"
-          supply_end: "{{ supply_end }}"
+          supply_mean: "{{ supply_mean }}"
+          supply_min: "{{ supply_min }}"
+          supply_max: "{{ supply_max }}"
+          supply: "{{ supply }}"
           series: "{{ series }}"
           rise: "{{ rise }}"
           valves_end: "{{ valves }}"
@@ -196,7 +206,7 @@ script:
         data:
           title: "Balancing test '{{ run_label }}' done"
           message: >
-            Rise of TRV reading after 15 / 30 min fully open (supply {{ supply_start }} → {{ supply_end }} °C, outside {{ outside }} °C):
+            Rise of TRV reading after 15 / 30 min fully open (supply {{ supply_mean }} °C, {{ supply_min }}–{{ supply_max }}, outside {{ outside }} °C):
             {% for s in slugs %}
             {{ names[s] }}: +{{ rise[s].r15 }} / +{{ rise[s].r30 }}{% endfor %}
             Targets restored. Full series in sensor.balancing_test_result.
