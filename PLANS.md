@@ -16,48 +16,95 @@ built and delete it from this file.
 
 ## Next visit to Kodu 24
 
-### 1. Hydraulic balance — radiator lockshields
+### 1. Hydraulic balance — radiator valve presets
 
 **Heating settings are frozen until this is done** (see `BETTER_THERMOSTAT.md`). The
 week of data until then is the "before" picture.
 
-**Why (2026-10-17/18):** all radiators share one pump and the lockshields are
-fully open, never balanced. The radiator nearest the manifold gets the easiest
-path and the most water, the farthest is starved. Exactly that pattern shows: the
-master bedroom (nearest, plus heat from the en-suite floor) overshoots with its
-valve nearly shut, the kitchen (farthest) only rises once the others close.
+**Why (2026-10-17/18):** all radiators share one pump and nothing has ever been
+balanced. Water takes the easiest path: short runs and small radiators get more
+than they need, long runs to big radiators get less. The master bedroom (shortest
+run, plus heat from the en-suite floor) overshoots with its valve nearly shut.
 Without balance, the trims just hide the imbalance.
 
-**The master bedroom has three heat sources besides its radiator:** it is nearest
-the manifold (most flow), the en-suite floor loops warm it through the wall, and
+**The radiators** (installer's spec; runs are Eero's one-way estimate, 2026-10-25):
+
+| Room | Area | Radiator (Atol C3, H500) | Sections | Run from manifold |
+|---|---|---|---|---|
+| Kitchen | 20 m² | L1058 | 23 | 9 m |
+| Master | 16 m² | L874 | 19 | 3 m |
+| Lola | 10 m² | L552 | 12 | 9 m |
+| Ada | 9.5 m² | L506 | 11 | 11 m |
+| Stairwell | 8 m² | L460 | 10 | 4 m |
+
+Each needs flow roughly in proportion to its sections (same model and height).
+With everything open, flow falls with run length. Put together, **the kitchen gets
+the least water for its size** - the biggest radiator on a long run, about half
+what Ada and Lola get per section and a third of the stairwell's (crude: counts
+pipe resistance only, which overstates the spread). Ada is the farthest run but
+has a small radiator, so she is not the starved one.
+
+The kitchen's *apparent* shortfall was still mostly its cold outer-wall sensor:
+on the door sensor (from 2026-10-25) it sits about on target, and its valve at
+~95 % for days was the +2.5 trim making the TRV chase target + 2.5, not a measure
+of flow. But it is the room most likely to fall short in real cold, and the
+reason is its size, not distance.
+
+**The master bedroom has three heat sources besides its radiator:** it is the
+shortest run (most flow), the en-suite floor loops warm it through the wall, and
 **the manifold itself sits inside the master bedroom wall** — distribution pipes
 give off heat whenever the system circulates, valve open or not. So the master
-needs the most throttled lockshield and the smallest trim of any room, and will
-never fully close its own heat off. If it still runs warm after balancing,
-insulating the manifold cavity/pipes is the remaining lever (it also keeps that
-heat for the rooms that need it).
+needs throttling beyond what its size suggests and the smallest trim of any room,
+and will never fully close its own heat off. If it still runs warm after
+balancing, insulating the manifold cavity/pipes is the remaining lever (it also
+keeps that heat for the rooms that need it).
 
-**Order from the manifold:** master → Lola → Ada → kitchen (check the plans if
-unsure).
+**Where to balance:** bottom-connected radiators ("altühendusega") with a
+**built-in valve insert** - the eTRV sits on it - and a **Honeywell 1/2" straight
+H-valve** underneath, fed by 16 mm pipe (Kermi eurocones) on its own run from the
+manifold.
 
-1. **Before:** tell Claude — it sets all four TRV targets high for an hour (all
+The H-valve is a **quarter-turn ball shut-off with no presetting** (confirmed
+2026-10-25 against Danfoss's similar RLV-KB instruction, filed as
+`~/Documents/Kodu 24/Juhendid-manuaalid/Danfoss RLV-KB H-valve (similar to installed Honeywell).pdf`): screwdriver
+slot *along* the pipe = open, *across* = closed. It has no end stops - hence
+"it just rotates" - and is not meant to sit part-open. **All five set fully open
+2026-10-25.** What older docs here call the "lockshield" closed for summer is this
+valve.
+
+So the balancing knob is the **presetting on the insert** (under the eTRV). Seen
+2026-10-25 on one radiator: brass insert stamped **"OV"** (Oventrop's mark) plus a
+type code (~"0637AT", "1181"), with a **black preset ring numbered around the pin**,
+read against a nubbin on the brass body. Oventrop's inserts normally run **1–6,
+6 = fully open** (also the factory setting). **It sits at 6** (confirmed
+2026-10-25) - unbalanced, as expected. Assume the other four are at 6 too until
+seen. Still open: the exact insert's flow (kv) table, if the type code can be read. The
+ring turns by hand or with Oventrop's plastic key, eTRV off. The manifold is no
+alternative: **plain ball valves only, all fully open** (2026-10-25).
+
+1. **Before:** tell Claude — it sets all five TRV targets high for an hour (all
    valves open) and records how fast each radiator warms (the TRV's own reading
    rising is a rough flow proxy). Repeated after, so the effect is measured.
-2. **Close each lockshield fully, counting turns** — that gives the range
-   (typically 3–5 turns) and a way back. **Write the counts down below.**
-3. **Starting point (turns open from closed):** master ~1 · Lola ~1.5 ·
-   Ada ~2–2.5 · kitchen fully open.
+2. **Write down each insert's current preset** before touching it - that is the
+   way back.
+3. **Starting point, from the table above** (flow: kitchen fully open · Ada and
+   Lola about half · master a bit below half, for its extra heat · stairwell about
+   a third). On a 1–6 Oventrop scale, roughly: **kitchen 6 · Lola 5 · Ada 5 ·
+   master 4 · stairwell 3**. Approximate - the scale is not linear and the exact
+   kv table is unknown.
 4. **Fine-tune by temperature drop:** TRV fully open, IR thermometer on supply
    and return pipe. Aim for ~5–8 °C drop at 35–40 °C supply, about the same on
    each. Small drop (2–3 °C) = water rushing through → throttle; large drop =
-   starved → open.
+   starved → open. This decides; step 3 only gets close.
 5. **After:** a day on the Küte dashboard's Diagnostika table, then the trims
    (master most likely down). One lever at a time.
 
-**Measured turns:** master … · Lola … · Ada … · kitchen … (fill in on site).
+**Presets before → after:** kitchen … · master … · Lola … · Ada … · stairwell …
+(fill in on site).
 
-**Every spring:** the summer fix is closing the lockshields — count the turns
-when closing and reopen to the same count in autumn, or the balance is lost.
+**Every summer:** to stop the 1 % summer heat (`DANFOSS.md` §2.6), turn the
+**H-valve slots across the pipe** (closed), never the presets - then the balance
+survives and autumn is just turning them back along the pipe.
 
 ### 2. Kitchen trim against the door sensor
 
