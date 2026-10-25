@@ -85,9 +85,12 @@ class HA:
 
 async def connect():
     url = HA_URL.replace("http", "ws", 1).rstrip("/") + "/api/websocket"
+    # Token first: HA drops an unauthenticated socket after ~10 s, and op read can
+    # sit longer than that waiting for the 1Password approval.
+    tok = token()
     ws = await websockets.connect(url, max_size=None)
     await ws.recv()
-    await ws.send(json.dumps({"type": "auth", "access_token": token()}))
+    await ws.send(json.dumps({"type": "auth", "access_token": tok}))
     if json.loads(await ws.recv()).get("type") != "auth_ok":
         sys.exit("HA rejected the token")
     return ws

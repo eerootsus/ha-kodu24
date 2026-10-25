@@ -38,7 +38,7 @@ sections:
     entity: climate.trv_danfoss_kitchen
     primary: Köök
     secondary: '{{ states(''sensor.climate_kitchen_temperature'') }} °C · {{ states(''sensor.climate_kitchen_humidity'')
-      | round(0) }} % niiskus'
+      | round(0, default=''–'') }} % niiskus'
     icon: mdi:radiator
     icon_color: '{% set room = states(''sensor.climate_kitchen_temperature'') | float(none) %}{% set sp
       = state_attr(''climate.trv_danfoss_kitchen'', ''temperature'') | float(none) %}{% if room is none
@@ -53,7 +53,7 @@ sections:
     entity: climate.trv_danfoss_ada
     primary: Ada tuba
     secondary: '{{ states(''sensor.climate_ada_s_room_temperature'') }} °C · {{ states(''sensor.climate_ada_s_room_humidity'')
-      | round(0) }} % niiskus'
+      | round(0, default=''–'') }} % niiskus'
     icon: mdi:radiator
     icon_color: '{% set room = states(''sensor.climate_ada_s_room_temperature'') | float(none) %}{% set
       sp = state_attr(''climate.trv_danfoss_ada'', ''temperature'') | float(none) %}{% if room is none
@@ -68,7 +68,7 @@ sections:
     entity: climate.trv_danfoss_lola
     primary: Lola tuba
     secondary: '{{ states(''sensor.climate_lola_s_room_temperature'') }} °C · {{ states(''sensor.climate_lola_s_room_humidity'')
-      | round(0) }} % niiskus'
+      | round(0, default=''–'') }} % niiskus'
     icon: mdi:radiator
     icon_color: '{% set room = states(''sensor.climate_lola_s_room_temperature'') | float(none) %}{% set
       sp = state_attr(''climate.trv_danfoss_lola'', ''temperature'') | float(none) %}{% if room is none
@@ -83,7 +83,7 @@ sections:
     entity: climate.trv_danfoss_master
     primary: Kätlyni tuba
     secondary: '{{ states(''sensor.climate_bedroom_temperature'') }} °C · {{ states(''sensor.climate_bedroom_humidity'')
-      | round(0) }} % niiskus'
+      | round(0, default=''–'') }} % niiskus'
     icon: mdi:radiator
     icon_color: '{% set room = states(''sensor.climate_bedroom_temperature'') | float(none) %}{% set sp
       = state_attr(''climate.trv_danfoss_master'', ''temperature'') | float(none) %}{% if room is none
@@ -98,7 +98,7 @@ sections:
     entity: climate.trv_danfoss_stairwell
     primary: Trepihall
     secondary: '{{ states(''sensor.climate_trepihall_temperature'') }} °C · {{ states(''sensor.climate_trepihall_humidity'')
-      | round(0) }} % niiskus'
+      | round(0, default=''–'') }} % niiskus'
     icon: mdi:radiator
     icon_color: '{% set room = states(''sensor.climate_trepihall_temperature'') | float(none) %}{% set
       sp = state_attr(''climate.trv_danfoss_stairwell'', ''temperature'') | float(none) %}{% if room is
@@ -117,7 +117,7 @@ sections:
     primary: Elutuba
     icon: mdi:sofa
     secondary: '{{ states(''sensor.th_living_room_temperature'') }} °C · {{ states(''sensor.th_living_room_humidity'')
-      | round(0) }} % niiskus'
+      | round(0, default=''–'') }} % niiskus'
     icon_color: grey
     entity: sensor.th_living_room_temperature
     tap_action:
@@ -128,7 +128,7 @@ sections:
     primary: Alumine vannituba
     icon: mdi:shower
     secondary: '{{ states(''sensor.tz2000_a476raq2_ts0201_temperature'') }} °C · {{ states(''sensor.tz2000_a476raq2_ts0201_humidity'')
-      | round(0) }} % niiskus'
+      | round(0, default=''–'') }} % niiskus'
     icon_color: grey
     entity: sensor.tz2000_a476raq2_ts0201_temperature
     tap_action:
@@ -139,7 +139,7 @@ sections:
     primary: Ülemine vannituba
     icon: mdi:bathtub
     secondary: '{{ states(''sensor.th_upstairs_bathroom_temperature_2'') }} °C · {{ states(''sensor.th_upstairs_bathroom_humidity_2'')
-      | round(0) }} % niiskus'
+      | round(0, default=''–'') }} % niiskus'
     icon_color: grey
     entity: sensor.th_upstairs_bathroom_temperature_2
     tap_action:
