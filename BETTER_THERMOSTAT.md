@@ -95,7 +95,7 @@ morning sun (22.6, valve still 94 %): her boxed-in TRV cannot feel the room
 warming - first room where automatic offset mode would clearly help, after the
 curtain/headboard fix.
 
-> **SETTINGS FROZEN since 2026-10-19 until the lockshield balancing visit**
+> **SETTINGS FROZEN since 2026-10-19 until the radiator balancing visit**
 > (`PLANS.md` §1). Curve 0.9 / +3, trims Ada +2.0 · Master +1.5 · Kitchen +2.0 ·
 > Stairwell 0, Lola +2.5 (room feed tried and parked 2026-10-19). Too many levers moved at once already;
 > before the radiators are balanced every trim or curve change partly compensates
@@ -450,9 +450,11 @@ kind of link as the stuck ones. Whatever holds the valve open is not the radio. 
 external-sensor control path (§2.6) remains the best explanation, which is consistent
 with Stairwell being the one TRV never fed an external sensor.
 
-**Chosen resolution:** physically **close the manual lockshield valve** on the
-radiators where possible for summer — bulletproof, independent of TRV/mesh. Accepted
-trade-off: those radiators can't be turned on for a cold summer night until reopened.
+**Chosen resolution:** physically shut the radiator feed for summer — bulletproof,
+independent of TRV/mesh. Since 2026-10-25 that means the **radiator master valves**
+between the boiler and the radiator manifold (`PLANS.md` §1, "Every summer"): one
+place, and the bathroom underfloor keeps running. Accepted trade-off: no radiator
+can be turned on for a cold summer night until they are reopened.
 
 **If the mesh is improved later:** re-deploy `trv_debug.py` (attribute dump) and
 `trv_unstick.py` (cycle covered + setpoint nudge), re-run on the reliable network,

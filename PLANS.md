@@ -69,8 +69,8 @@ The H-valve is a **quarter-turn ball shut-off with no presetting** (confirmed
 `~/Documents/Kodu 24/Juhendid-manuaalid/Danfoss RLV-KB H-valve (similar to installed Honeywell).pdf`): screwdriver
 slot *along* the pipe = open, *across* = closed. It has no end stops - hence
 "it just rotates" - and is not meant to sit part-open. **All five set fully open
-2026-10-25.** What older docs here call the "lockshield" closed for summer is this
-valve.
+2026-10-25.** Older docs here say "lockshield"; there is no separate lockshield -
+the summer shut-off is the radiator master valves (below).
 
 So the balancing knob is the **presetting on the insert** (under the eTRV). Seen
 2026-10-25 on one radiator: brass insert stamped **"OV"** (Oventrop's mark) plus a
@@ -82,9 +82,10 @@ seen. Still open: the exact insert's flow (kv) table, if the type code can be re
 ring turns by hand or with Oventrop's plastic key, eTRV off. The manifold is no
 alternative: **plain ball valves only, all fully open** (2026-10-25).
 
-1. **Before:** tell Claude — it sets all five TRV targets high for an hour (all
-   valves open) and records how fast each radiator warms (the TRV's own reading
-   rising is a rough flow proxy). Repeated after, so the effect is measured.
+1. **Before:** run `script.balancing_test` with label "before" (~2 h, unattended:
+   every valve shut for an hour so all start cold, then fully open for an hour
+   while each TRV's reading is sampled; targets restored after, push with the
+   result). See `trv-climate/balancing_test.yaml`.
 2. **Write down each insert's current preset** before touching it - that is the
    way back.
 3. **Starting point, from the table above** (flow: kitchen fully open · Ada and
@@ -96,15 +97,18 @@ alternative: **plain ball valves only, all fully open** (2026-10-25).
    and return pipe. Aim for ~5–8 °C drop at 35–40 °C supply, about the same on
    each. Small drop (2–3 °C) = water rushing through → throttle; large drop =
    starved → open. This decides; step 3 only gets close.
-5. **After:** a day on the Küte dashboard's Diagnostika table, then the trims
-   (master most likely down). One lever at a time.
+5. **After:** run `script.balancing_test` again (label "after"); the result sensor
+   keeps the previous run beside it. Then ~2 days on the Küte dashboard's
+   Diagnostika table, then the trims (master most likely down). One lever at a time.
 
 **Presets before → after:** kitchen … · master … · Lola … · Ada … · stairwell …
 (fill in on site).
 
-**Every summer:** to stop the 1 % summer heat (`DANFOSS.md` §2.6), turn the
-**H-valve slots across the pipe** (closed), never the presets - then the balance
-survives and autumn is just turning them back along the pipe.
+**Every summer:** to stop the 1 % summer heat (`DANFOSS.md` §2.6), close the
+**radiator master valves** between the boiler and the radiator manifold. That shuts
+all five radiators in one place while the bathroom underfloor loops keep running
+(switching heating off at the boiler would stop those too). Never touch the presets
+for summer - the balance survives, and autumn is just reopening the master valves.
 
 ### 2. Kitchen trim against the door sensor
 

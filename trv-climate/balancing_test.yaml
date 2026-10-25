@@ -1,0 +1,261 @@
+# Balancing test - a repeatable before/after measurement for the radiator preset
+# balancing (PLANS.md §1). Run it, walk away, read the result.
+#
+# What it measures: how fast each radiator warms when its valve is forced fully
+# open. The eTRV's own sensor sits on the radiator, so its reading rising is a
+# rough but consistent flow proxy - a radiator that gets more water warms faster.
+# Compare rooms against each other and a run against an earlier run, not against
+# any absolute number: the supply temperature follows the weather curve, so a
+# colder day warms everything faster.
+#
+# How:
+#   1. COOL   - every TRV set to 5 C for `cool_minutes` (default 60), so all five
+#               start from a similar cold radiator. Without this the result mostly
+#               measures where each radiator happened to start (a valve that was at
+#               96 % is already hot).
+#   2. OPEN   - every TRV set to 28 C for `open_minutes` (default 60): valves go
+#               fully open. Each TRV's reading is sampled every 5 min.
+#   3. RESTORE - every TRV back to the target it had before the test, written twice
+#               30 s apart (the eTRVs are sleepy, a single write can miss).
+#
+# Results land in sensor.balancing_test_result: state = the run's label, attribute
+# `result` = this run, `previous` = the run before it, so "before" and "after" sit
+# side by side. A push gives the short version: rise at 15 and 30 min per room.
+#
+# Safety: the original targets are saved in sensor.balancing_test_saved_targets
+# (a trigger-based template sensor, so it survives a restart) BEFORE anything is
+# changed. If the script is stopped or HA restarts mid-test, the watchdog below
+# restores them from there - the TRVs are never left at 5 or 28.
+#
+# Side effects, checked 2026-10-25: the offset `_settled` sensors stay clean (their
+# gate needs the TRV within 1 K of its setpoint, never true at 5 or 28), and the
+# shortfall alert needs 3 h below target (the open phase is 1 h, and a 5 C target
+# is never "below").
+#
+# Run: Developer Tools -> Actions -> script.balancing_test, with a label such as
+# "before" or "after presets". Abort: stop the script; the watchdog restores.
+#
+# Install: declared as `climate_balancing_test:` in configuration.yaml.
+
+input_boolean:
+  balancing_test_running:
+    name: Balancing test running
+    icon: mdi:radiator
+
+template:
+  - triggers:
+      - trigger: event
+        event_type: balancing_test_started
+    sensor:
+      - name: Balancing test saved targets
+        unique_id: balancing_test_saved_targets
+        device_class: timestamp
+        state: "{{ now().isoformat() }}"
+        attributes:
+          targets: "{{ trigger.event.data.targets }}"
+
+  - triggers:
+      - trigger: event
+        event_type: balancing_test_done
+    sensor:
+      - name: Balancing test result
+        unique_id: balancing_test_result
+        icon: mdi:radiator
+        state: "{{ trigger.event.data.label }}"
+        attributes:
+          result: "{{ trigger.event.data }}"
+          # `this` is the sensor as it was before this run.
+          previous: "{{ this.attributes.result if this is defined and this.attributes.result is defined else none }}"
+
+script:
+  balancing_test:
+    alias: "Balancing test"
+    description: "Cool all radiators, open all fully, sample how fast each warms, restore targets. Source: ha-kodu24/trv-climate/balancing_test.yaml."
+    icon: mdi:radiator
+    mode: single
+    fields:
+      label:
+        description: "Name for this run, e.g. 'before' or 'after presets'."
+        example: before
+        selector:
+          text:
+      cool_minutes:
+        description: "Minutes with every valve shut first (default 60)."
+        example: 60
+        selector:
+          number:
+            min: 0
+            max: 120
+            step: 5
+      open_minutes:
+        description: "Minutes with every valve fully open, sampled every 5 (default 60)."
+        example: 60
+        selector:
+          number:
+            min: 30
+            max: 120
+            step: 5
+    sequence:
+      - condition: state
+        entity_id: input_boolean.balancing_test_running
+        state: "off"
+      - variables:
+          run_label: "{{ label | default('test', true) }}"
+          cool: "{{ cool_minutes | default(60) | int }}"
+          open: "{{ open_minutes | default(60) | int }}"
+          slugs: [kitchen, stairwell, ada, lola, master]
+          names:
+            kitchen: Köök
+            stairwell: Trepihall
+            ada: Ada
+            lola: Lola
+            master: Kätlyn
+          trvs: "{{ slugs | map('regex_replace', '^', 'climate.trv_danfoss_') | list }}"
+          targets: >
+            {% set ns = namespace(d={}) %}
+            {% for s in slugs %}{% set ns.d = dict(ns.d, **{s: state_attr('climate.trv_danfoss_' ~ s, 'temperature') | float(21)}) %}{% endfor %}
+            {{ ns.d }}
+      # Save first, so the watchdog can always put things back.
+      - event: balancing_test_started
+        event_data:
+          targets: "{{ targets }}"
+      - action: input_boolean.turn_on
+        target:
+          entity_id: input_boolean.balancing_test_running
+      - delay: 5
+
+      # 1. COOL
+      - if: "{{ cool > 0 }}"
+        then:
+          - action: climate.set_temperature
+            target:
+              entity_id: "{{ trvs }}"
+            data:
+              temperature: 5
+          - delay:
+              minutes: "{{ cool }}"
+
+      # 2. OPEN, sampling every 5 min
+      - variables:
+          started: "{{ now().isoformat() }}"
+          outside: "{{ state_attr('weather.forecast_kodu', 'temperature') }}"
+          supply_start: "{{ states('sensor.vicare_supply_temperature') | float(none) }}"
+          series: >
+            {% set ns = namespace(d={}) %}
+            {% for s in slugs %}{% set ns.d = dict(ns.d, **{s: [state_attr('climate.trv_danfoss_' ~ s, 'current_temperature') | float(none)]}) %}{% endfor %}
+            {{ ns.d }}
+      - action: climate.set_temperature
+        target:
+          entity_id: "{{ trvs }}"
+        data:
+          temperature: 28
+      - repeat:
+          count: "{{ (open / 5) | int }}"
+          sequence:
+            - delay:
+                minutes: 5
+            - variables:
+                series: >
+                  {% set ns = namespace(d={}) %}
+                  {% for s in slugs %}{% set ns.d = dict(ns.d, **{s: series[s] + [state_attr('climate.trv_danfoss_' ~ s, 'current_temperature') | float(none)]}) %}{% endfor %}
+                  {{ ns.d }}
+      - variables:
+          supply_end: "{{ states('sensor.vicare_supply_temperature') | float(none) }}"
+          valves: >
+            {% set ns = namespace(d={}) %}
+            {% for s in slugs %}{% set ns.d = dict(ns.d, **{s: states('sensor.trv_danfoss_' ~ s ~ '_pi_heating_demand') | float(none)}) %}{% endfor %}
+            {{ ns.d }}
+          # Rise of the TRV reading after 15 and 30 min open: the early slope is the
+          # flow signal, later the radiator saturates.
+          rise: >
+            {% set ns = namespace(d={}) %}
+            {% for s in slugs %}
+              {% set v = series[s] %}
+              {% set r15 = (v[3] - v[0]) | round(1) if v | count > 3 and v[0] is number and v[3] is number else none %}
+              {% set r30 = (v[6] - v[0]) | round(1) if v | count > 6 and v[0] is number and v[6] is number else none %}
+              {% set ns.d = dict(ns.d, **{s: {'r15': r15, 'r30': r30}}) %}
+            {% endfor %}
+            {{ ns.d }}
+
+      # 3. RESTORE
+      - action: script.balancing_test_restore
+      - event: balancing_test_done
+        event_data:
+          label: "{{ run_label }}"
+          started: "{{ started }}"
+          cool_minutes: "{{ cool }}"
+          open_minutes: "{{ open }}"
+          outside: "{{ outside }}"
+          supply_start: "{{ supply_start }}"
+          supply_end: "{{ supply_end }}"
+          series: "{{ series }}"
+          rise: "{{ rise }}"
+          valves_end: "{{ valves }}"
+          targets_restored: "{{ targets }}"
+      - action: notify.mobile_app_eeros_iphone_17
+        data:
+          title: "Balancing test '{{ run_label }}' done"
+          message: >
+            Rise of TRV reading after 15 / 30 min fully open (supply {{ supply_start }} → {{ supply_end }} °C, outside {{ outside }} °C):
+            {% for s in slugs %}
+            {{ names[s] }}: +{{ rise[s].r15 }} / +{{ rise[s].r30 }}{% endfor %}
+            Targets restored. Full series in sensor.balancing_test_result.
+          data:
+            push:
+              thread-id: heating
+
+  balancing_test_restore:
+    alias: "Balancing test - restore targets"
+    description: "Put every TRV back on the target saved when the balancing test started. Source: ha-kodu24/trv-climate/balancing_test.yaml."
+    icon: mdi:backup-restore
+    mode: queued
+    sequence:
+      - variables:
+          targets: "{{ state_attr('sensor.balancing_test_saved_targets', 'targets') or {} }}"
+      - if: "{{ targets | count > 0 }}"
+        then:
+          # Twice, 30 s apart: the eTRVs are sleepy end devices and one write can miss.
+          - repeat:
+              count: 2
+              sequence:
+                - repeat:
+                    for_each: "{{ targets | dictsort }}"
+                    sequence:
+                      - action: climate.set_temperature
+                        target:
+                          entity_id: "climate.trv_danfoss_{{ repeat.item[0] }}"
+                        data:
+                          temperature: "{{ repeat.item[1] }}"
+                - delay: 30
+      - action: input_boolean.turn_off
+        target:
+          entity_id: input_boolean.balancing_test_running
+
+automation:
+  - id: balancing_test_watchdog
+    alias: "Balancing test - watchdog"
+    description: "Restores TRV targets if the balancing test is stopped or HA restarts mid-test. Source: ha-kodu24/trv-climate/balancing_test.yaml."
+    mode: single
+    triggers:
+      - trigger: homeassistant
+        event: start
+      - trigger: state
+        entity_id: script.balancing_test
+        to: "off"
+    conditions:
+      - condition: state
+        entity_id: input_boolean.balancing_test_running
+        state: "on"
+    actions:
+      # After a restart, give ZHA time to come up before writing to the TRVs.
+      - if: "{{ trigger.platform == 'homeassistant' }}"
+        then:
+          - delay: 120
+      - action: script.balancing_test_restore
+      - action: notify.mobile_app_eeros_iphone_17
+        data:
+          title: "Balancing test interrupted"
+          message: "Stopped before it finished ({{ 'HA restart' if trigger.platform == 'homeassistant' else 'script stopped' }}). TRV targets restored to {{ state_attr('sensor.balancing_test_saved_targets', 'targets') }}."
+          data:
+            push:
+              thread-id: heating

@@ -51,7 +51,7 @@ input_number:
     icon: mdi:shower
     # Bathrooms are kept warmer than living rooms and sit on the underfloor circuit,
     # so they need their own line. They are also the *only* thing the curve drives
-    # while the radiator lockshields are shut.
+    # while the radiator master valves are shut for summer.
   curve_test_tolerance:
     name: Curve test allowed deficit
     min: 0.2
@@ -374,7 +374,7 @@ automation:
                  > states('input_number.curve_test_tolerance') | float(0.5) }}
         for: "01:30:00"
       # Underfloor — deliberately NOT gated on outside temperature. The bathroom
-      # loops run year-round, and while the radiator lockshields are shut they are
+      # loops run year-round, and while the radiator master valves are shut they are
       # the only load the curve drives, so a summer failure here is real and would
       # otherwise be invisible.
       - platform: template

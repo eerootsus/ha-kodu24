@@ -72,8 +72,8 @@ pump is ever finished. If 1.2 was never justified, that has been leaking money f
 
 ## Preconditions — read before enabling
 
-1. **The radiator lockshields must be open.** They are physically closed for summer
-   (see `BETTER_THERMOSTAT.md`, summer fix). With the radiator feed shut the test
+1. **The radiator master valves must be open.** They are closed for summer (between
+   the boiler and the radiator manifold; see `PLANS.md` §1, "Every summer"). With the radiator feed shut the test
    measures nothing and will step the slope down unopposed to its floor. Enable only
    after reopening in autumn.
 2. **Heating season.** The revert automation only evaluates below 12 °C outside;
@@ -250,10 +250,9 @@ the underfloor. So the curve test is really asking **"what tank temperature does
 radiator circuit need?"** — which is exactly the number that decides whether the heat
 pump can serve radiators at all, or only the underfloor.
 
-Decoupling also fixes the summer problem recorded in `BETTER_THERMOSTAT.md`: once the
-radiator circuit is independent, the bathroom underfloor loops can run from the tank
-without keeping the radiator loop hot, and the lockshield workaround becomes
-unnecessary.
+The summer problem recorded in `BETTER_THERMOSTAT.md` (radiators warm while the
+underfloor runs) needs no decoupling after all: the radiator master valves between
+boiler and manifold shut the radiator feed alone (`PLANS.md` §1, "Every summer").
 
 ## Sources
 
