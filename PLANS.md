@@ -59,13 +59,12 @@ unsure).
 **Every spring:** the summer fix is closing the lockshields — count the turns
 when closing and reopen to the same count in autumn, or the balance is lost.
 
-### 2. Kitchen door sensor
+### 2. Kitchen trim against the door sensor
 
-The kitchen's only room sensor is on the outer wall (renamed `TH01 Sonoff Kitchen
-Alt`), so it reads cold and its +2.5 trim was sized against that. Add a sensor at
-the door, inside wall, ~1.5 m. Then: label it `sensor_weight_2`, set the Alt to
-`sensor_weight_0` (see `CLAUDE.md` "Device Labels"), re-size the kitchen trim, and
-only then decide whether the curve needs another shift step.
+The door sensor is in (2026-10-25, weight 2; the Alt is weight 0) and reads ~1.4 K
+above the outer-wall Alt the +2.5 trim was sized against. Once settings unfreeze
+after §1: re-size the kitchen trim against it, and only then decide whether the
+curve needs another shift step.
 
 ### 3. Lola's room
 

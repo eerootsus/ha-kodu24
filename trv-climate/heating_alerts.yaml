@@ -74,6 +74,15 @@ automation:
              and state_attr('weather.forecast_kodu', 'temperature') | float(99) < 12
              and sp - room > 0.5 }}
         for: "03:00:00"
+      - trigger: template
+        id: stairwell
+        value_template: >
+          {% set room = states('sensor.climate_trepihall_temperature') | float(none) %}
+          {% set sp = state_attr('climate.trv_danfoss_stairwell', 'temperature') | float(none) %}
+          {{ room is not none and sp is not none
+             and state_attr('weather.forecast_kodu', 'temperature') | float(99) < 12
+             and sp - room > 0.5 }}
+        for: "03:00:00"
       # No data: the alert above cannot see a room whose sensors are silent.
       - trigger: template
         id: kitchen_nodata
@@ -91,9 +100,13 @@ automation:
         id: master_nodata
         value_template: "{{ states('sensor.climate_bedroom_temperature') | float(none) is none }}"
         for: "03:00:00"
+      - trigger: template
+        id: stairwell_nodata
+        value_template: "{{ states('sensor.climate_trepihall_temperature') | float(none) is none }}"
+        for: "03:00:00"
     variables:
       key: "{{ trigger.id | replace('_nodata', '') }}"
-      rooms: "{{ {'kitchen': ['Köök', 'sensor.climate_kitchen_temperature'], 'ada': ['Ada tuba', 'sensor.climate_ada_s_room_temperature'], 'lola': ['Lola tuba', 'sensor.climate_lola_s_room_temperature'], 'master': ['Kätlyni tuba', 'sensor.climate_bedroom_temperature']} }}"
+      rooms: "{{ {'kitchen': ['Köök', 'sensor.climate_kitchen_temperature'], 'ada': ['Ada tuba', 'sensor.climate_ada_s_room_temperature'], 'lola': ['Lola tuba', 'sensor.climate_lola_s_room_temperature'], 'master': ['Kätlyni tuba', 'sensor.climate_bedroom_temperature'], 'stairwell': ['Trepihall', 'sensor.climate_trepihall_temperature']} }}"
       name: "{{ rooms[key][0] }}"
       room: "{{ states(rooms[key][1]) | float(0) }}"
       sp: "{{ state_attr('climate.trv_danfoss_' ~ key, 'temperature') | float(0) }}"

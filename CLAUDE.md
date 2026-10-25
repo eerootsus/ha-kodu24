@@ -246,9 +246,9 @@ Configure in Home Assistant UI on devices:
   the sensor at the door; the "Alt" sensors sit on the outer wall (the coldest
   spot, on purpose) and carry weight 0, so they still appear in the dashboard's
   Diagnostika table but do not drag the room value down. The table puts any
-  sensor whose name contains "Alt" in its Alt column; the kitchen's only sensor
-  is on the outer wall, so it is named `TH01 Sonoff Kitchen Alt` but keeps weight
-  2 until a door sensor is added. Lola's two may have been
+  sensor whose name contains "Alt" in its Alt column. The kitchen and the
+  stairwell got door sensors on 2026-10-25 (SNZB-02P, weight 2; the kitchen Alt
+  went to weight 0), so every TRV room now has a room reference. Lola's two may have been
   swapped at the 2026-09-12 battery change - unverified (hold one, watch which
   column jumps).
 

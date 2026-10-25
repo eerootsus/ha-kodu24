@@ -42,6 +42,12 @@ TZ = ZoneInfo("Europe/Tallinn")
 # was computed with door+Alt averages, which read 0.1-0.3 C colder (Ada, Lola)
 # and ~0.2 C colder (Master, 2:1). So part of any improvement vs the baseline in
 # Ada / Lola / Master is just the new reference - discount it by that much.
+#
+# DEFINITION CHANGE, 2026-10-25: the kitchen got its door sensor (the outer-wall
+# Alt went to weight 0) and the stairwell got its first room sensor. On the first
+# reading the kitchen door read 21.9 against the Alt's 20.5, so the kitchen row
+# jumps ~1.4 C warmer from then on with no heating change behind it. The
+# stairwell has no baseline at all.
 BASELINE = ("2026-10-10 00:00", "2026-10-17 13:00")
 
 HDD_BASE = 17.0  # C; heating degree-day base
@@ -51,7 +57,7 @@ ROOMS = [  # (label, trv slug, room sensor or None)
     ("Master", "master", "sensor.climate_bedroom_temperature"),
     ("Lola", "lola", "sensor.climate_lola_s_room_temperature"),
     ("Kitchen", "kitchen", "sensor.climate_kitchen_temperature"),
-    ("Stairwell", "stairwell", None),
+    ("Stairwell", "stairwell", "sensor.climate_trepihall_temperature"),
 ]
 
 HOST = os.environ.get("HA_HOST", "homeassistant.tail7c95c3.ts.net")
