@@ -1,0 +1,77 @@
+# TRV clock sync - puts the time back on an eTRV that has lost it.
+#
+# An eTRV loses its clock on a battery change, an OTA, a reset, or simply having
+# its head taken off (kitchen, 2026-10-25). It then raises `Invalid_clock_information`
+# (SW error bit 10) and keeps it until someone writes the time. The weekly sync that
+# used to do this (`set_time()` in danfoss.py) went when the script was trimmed for
+# Better Thermostat, and nothing replaced it: the stairwell sat without a clock from
+# 2026-10-01 to 2026-10-25 unnoticed. During the 2026-10-25 balancing test it was
+# also the one valve that crept open (26 -> 45 %) instead of going to ~91 %, so the
+# clock may matter for more than schedules - unconfirmed.
+#
+# What it does: on the error flag (and once a night as a catch-all), writes Time
+# (cluster 0x000A attr 0, seconds since 2000-01-01 UTC) to every TRV that has the
+# flag set - the one write that cleared it by hand (DANFOSS.md). If the flag is still
+# set 5 minutes later, it pushes instead: then something needs a human.
+#
+# This writes the clock only - no setpoint, trim or valve setting - so it stays
+# outside the "advise, don't automate" rule for heating.
+#
+# Install: declared as `climate_clock_sync:` in configuration.yaml.
+
+automation:
+  - id: trv_clock_sync
+    alias: "TRV - restore lost clock"
+    description: "Writes the time to any Danfoss eTRV reporting Invalid_clock_information; pushes if that does not clear it. Source: ha-kodu24/trv-climate/clock_sync.yaml."
+    mode: single
+    max_exceeded: silent
+    triggers:
+      - trigger: state
+        entity_id: &errors
+          - sensor.trv_danfoss_kitchen_software_error
+          - sensor.trv_danfoss_stairwell_software_error
+          - sensor.trv_danfoss_ada_software_error
+          - sensor.trv_danfoss_lola_software_error
+          - sensor.trv_danfoss_master_software_error
+        attribute: Invalid_clock_information
+        to: true
+        # Let a TRV that just rejoined settle before writing to it.
+        for: "00:02:00"
+      - trigger: time
+        at: "03:30:00"
+    variables:
+      errors: *errors
+      lost: >
+        {{ errors | select('is_state_attr', 'Invalid_clock_information', true)
+           | map('regex_replace', '^sensor\.trv_danfoss_(.*)_software_error$', '\\1') | list }}
+    conditions:
+      - "{{ lost | count > 0 }}"
+    actions:
+      - repeat:
+          for_each: "{{ lost }}"
+          sequence:
+            - action: zha.set_zigbee_cluster_attribute
+              continue_on_error: true
+              data:
+                ieee: "{{ (device_attr(device_id('climate.trv_danfoss_' ~ repeat.item), 'identifiers') | list)[0][1] }}"
+                endpoint_id: 1
+                cluster_id: 10
+                cluster_type: in
+                attribute: 0
+                value: "{{ (now().timestamp() | int) - 946684800 }}"
+      - delay: "00:05:00"
+      - variables:
+          still: >
+            {{ errors | select('is_state_attr', 'Invalid_clock_information', true)
+               | map('regex_replace', '^sensor\.trv_danfoss_(.*)_software_error$', '\\1') | list }}
+      - if: "{{ still | count > 0 }}"
+        then:
+          - action: notify.mobile_app_eeros_iphone_17
+            data:
+              title: "TRV clock not restored"
+              message: >
+                {{ still | join(', ') }} still report an invalid clock after a time
+                write. Check the device in ZHA; the manual write is in DANFOSS.md.
+              data:
+                push:
+                  thread-id: heating
