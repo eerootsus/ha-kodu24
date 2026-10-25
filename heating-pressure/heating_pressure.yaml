@@ -1,0 +1,108 @@
+# Heating pressure - tells Eero when the radiator/floor system needs topping up,
+# and when the known slow leak gets faster. Alert only: nothing here can refill.
+#
+# The system loses ~0.07-0.09 bar a month all year (small leaks, not yet found;
+# PLANS.md "House"). Eero tops it up to ~2.0 bar on the boiler's manometer. The
+# ViCare sensor reads in 0.1 bar steps and disagrees with the manometer by about
+# +-0.2: on 2026-10-25 it read 1.5 while the gauge showed ~1.75, i.e. exactly when
+# Eero chose to top up. Hence "top-up due" = the sensor at 1.5 or lower.
+#
+# Three alerts:
+#   top-up due   sensor <= 1.5 for 12 h. The level, not a crossing at one moment:
+#                hot water reads higher, so a short spike to 1.6+ must not count
+#                as "fine". At most once a week, or it nags while it bounces.
+#   critical     sensor < 1.2 for 10 min - a real leak or a lift of the safety
+#                valve, heading for the boiler's low-pressure lockout.
+#   leak faster  the daily (time-weighted) mean has fallen > 0.2 bar in 7 days,
+#                ten times the usual drift. A daily mean, because single readings
+#                swing with water temperature. Expect one false alarm when the
+#                heating stops for summer (water cools, pressure falls) - the
+#                message says so.
+#
+# Install: declared as `heating_pressure:` in configuration.yaml.
+
+sensor:
+  # Time-weighted: the sensor is a step function that only reports on change, so a
+  # plain sample mean would overweight busy periods.
+  - platform: statistics
+    name: Heating pressure 24h average
+    unique_id: heating_pressure_24h_average
+    entity_id: sensor.vitodens_100_supply_pressure
+    state_characteristic: average_step
+    max_age:
+      hours: 24
+    sampling_size: 5000
+    keep_last_sample: true
+    precision: 2
+
+  # Newest minus oldest daily average across the last 7 days. Needs a week of the
+  # sensor above before it means anything; until then it spans less.
+  - platform: statistics
+    name: Heating pressure 7d change
+    unique_id: heating_pressure_7d_change
+    entity_id: sensor.heating_pressure_24h_average
+    state_characteristic: change
+    max_age:
+      days: 7
+    sampling_size: 20000
+    keep_last_sample: true
+    precision: 2
+
+automation:
+  - id: heating_pressure_top_up
+    alias: "Heating pressure - top up"
+    description: "Push when the heating system pressure needs topping up, or is critically low. Alert only. Source: ha-kodu24/heating-pressure/heating_pressure.yaml."
+    mode: single
+    triggers:
+      - trigger: numeric_state
+        id: due
+        entity_id: sensor.vitodens_100_supply_pressure
+        below: 1.55
+        for: "12:00:00"
+      - trigger: numeric_state
+        id: critical
+        entity_id: sensor.vitodens_100_supply_pressure
+        below: 1.2
+        for: "00:10:00"
+    conditions:
+      # "due" at most once a week; "critical" always.
+      - condition: template
+        value_template: >
+          {{ trigger.id == 'critical'
+             or this.attributes.last_triggered is none
+             or now() - this.attributes.last_triggered > timedelta(days=7) }}
+    actions:
+      - action: notify.mobile_app_eeros_iphone_17
+        data:
+          title: >
+            {{ 'Heating pressure LOW: ' if trigger.id == 'critical' else 'Heating pressure: top up, ' }}{{ states('sensor.vitodens_100_supply_pressure') }} bar
+          message: >
+            {% if trigger.id == 'critical' %}Below 1.2 bar for 10 min - far faster than the
+            usual slow leak. Top up to 2.0 on the boiler manometer now and look for water:
+            safety valve drain, manifold (master bedroom wall), H-valves.
+            {% else %}At or below 1.5 bar on the sensor for 12 h (~1.75 on the
+            manometer). Top up to 2.0, and bleed the radiators a day or two after.{% endif %}
+          data:
+            push:
+              thread-id: heating
+
+  - id: heating_pressure_leak_faster
+    alias: "Heating pressure - leak faster"
+    description: "Push when the daily mean heating pressure falls more than 0.2 bar in a week. Alert only. Source: ha-kodu24/heating-pressure/heating_pressure.yaml."
+    mode: single
+    triggers:
+      - trigger: numeric_state
+        entity_id: sensor.heating_pressure_7d_change
+        below: -0.2
+    actions:
+      - action: notify.mobile_app_eeros_iphone_17
+        data:
+          title: "Heating pressure falling faster: {{ states('sensor.heating_pressure_7d_change') }} bar in 7 days"
+          message: >
+            Daily mean is {{ states('sensor.heating_pressure_24h_average') }} bar; the usual
+            loss is ~0.02 bar a week. Unless the heating was just switched off for summer
+            (cooling water reads lower), the leak has grown: check the safety valve drain,
+            the manifold and the H-valves.
+          data:
+            push:
+              thread-id: heating

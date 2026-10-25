@@ -29,6 +29,9 @@ housekeeping packages that have nowhere better to live:
 - **`workshop-heating/`** — on/off heating of the workshop with its split unit,
   17–19 °C, October–April, with a fail-safe that switches it off if its sensor
   goes silent.
+- **`heating-pressure/`** — push alerts for the heating system pressure: top-up
+  due (≤ 1.5 bar on the sensor for 12 h), critically low (< 1.2), and the slow
+  leak getting faster (daily mean down > 0.2 bar in a week).
 - **`battery-monitor/`** — weekly battery nudge, plus immediate alerts for
   safety devices.
 - **`backup-monitor/`** — push alerts for the off-site backups running on

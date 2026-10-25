@@ -59,6 +59,7 @@ MANIFEST=(
   "backup-monitor/    backup-monitor/       yes"
   "battery-monitor/   battery-monitor/      yes"
   "workshop-heating/  workshop-heating/     yes"
+  "heating-pressure/  heating-pressure/     yes"
   "chores/            chores/               yes"
   "themes/            themes/               no"
 )

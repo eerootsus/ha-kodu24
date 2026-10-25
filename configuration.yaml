@@ -68,6 +68,7 @@ homeassistant:
     backup_monitor: !include backup-monitor/backup_monitor.yaml
     battery_monitor: !include battery-monitor/battery_monitor.yaml
     workshop_heating: !include workshop-heating/workshop_heating.yaml
+    heating_pressure: !include heating-pressure/heating_pressure.yaml
 
 
 pyscript:

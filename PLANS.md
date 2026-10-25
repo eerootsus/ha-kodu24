@@ -228,6 +228,16 @@ Eurotronic Spirit Zigbee. Avoid Tuya/Aqara TRVs.
   sensor at the heat pump's intake vs met.no, split on vs off, answers it.
 - Ada does not sleep in her room every night and her door is usually more open,
   so her room is a poor night-time baseline.
+- **Heating system pressure leaks down slowly** (known small leaks, not yet found;
+  Eero tops it up to ~2.0 bar on the boiler's manometer), ~0.07–0.09 bar a month all year
+  (`sensor.vitodens_100_supply_pressure`, weekly means): ~2.0 in Dec 2025 → 1.5 by
+  May, topped up to ~1.9 in mid-May, → 1.5 by Oct; topped up again 2026-10-25 from
+  ~1.75 to 2.0 on the gauge (sensor 2.2 - sensor and gauge differ by ~±0.2). Nov 2025
+  peaked at 3.4–3.6 on the sensor - worth knowing, as that is near the safety
+  valve's usual 3 bar and a valve that has lifted can keep weeping.
+  Suspects: safety valve weeping (check its drain), manifold or H-valve fittings,
+  auto air vents, expansion vessel precharge. A top-up lasts ~6–8 months at this
+  rate; bleed the radiators a day or two after one.
 
 ### Zigbee vs Matter / Thread
 
