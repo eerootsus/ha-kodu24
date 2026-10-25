@@ -86,6 +86,25 @@ alternative: **plain ball valves only, all fully open** (2026-10-25).
    every valve shut for an hour so all start cold, then fully open for an hour
    while each TRV's reading is sampled; targets restored after, push with the
    result). See `trv-climate/balancing_test.yaml`.
+   **Done 2026-10-25, but use `cool_minutes: 240`, `open_minutes: 90`.** A 60-min
+   cool left the radiators at 22-23 °C (barely below where they started), so that
+   run rose only 0.0-0.7 °C and compares nothing. The 4 h cool brought all five
+   to 20.3-20.7 °C. Baseline "before (4h cool)", outside 10.6 °C, supply
+   51.3 → 39.7 °C:
+
+   | Room      | +15 min | +30 min | +90 min | valve |
+   |-----------|---------|---------|---------|-------|
+   | Master    | 1.7     | 2.5     | 3.0     | 97 %  |
+   | Ada       | 1.2     | 2.1     | 2.7     | 99 %  |
+   | Lola      | 1.3     | 2.1     | 3.3     | 100 % |
+   | Stairwell | 1.2     | 1.7     | 2.5     | 45 %  |
+   | Kitchen   | 0.9     | 1.5     | 2.3     | 100 % |
+
+   The +30 column is the one to compare; after it the curves flatten. Master
+   fastest and kitchen slowest, as the table above predicts. The stairwell eTRV
+   never opened past 45 % even at a 28 °C target (its slow ramp, see the 1 %
+   investigation), yet kept pace with the fully open kitchen - so its share of
+   flow is generous, consistent with throttling it most.
 2. **Write down each insert's current preset** before touching it - that is the
    way back.
 3. **Starting point, from the table above** (flow: kitchen fully open · Ada and
@@ -97,7 +116,8 @@ alternative: **plain ball valves only, all fully open** (2026-10-25).
    and return pipe. Aim for ~5–8 °C drop at 35–40 °C supply, about the same on
    each. Small drop (2–3 °C) = water rushing through → throttle; large drop =
    starved → open. This decides; step 3 only gets close.
-5. **After:** run `script.balancing_test` again (label "after"); the result sensor
+5. **After:** run `script.balancing_test` again (label "after", same 240/90 and a
+   similar outside temperature); the result sensor
    keeps the previous run beside it. Then ~2 days on the Küte dashboard's
    Diagnostika table, then the trims (master most likely down). One lever at a time.
 
