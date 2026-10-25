@@ -62,9 +62,10 @@ when closing and reopen to the same count in autumn, or the balance is lost.
 ### 2. Kitchen trim against the door sensor
 
 The door sensor is in (2026-10-25, weight 2; the Alt is weight 0) and reads ~1.4 K
-above the outer-wall Alt the +2.5 trim was sized against. Once settings unfreeze
-after §1: re-size the kitchen trim against it, and only then decide whether the
-curve needs another shift step.
+above the outer-wall Alt the +2.5 trim was sized against. First correction taken
+2026-10-25: +2.5 → +2.0 (`BETTER_THERMOSTAT.md` "Trims in force"). After §1:
+confirm the trim against the door sensor, and only then decide whether the curve
+needs another shift step.
 
 ### 3. Lola's room
 
