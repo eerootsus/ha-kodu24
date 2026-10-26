@@ -145,6 +145,14 @@ is still the slowest by +60 and cannot open further, so any next step is throttl
 the others (Lola, stairwell → 3), not the kitchen. Not acted on: first ~2 days of
 daily behaviour on the Küte table, one lever at a time.
 
+**Watching until ~2026-11-02**, then decide. Idea first: the **kitchen may be
+partly blocked** like Lola seemed to be - its ring was never turned (left at 6),
+only its H-valve, which hissed. Exercise it: eTRV off, ring 6 → 1 → 6 a few times
+(the full stroke flushes the gap), then back on (clock re-sync is automatic). It
+ends at the same preset, so it is a cleaning step rather than a balance change - do
+it early so the week's data includes it. If the kitchen then keeps up, the presets
+may already be close; if not, throttle Lola and the stairwell to 3.
+
 **Presets before → after** (set 2026-10-26): kitchen 6 → 6 · master 6 → 4 ·
 Lola 6 → 4 · Ada 6 → 5 · stairwell 5 → 4. Ada's ring was found a little past 6,
 towards 1; the stairwell's at 5, not the factory 6.
