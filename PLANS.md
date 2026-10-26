@@ -211,6 +211,11 @@ needs another shift step.
   is the odd one out and the TRVZB (regulating on the door sensor) is the fix.
   Watch whether preset 4 costs her: valve ~98 % and room below ~21 at night = back
   to 5-6.
+- **Her eTRV reads wrong** (2026-10-26 evening): the room felt chilly at 21.1 while
+  the TRV, reading 24.1-24.7 against target 22 + trim 2.5 = 24.5, held the valve at
+  30-60 %. Error ~3.4 K > the 2.5 K trim cap. **Target raised 22 → 23** at 22:27 as
+  the stopgap. Decided: **she gets a TRVZB too** (regulating on her door sensor),
+  once Ada's has a few days of data.
 - **Humidity** (7-day mean 67 %, >70 % most nights) is the **plants** — thin them
   first. A 2026-10-17 analysis of 74 heating-season nights found no wind effect on
   her overnight moisture gain (r −0.02), a modest stack-effect one (r −0.30) and a
