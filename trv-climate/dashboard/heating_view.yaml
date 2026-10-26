@@ -50,13 +50,13 @@ sections:
     grid_options:
       columns: 8
   - type: custom:mushroom-template-card
-    entity: climate.trv_danfoss_ada
+    entity: climate.trv_sonoff_ada
     primary: Ada tuba
     secondary: '{{ states(''sensor.climate_ada_s_room_temperature'') }} °C · {{ states(''sensor.climate_ada_s_room_humidity'')
       | round(0, default=''–'') }} % niiskus'
     icon: mdi:radiator
     icon_color: '{% set room = states(''sensor.climate_ada_s_room_temperature'') | float(none) %}{% set
-      sp = state_attr(''climate.trv_danfoss_ada'', ''temperature'') | float(none) %}{% if room is none
+      sp = state_attr(''climate.trv_sonoff_ada'', ''temperature'') | float(none) %}{% if room is none
       or sp is none %}grey{% else %}{% set d = room - sp %}{% if d < -1.5 %}blue{% elif d < -0.5 %}light-blue{%
       elif d > 1.0 %}deep-orange{% elif d > 0.5 %}amber{% else %}green{% endif %}{% endif %}'
     multiline_secondary: true
