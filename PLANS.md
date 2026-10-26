@@ -127,8 +127,9 @@ alternative: **plain ball valves only, all fully open** (2026-10-25).
    keeps the previous run beside it. Then ~2 days on the Küte dashboard's
    Diagnostika table, then the trims (master most likely down). One lever at a time.
 
-**Presets before → after:** kitchen … · master … · Lola … · Ada … · stairwell …
-(fill in on site).
+**Presets before → after** (set 2026-10-26): kitchen 6 → 6 · master 6 → 4 ·
+Lola 6 → 4 · Ada 6 → 5 · stairwell 5 → 4. Ada's ring was found a little past 6,
+towards 1; the stairwell's at 5, not the factory 6.
 
 **Every summer:** to stop the 1 % summer heat (`DANFOSS.md` §2.6), close the
 **radiator master valves** between the boiler and the radiator manifold. That shuts
