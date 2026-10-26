@@ -112,6 +112,12 @@ alternative: **plain ball valves only, all fully open** (2026-10-25).
    a third). On a 1–6 Oventrop scale, roughly: **kitchen 6 · Lola 5 · Ada 5 ·
    master 4 · stairwell 3**. Approximate - the scale is not linear and the exact
    kv table is unknown.
+   **Adjusted by the "before" run** (2026-10-25 21:24, 4 h cool / 90 min open; rise
+   on each TRV's own sensor): kitchen 2.4 · stairwell 2.5 · Ada 2.7 · master 3.0
+   (fastest start) · Lola 3.3 °C. The stairwell heated as slowly as the kitchen, so
+   it is not the over-fed room the table suggested (its never-fed valve may also
+   ramp slowly); Lola climbed most. Chosen: **kitchen 6 · Ada 5 · Lola 4 · master 4
+   · stairwell 4**.
 4. **Fine-tune by temperature drop:** TRV fully open, IR thermometer on supply
    and return pipe. Aim for ~5–8 °C drop at 35–40 °C supply, about the same on
    each. Small drop (2–3 °C) = water rushing through → throttle; large drop =
