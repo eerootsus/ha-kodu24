@@ -95,6 +95,11 @@ script:
             min: 30
             max: 120
             step: 5
+      rooms:
+        description: "Rooms to test (default all five). Leave one out while its TRV is off the radiator - e.g. Ada on 2026-10-26."
+        example: "[kitchen, stairwell, lola, master]"
+        selector:
+          object:
     sequence:
       - condition: state
         entity_id: input_boolean.balancing_test_running
@@ -103,7 +108,7 @@ script:
           run_label: "{{ label | default('test', true) }}"
           cool: "{{ cool_minutes | default(60) | int }}"
           open: "{{ open_minutes | default(60) | int }}"
-          slugs: [kitchen, stairwell, ada, lola, master]
+          slugs: "{{ rooms | default(['kitchen', 'stairwell', 'ada', 'lola', 'master'], true) | list }}"
           names:
             kitchen: Köök
             stairwell: Trepihall
