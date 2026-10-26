@@ -137,6 +137,23 @@ all five radiators in one place while the bathroom underfloor loops keep running
 (switching heating off at the boiler would stop those too). Never touch the presets
 for summer - the balance survives, and autumn is just reopening the master valves.
 
+**Debris - check it before turning a knob.** Half the system is old and has had
+debris before (flushed, inhibitor added). Turning the kitchen H-valve on 2026-10-26
+gave a hiss, like something giving way or a valve that had not really been open. Lower
+presets make the insert's gap narrower, so particles lodge more easily: a room that
+drifts after being stable, or a preset that seems to stop working, may be dirt, not
+balance. Run its ring fully closed and open a couple of times before changing the
+setting. Lola's jump in the "after" run (6 → 4 yet faster than "before") may be a pin
+freed by the visit rather than a flow change - judge her on the next days, not that run.
+
+**Filtration** - two separate jobs:
+- **Heating circuit:** a magnetic dirt separator on the return before the boiler
+  (check first whether one is under the Vitodens). Catches magnetite all the time,
+  protecting the boiler's heat exchanger and the insert gaps.
+- **Incoming mains water:** a filter on the cold supply, suggested by the boiler
+  company to protect the hot-water side. Top-ups of the heating also come from the
+  mains, so it helps there too.
+
 ### 2. Kitchen trim against the door sensor
 
 The door sensor is in (2026-10-25, weight 2; the Alt is weight 0) and reads ~1.4 K
@@ -277,6 +294,9 @@ Eurotronic Spirit Zigbee. Avoid Tuya/Aqara TRVs.
   Suspects: safety valve weeping (check its drain), manifold or H-valve fittings,
   auto air vents, expansion vessel precharge. A top-up lasts ~6–8 months at this
   rate; bleed the radiators a day or two after one.
+  Every top-up also brings in fresh, oxygen-rich water, which with steel radiators
+  makes magnetite sludge - so the leak feeds the debris problem too (§1 "Debris"),
+  and finding it is part of keeping the system clean.
 
 ### Zigbee vs Matter / Thread
 
