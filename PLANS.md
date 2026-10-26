@@ -127,6 +127,24 @@ alternative: **plain ball valves only, all fully open** (2026-10-25).
    keeps the previous run beside it. Then ~2 days on the Küte dashboard's
    Diagnostika table, then the trims (master most likely down). One lever at a time.
 
+**"After presets" run** (2026-10-26 18:43 open, 4 h cool / 90 min open, outside
+10.2 °C, supply mean 39.5 °C but cycling 33–64.5; Ada left out - her TRV was being
+swapped). Rise on each TRV's own sensor, after vs before:
+
+| Room      | +15        | +30        | +60        | start |
+|-----------|------------|------------|------------|-------|
+| Master    | 0.0 (1.7)  | 1.2 (2.5)  | 2.9 (2.8)  | 20.6  |
+| Lola      | 1.6 (1.3)  | 2.5 (2.1)  | 2.9 (2.9)  | 21.2  |
+| Stairwell | 1.0 (1.2)  | 1.8 (1.7)  | 2.8 (2.2)  | 20.4  |
+| Kitchen   | 1.3 (0.9)  | 1.6 (1.5)  | 2.1 (2.3)  | 20.1  |
+
+Read: master's early slope collapsed (fastest → slowest at +30) but it caught up by
++60, so it still gets plenty once warm - part of the delay may be its valve opening
+late, not flow. Lola went *faster* despite 6 → 4 (freed pin? see "Debris"). Kitchen
+is still the slowest by +60 and cannot open further, so any next step is throttling
+the others (Lola, stairwell → 3), not the kitchen. Not acted on: first ~2 days of
+daily behaviour on the Küte table, one lever at a time.
+
 **Presets before → after** (set 2026-10-26): kitchen 6 → 6 · master 6 → 4 ·
 Lola 6 → 4 · Ada 6 → 5 · stairwell 5 → 4. Ada's ring was found a little past 6,
 towards 1; the stairwell's at 5, not the factory 6.
