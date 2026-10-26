@@ -253,9 +253,8 @@ Configure in Home Assistant UI on devices:
   Diagnostika table but do not drag the room value down. The table puts any
   sensor whose name contains "Alt" in its Alt column. The kitchen and the
   stairwell got door sensors on 2026-10-25 (SNZB-02P, weight 2; the kitchen Alt
-  went to weight 0), so every TRV room now has a room reference. Lola's two may have been
-  swapped at the 2026-09-12 battery change - unverified (hold one, watch which
-  column jumps).
+  went to weight 0), so every TRV room now has a room reference. Lola's two are named right
+  (checked 2026-10-26: the door one warmed by hand jumped as `TH01 Sonoff Lola`).
 
 ## Adding New Areas
 

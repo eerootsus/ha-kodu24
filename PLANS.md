@@ -202,9 +202,15 @@ needs another shift step.
   adapter her valve body needs (look at the one under the Danfoss). Do it **after**
   the balancing, one lever at a time. Danfoss covered mode (`0x4016` = TRUE) is the
   software-only alternative.
-- **Sensor swap check:** hold one of her TH01s in a hand for a minute and watch
-  which Diagnostika column (Andur / Alt) jumps. If the door one shows as Alt, swap
-  the two device names in HA. Suspected since the 2026-09-12 battery change.
+- **Furniture moved 2026-10-25: helped, not enough.** Her TRV's error over the door
+  sensor fell from ~4.5 to ~3.0 K, but that is still the largest in the house
+  (kitchen ~1, master ~1.8, Ada's eTRV ~2). Overnight 25→26 (preset 6) the valve sat
+  at ~98 % and the room reached only ~21 on a 22 target. Sensor swap ruled out
+  2026-10-26 (door sensor warmed by hand jumped as `TH01 Sonoff Lola`). Next: a
+  spare sensor mid-room for a day - if it agrees with the door sensor, the TRV head
+  is the odd one out and the TRVZB (regulating on the door sensor) is the fix.
+  Watch whether preset 4 costs her: valve ~98 % and room below ~21 at night = back
+  to 5-6.
 - **Humidity** (7-day mean 67 %, >70 % most nights) is the **plants** — thin them
   first. A 2026-10-17 analysis of 74 heating-season nights found no wind effect on
   her overnight moisture gain (r −0.02), a modest stack-effect one (r −0.30) and a
