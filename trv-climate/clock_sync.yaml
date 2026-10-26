@@ -30,7 +30,6 @@ automation:
         entity_id: &errors
           - sensor.trv_danfoss_kitchen_software_error
           - sensor.trv_danfoss_stairwell_software_error
-          - sensor.trv_danfoss_ada_software_error
           - sensor.trv_danfoss_lola_software_error
           - sensor.trv_danfoss_master_software_error
         attribute: Invalid_clock_information

@@ -205,9 +205,17 @@ Add the kitchen Zigbee switch **wired so the TRÅDFRI bulbs stay always powered*
 (decoupled smart-bulb mode — the switch sends Zigbee commands, never cuts power),
 or dumb bulbs + an always-live ZBMINIR2. Switched-off bulbs are dead routers.
 
-### 7. Sonoff TRVZB test (one on the shelf)
+### 7. Sonoff TRVZB test - fitted on Ada, 2026-10-26
 
-Try one on a well-linked radiator, standalone (own sensor + trim, like the
+**Fitted on Ada's radiator 2026-10-26** (`climate.trv_sonoff_ada`, target 21, local
+offset 0): her eTRV's adapter collar gave trouble at the preset visit and its
+adaptation run never completed; the TRVZB threads straight onto the Oventrop M30
+insert. The eTRV was removed from ZHA. Ada missed the "after" balancing run for it.
+Still to do: find its trim (`number.trv_sonoff_ada_local_temperature_offset` -
+negative = reads lower = heats more; the Küte table shows minus it as Trimm), check
+which external-sensor settings ZHA exposes, update its firmware.
+
+Originally: try one on a well-linked radiator, standalone (own sensor + trim, like the
 Danfosses — Better Thermostat is gone). Direct valve control: closes properly, no
 Danfoss summer 1 % hold, maintained firmware. Don't set its "closing degree"
 parameter (breaks hvac_action); watch for calibration drift. Alternative:

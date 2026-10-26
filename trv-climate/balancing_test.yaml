@@ -115,10 +115,20 @@ script:
             ada: Ada
             lola: Lola
             master: Kätlyn
-          trvs: "{{ slugs | map('regex_replace', '^', 'climate.trv_danfoss_') | list }}"
+          # Ada is a Sonoff TRVZB since 2026-10-26 (no pi_heating_demand: valve = none).
+          climates:
+            kitchen: climate.trv_danfoss_kitchen
+            stairwell: climate.trv_danfoss_stairwell
+            ada: climate.trv_sonoff_ada
+            lola: climate.trv_danfoss_lola
+            master: climate.trv_danfoss_master
+          trvs: >
+            {% set ns = namespace(l=[]) %}
+            {% for s in slugs %}{% set ns.l = ns.l + [climates[s]] %}{% endfor %}
+            {{ ns.l }}
           targets: >
             {% set ns = namespace(d={}) %}
-            {% for s in slugs %}{% set ns.d = dict(ns.d, **{s: state_attr('climate.trv_danfoss_' ~ s, 'temperature') | float(21)}) %}{% endfor %}
+            {% for s in slugs %}{% set ns.d = dict(ns.d, **{s: state_attr(climates[s], 'temperature') | float(21)}) %}{% endfor %}
             {{ ns.d }}
       # Save first, so the watchdog can always put things back.
       - event: balancing_test_started
@@ -146,7 +156,7 @@ script:
           outside: "{{ state_attr('weather.forecast_kodu', 'temperature') }}"
           series: >
             {% set ns = namespace(d={}) %}
-            {% for s in slugs %}{% set ns.d = dict(ns.d, **{s: [state_attr('climate.trv_danfoss_' ~ s, 'current_temperature') | float(none)]}) %}{% endfor %}
+            {% for s in slugs %}{% set ns.d = dict(ns.d, **{s: [state_attr(climates[s], 'current_temperature') | float(none)]}) %}{% endfor %}
             {{ ns.d }}
       - action: climate.set_temperature
         target:
@@ -166,7 +176,7 @@ script:
             - variables:
                 series: >
                   {% set ns = namespace(d={}) %}
-                  {% for s in slugs %}{% set ns.d = dict(ns.d, **{s: series[s] + [state_attr('climate.trv_danfoss_' ~ s, 'current_temperature') | float(none)]}) %}{% endfor %}
+                  {% for s in slugs %}{% set ns.d = dict(ns.d, **{s: series[s] + [state_attr(climates[s], 'current_temperature') | float(none)]}) %}{% endfor %}
                   {{ ns.d }}
                 supply: "{{ supply + [states('sensor.vicare_supply_temperature') | float(none)] }}"
       - variables:
@@ -238,7 +248,7 @@ script:
                     sequence:
                       - action: climate.set_temperature
                         target:
-                          entity_id: "climate.trv_danfoss_{{ repeat.item[0] }}"
+                          entity_id: "{{ 'climate.trv_sonoff_ada' if repeat.item[0] == 'ada' else 'climate.trv_danfoss_' ~ repeat.item[0] }}"
                         data:
                           temperature: "{{ repeat.item[1] }}"
                 - delay: 30

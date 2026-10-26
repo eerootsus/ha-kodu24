@@ -65,7 +65,7 @@ the `_settled` sensors had any data:
 
 | Room | `regulation_setpoint_offset` | Room vs setpoint before | Note |
 |---|---|---|---|
-| Ada | +1.4 → **+2.0** | −1.2 … −1.4 | Raised 2026-10-18: reached 22.0 at 23:00, then throttled to ~20 % and settled 0.6 short overnight - TRV read exactly 22 + 1.4, settled error ~2.0. Target 22 → 21 on 2026-10-21 (Kätlyn): settled in ~2 days and held 20.8–21.1 from 10-23 - trim confirmed |
+| Ada | +1.4 → **+2.0** → TRVZB | −1.2 … −1.4 | Raised 2026-10-18: reached 22.0 at 23:00, then throttled to ~20 % and settled 0.6 short overnight - TRV read exactly 22 + 1.4, settled error ~2.0. Target 22 → 21 on 2026-10-21 (Kätlyn): settled in ~2 days and held 20.8–21.1 from 10-23 - trim confirmed. **Replaced 2026-10-26** by a Sonoff TRVZB (`climate.trv_sonoff_ada`, M30 thread, no adapter collar): the eTRV's collar failed at the preset visit and its adaptation run never finished. Starts on local offset 0 - trim to be found |
 | Master | +1.5 → +2.2 → +2.0 → **+1.5** | −1.3 … −1.6 | +2.2 on 2026-10-17 16:03 (throttling 0.7 short). Back to +2.0 on 2026-10-18: held 22.0–22.6, i.e. a touch over. Tuning rule: err slightly under target, not over. Uncontrolled heat in: nearest the manifold, en-suite floor loops, and the **manifold is inside its wall** - expect it to need the smallest trim (`PLANS.md` §1). 2026-10-19: 22.5–22.8 overnight with the valve at 6–7 % - uncontrolled heat dominates; 1.5 lets the valve close. Target 22 → 21 on 2026-10-21 (Kätlyn): settled in ~2 days to 21.2–21.6, i.e. 0.2–0.5 over and drifting down - steady, left alone |
 | Lola | +2.0 → +2.5 → 0 + room feed → **+2.5** | −1.8 … −2.2 | 2026-10-18/19: automatic offset mode tried (`trv-climate/room_feed.yaml`, now parked) - valve stuck ~25–35 % whatever the room did (20.8 at night, 22.6 in sun). Back on the +2.5 trim 2026-10-19 20:07, which had held 22.1–22.3 on night 1 (misses only in morning sun). Next: free the TRV, then the TRVZB (`PLANS.md` §3) |
 | Kitchen | +2.5 → **+2.0** | −2.1 … −2.5; TRV reads ~3 K warm | Still ~0.5 K short at best - **against the outer-wall sensor** (`TH01 Sonoff Kitchen Alt`), the only one until 2026-10-25. A door sensor (SNZB-02P, weight 2) was added then and the Alt went to weight 0; first reading door 21.9 vs Alt 20.5, so the shortfall above is overstated by ~1.4 K. Against the door sensor the TRV reads only ~1 K warm (22.4 vs 21.4), so +2.5 would aim the room at ~22.5 on a 21 target: trimmed to +2.0 on 2026-10-25 12:37. Its valve sat at ~95 % for days at the old 22 target: that was the trim making the TRV chase 24.5 on its own sensor, not starvation - the kitchen is a 9 m run, level with Lola (`PLANS.md` §1). Next check: whether 21 holds on a cold night |
@@ -218,7 +218,7 @@ sensor.climate_<area>_temperature        target temp + calibration            (a
 
 | Room | eTRV climate entity | BT external sensor input |
 |------|---------------------|--------------------------|
-| Ada | `climate.trv_danfoss_ada` | `sensor.climate_ada_s_room_temperature` |
+| Ada | `climate.trv_sonoff_ada` (TRVZB) | `sensor.climate_ada_s_room_temperature` |
 | Master/Bedroom | `climate.trv_danfoss_master` | `sensor.climate_bedroom_temperature` |
 | Kitchen | `climate.trv_danfoss_kitchen` | `sensor.climate_kitchen_temperature` |
 | Lola | `climate.trv_danfoss_lola` | `sensor.climate_lola_s_room_temperature` |

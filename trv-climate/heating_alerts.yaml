@@ -51,7 +51,7 @@ automation:
         id: ada
         value_template: >
           {% set room = states('sensor.climate_ada_s_room_temperature') | float(none) %}
-          {% set sp = state_attr('climate.trv_danfoss_ada', 'temperature') | float(none) %}
+          {% set sp = state_attr('climate.trv_sonoff_ada', 'temperature') | float(none) %}
           {{ room is not none and sp is not none
              and state_attr('weather.forecast_kodu', 'temperature') | float(99) < 12
              and sp - room > 0.5 }}
@@ -109,15 +109,17 @@ automation:
       rooms: "{{ {'kitchen': ['Köök', 'sensor.climate_kitchen_temperature'], 'ada': ['Ada tuba', 'sensor.climate_ada_s_room_temperature'], 'lola': ['Lola tuba', 'sensor.climate_lola_s_room_temperature'], 'master': ['Kätlyni tuba', 'sensor.climate_bedroom_temperature'], 'stairwell': ['Trepihall', 'sensor.climate_trepihall_temperature']} }}"
       name: "{{ rooms[key][0] }}"
       room: "{{ states(rooms[key][1]) | float(0) }}"
-      sp: "{{ state_attr('climate.trv_danfoss_' ~ key, 'temperature') | float(0) }}"
-      trv: "{{ state_attr('climate.trv_danfoss_' ~ key, 'current_temperature') }}"
+      climate: "{{ 'climate.trv_sonoff_ada' if key == 'ada' else 'climate.trv_danfoss_' ~ key }}"
+      sp: "{{ state_attr(climate, 'temperature') | float(0) }}"
+      trv: "{{ state_attr(climate, 'current_temperature') }}"
       trim: "{{ states('number.trv_danfoss_' ~ key ~ '_regulation_setpoint_offset') | float(0) }}"
       valve: "{{ states('sensor.trv_danfoss_' ~ key ~ '_pi_heating_demand') | float(-1) }}"
       # Room fed to the TRV (room_feed.yaml, automatic offset mode): the trim is 0 on
       # purpose there, so "raise the trim" would be wrong advice.
       fed: "{{ states('number.trv_danfoss_' ~ key ~ '_external_temperature_sensor') | float(-80) > -80 }}"
       cause: >
-        {% if valve >= 80 %}Valve {{ valve | int }} % open and still short: the radiator cannot deliver at {{ states('sensor.vicare_supply_temperature') }} °C supply. Raise the heating curve: shift +1 (now {{ states('number.vitodens_100_heating_curve_shift') }}, slope {{ states('number.vitodens_100_heating_curve_slope') }}). Use the shift for mild-weather shortfalls; the slope only if rooms fall short in real cold.
+        {% if key == 'ada' %}Sonoff TRVZB, which reports no valve %: it is {{ 'calling for heat' if is_state_attr(climate, 'hvac_action', 'heating') else 'not calling' }}, reading {{ trv }} °C against target {{ sp }}. Not calling = it reads warm: lower its local temperature offset (now {{ states('number.trv_sonoff_ada_local_temperature_offset') }}). Calling and still short = the radiator cannot deliver: raise the heating curve shift.
+        {% elif valve >= 80 %}Valve {{ valve | int }} % open and still short: the radiator cannot deliver at {{ states('sensor.vicare_supply_temperature') }} °C supply. Raise the heating curve: shift +1 (now {{ states('number.vitodens_100_heating_curve_shift') }}, slope {{ states('number.vitodens_100_heating_curve_slope') }}). Use the shift for mild-weather shortfalls; the slope only if rooms fall short in real cold.
         {% elif valve > 1 and fed %}Valve only {{ valve | int }} % open although the TRV is fed the room temperature (automatic offset): check that room_feed.yaml is still writing (last value {{ states('number.trv_danfoss_' ~ key ~ '_external_temperature_sensor') }} °C), then give the TRV's self-correction time - or go back to a fixed trim.
         {% elif valve > 1 %}Valve only {{ valve | int }} % open: the TRV is throttling, reading {{ trv }} °C against target + trim {{ sp + trim }}. Its sensor error outgrew the trim{{ ' - and the trim is already at the +2.5 maximum' if trim >= 2.5 else '; raise the trim' }}.
         {% elif valve >= 0 %}Valve not calling ({{ valve | int }} %) while the room is cold: stuck valve or mesh fault.

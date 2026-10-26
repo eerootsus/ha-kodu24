@@ -236,7 +236,8 @@ externally-fed TRVs; only an unfed one idles — see `DANFOSS.md` §2.6, and not
 Better Thermostat — which was then **trialled and removed** as not worth it.
 
 What that leaves, and it matters with heating season coming: the external feed is
-still disabled on all five TRVs (`0x4015 = -8000`), so each one regulates on its
+still disabled on the four eTRVs (`0x4015 = -8000`; Ada has a Sonoff TRVZB since
+2026-10-26, see `PLANS.md` §7), so each one regulates on its
 **internal** sensor, which sits on the radiator and reads warm. That is corrected
 with a static per-room trim (`regulation_setpoint_offset`, set 2026-10-17 —
 values and rationale in `BETTER_THERMOSTAT.md` "Trims in force").

@@ -46,8 +46,6 @@ homeassistant:
       device_class: gas
     sensor.vicare_hot_water_gas_consumption_current_day:
       device_class: gas
-    sensor.trv_danfoss_ada_load_estimate:
-      state_class: measurement
     sensor.trv_danfoss_kitchen_load_estimate:
       state_class: measurement
     sensor.trv_danfoss_lola_load_estimate:

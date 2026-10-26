@@ -46,7 +46,7 @@
 
 template:
   - sensor:
-      # --- Ada ---
+      # --- Ada (Sonoff TRVZB since 2026-10-26) ---
       - name: "TRV offset Ada"
         unique_id: trv_offset_ada
         unit_of_measurement: "°C"
@@ -54,10 +54,10 @@ template:
         state_class: measurement
         availability: >
           {% set room = states('sensor.climate_ada_s_room_temperature') | float(-999) %}
-          {% set trv = state_attr('climate.trv_danfoss_ada','current_temperature') | float(-999) %}
+          {% set trv = state_attr('climate.trv_sonoff_ada','current_temperature') | float(-999) %}
           {{ room > -900 and trv > -900 }}
         state: >
-          {{ (state_attr('climate.trv_danfoss_ada','current_temperature') | float
+          {{ (state_attr('climate.trv_sonoff_ada','current_temperature') | float
               - states('sensor.climate_ada_s_room_temperature') | float) | round(2) }}
 
       - name: "TRV offset Ada settled"
@@ -72,14 +72,14 @@ template:
         # `0 < x < 100` the way Python does.
         availability: >
           {% set room = states('sensor.climate_ada_s_room_temperature') | float(-999) %}
-          {% set trv = state_attr('climate.trv_danfoss_ada','current_temperature') | float(-999) %}
-          {% set sp = state_attr('climate.trv_danfoss_ada','temperature') | float(-999) %}
-          {% set dem = states('sensor.trv_danfoss_ada_pi_heating_demand') | float(-1) %}
+          {% set trv = state_attr('climate.trv_sonoff_ada','current_temperature') | float(-999) %}
+          {% set sp = state_attr('climate.trv_sonoff_ada','temperature') | float(-999) %}
+          {# The TRVZB reports no valve %, only whether it is calling for heat. #}
           {{ room > -900 and trv > -900 and sp > -900
-             and dem > 0 and dem < 100
+             and is_state_attr('climate.trv_sonoff_ada', 'hvac_action', 'heating')
              and (trv - sp) | abs <= 1.0 }}
         state: >
-          {{ (state_attr('climate.trv_danfoss_ada','current_temperature') | float
+          {{ (state_attr('climate.trv_sonoff_ada','current_temperature') | float
               - states('sensor.climate_ada_s_room_temperature') | float) | round(2) }}
 
       # --- Master ---
