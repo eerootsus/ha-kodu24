@@ -60,6 +60,18 @@ ROOMS = [  # (label, trv slug, room sensor or None)
     ("Stairwell", "stairwell", "sensor.climate_trepihall_temperature"),
 ]
 
+# Which TRV was on each radiator, from when (local). Rooms not listed have had a
+# Danfoss eTRV throughout. A window spanning a swap is stitched from both.
+#
+# The Sonoff TRVZB reports no valve %, only whether it is calling for heat, so its
+# "valve demand" is the share of time hvac_action = heating, and open>=50% has no
+# equivalent (counted over Danfoss hours only). Its trim is a local temperature
+# offset of the opposite sign (negative = reads lower = heats more); it is shown
+# negated so the trim column means the same thing for both.
+TRVS = {
+    "ada": [("danfoss", None), ("sonoff", "2026-10-26 18:34")],
+}
+
 HOST = os.environ.get("HA_HOST", "homeassistant.tail7c95c3.ts.net")
 PORT = os.environ.get("HA_PORT", "22")
 USER = os.environ.get("HA_USER", "root")
@@ -133,12 +145,60 @@ def weather(t0, t1):
     return mean, hdd
 
 
+def eras(slug, t0, t1):
+    """(kind, start, end) for each TRV that was fitted during [t0, t1)."""
+    spans = TRVS.get(slug, [("danfoss", None)])
+    out = []
+    for i, (kind, since) in enumerate(spans):
+        a = max(t0, ts(since)) if since else t0
+        b = min(t1, ts(spans[i + 1][1])) if i + 1 < len(spans) else t1
+        if a < b:
+            out.append((kind, a, b))
+    return out
+
+
 def setpoints(slug, t0, t1):
     """Setpoint step series (ts, float). Unavailable/blank samples are skipped,
     so the last real setpoint carries over a restart."""
-    return [(t, float(v)) for t, v in state_series(
-        f"climate.trv_danfoss_{slug}", t0, t1, "json_extract(sa.shared_attrs, '$.temperature')")
+    return [(t, float(v)) for kind, a, b in eras(slug, t0, t1) for t, v in state_series(
+        f"climate.trv_{kind}_{slug}", a, b, "json_extract(sa.shared_attrs, '$.temperature')")
         if v not in ("", None)]
+
+
+def demand(slug, t0, t1):
+    """(mean valve demand %, share of hours >= 50 %, any TRVZB hours), hour-weighted
+    across a TRV swap. TRVZB demand = % of time calling for heat."""
+    dem = hours = o50 = o50_hours = 0.0
+    sonoff = False
+    for kind, a, b in eras(slug, t0, t1):
+        if kind == "danfoss":
+            entity = f"sensor.trv_danfoss_{slug}_pi_heating_demand"
+            mean, n = stat_mean(entity, a, b)
+            if mean is None:
+                continue
+            share = stat_share(entity, a, b, "st.mean >= 50")
+            dem, hours = dem + mean * n, hours + n
+            o50, o50_hours = o50 + share * n, o50_hours + n
+        else:
+            series = state_series(f"climate.trv_{kind}_{slug}", a, b,
+                                  "json_extract(sa.shared_attrs, '$.hvac_action')")
+            held = [(v, dt) for v, dt in time_weighted(series, b) if v not in ("", None)]
+            secs = sum(dt for _, dt in held)
+            if not secs:
+                continue
+            on = sum(dt for v, dt in held if v == "heating")
+            dem, hours = dem + 100 * on / 3600, hours + secs / 3600
+            sonoff = True
+    return ((dem / hours if hours else None), (o50 / o50_hours if o50_hours else None), sonoff)
+
+
+def trim(slug, t1):
+    """Trim in force at t1, in the Danfoss sense (+ = heats more)."""
+    kind = eras(slug, t1 - 1, t1)[0][0]
+    if kind == "danfoss":
+        return last_state(f"number.trv_danfoss_{slug}_regulation_setpoint_offset", t1)
+    v = last_state(f"number.trv_{kind}_{slug}_local_temperature_offset", t1)
+    return -float(v) if v is not None else None
 
 
 def setpoint_label(series, t1):
@@ -176,14 +236,16 @@ def window(label, t0, t1):
     r = {"label": label, "t0": t0, "t1": t1, "rooms": {}}
     for name, slug, room in ROOMS:
         sps = setpoints(slug, t0, t1)
+        dem, open50, sonoff = demand(slug, t0, t1)
         r["rooms"][name] = {
             "sp": setpoint_label(sps, t1),
             "room": stat_mean(room, t0, t1)[0] if room else None,
             "short": shortfall(room, sps, t0, t1) if room else None,
-            "demand": stat_mean(f"sensor.trv_danfoss_{slug}_pi_heating_demand", t0, t1)[0],
-            "open50": stat_share(f"sensor.trv_danfoss_{slug}_pi_heating_demand", t0, t1, "st.mean >= 50"),
+            "demand": dem,
+            "sonoff": sonoff,
+            "open50": open50,
             "offset": stat_mean(f"sensor.trv_offset_{slug}_settled", t0, t1)[0] if room else None,
-            "trim": last_state(f"number.trv_danfoss_{slug}_regulation_setpoint_offset", t1),
+            "trim": trim(slug, t1),
         }
     r["met_mean"], r["hdd"] = weather(t0, t1)
     r["gas"] = stat_sum_delta("sensor.vicare_heating_gas_consumption_current_day", t0, t1)
@@ -225,7 +287,7 @@ def main():
         b, c = base["rooms"][name], cur["rooms"][name]
         print(f"{name:9s} {f(b['sp']):>9s} {f(c['sp']):>6s}  | {f(b['room']):>5s} {f(c['room']):>5s}   |"
               f" {f(b['short'], '{:+.1f}'):>5s} {f(c['short'], '{:+.1f}'):>5s}   |"
-              f" {f(b['demand'], '{:.0f}%'):>5s} {f(c['demand'], '{:.0f}%'):>5s}   |"
+              f" {f(b['demand'], '{:.0f}%'):>5s} {f(c['demand'], '{:.0f}%'):>5s}{'*' if c['sonoff'] else ' '}  |"
               f" {f(b['open50'], '{:.0%}'):>4s} {f(c['open50'], '{:.0%}'):>4s}   |"
               f" {f(b['offset'], '{:+.1f}'):>5s} {f(c['offset'], '{:+.1f}'):>5s}   | {f(c['trim'], '{:+.1f}')}")
 
@@ -244,6 +306,10 @@ def main():
     print(f"  {'gas per degree-day (m3)':28s} {f(per(base), '{:.2f}'):>6s}  {f(per(cur), '{:.2f}'):>6s}")
     print("\nSetpoint 'a/b!' = changed during the window; 'vs setpoint' still compares each")
     print("hour against the setpoint in force then.")
+    print("* = includes TRVZB hours: demand there is the share of time calling for heat,")
+    print("  and open>=50% counts the Danfoss hours only (TRVS in the script).")
+    print("  Its reading includes its offset, so its settled offset is what is left AFTER")
+    print("  the trim (0 = trim right); a Danfoss one is the raw error the trim should match.")
     print("Settled offset is '-' until the valve modulates near setpoint (offset.yaml).")
     print("Before 2026-10-17 13:00 its gate tested the ROOM against setpoint (since fixed),")
     print("so baseline settled offsets come from rare near-setpoint hours - indicative only.")
