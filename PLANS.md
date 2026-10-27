@@ -214,8 +214,13 @@ needs another shift step.
 - **Her eTRV reads wrong** (2026-10-26 evening): the room felt chilly at 21.1 while
   the TRV, reading 24.1-24.7 against target 22 + trim 2.5 = 24.5, held the valve at
   30-60 %. Error ~3.4 K > the 2.5 K trim cap. **Target raised 22 → 23** at 22:27 as
-  the stopgap. Decided: **she gets a TRVZB too** (regulating on her door sensor),
-  once Ada's has a few days of data.
+  the stopgap. Decided: **she gets a TRVZB too** (regulating on her door sensor).
+  **Priority since 2026-10-27, fit as soon as one is at hand** - her head follows
+  the water, not the room: within single hours it swung 1-2.8 K (23.4 → 26.2 → 23.4
+  at 01:00) with the boiler cycling 33-64 °C while the room moved 0.2 K, and her
+  valve flips between ~100 % for hours and 3 ↔ 99 % within an hour, with no steady
+  middle. No trim or target steadies that. 23 pinned the valve open overnight (room
+  21.2 → 22.7 by 10:30, still rising); **22.5 from 2026-10-27 11:00**, expect ±0.5 K.
 - **Humidity** (7-day mean 67 %, >70 % most nights) is the **plants** — thin them
   first. A 2026-10-17 analysis of 74 heating-season nights found no wind effect on
   her overnight moisture gain (r −0.02), a modest stack-effect one (r −0.30) and a
