@@ -279,6 +279,12 @@ Eurotronic Spirit Zigbee. Avoid Tuya/Aqara TRVs.
 
 ## HA work (no visit needed)
 
+- **Trim check next to the clock sync.** A remount resets an eTRV's trim to 0
+  (2026-10-27: kitchen and master ran a night short, HA still showing the old
+  values). Keep the intended trims in one place, read `0x404B` back from each device
+  (on a remount signal and nightly), push when they differ - advise, don't rewrite
+  silently. Needed before Lola's TRVZB swap and any further preset visit.
+
 - **Immich backup-silence sensor** — "no new assets for 14 days". The initial sync
   finished 2026-09-03 (~11k photos), so the baseline exists. A phone backup can stop
   silently; belongs with `backup-monitor/`.
