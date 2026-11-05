@@ -49,14 +49,14 @@ def get_all_climate_devices() -> tuple[dict[str, list[DeviceEntry]], dict[str, l
     trv_devices_by_area: dict[str, list[DeviceEntry]] = {}
     weighted_devices_by_area: dict[str, list[tuple[DeviceEntry, float]]] = {}
 
-    # `dr.devices.values()`, not `for device_id in dr.devices`: that used to yield
-    # ids, but HA now hands back a _DeprecatedDeviceRegistryItemsView whose __iter__
-    # yields DeviceEntry objects. Feeding one of those to `dr.async_get()` raised
-    # `TypeError: cannot use 'DeviceEntry' as a dict key` on every run from some HA
-    # release until 2026-09-13, which silently published no sensors at all -- and
-    # nothing downstream noticed, because an absent sensor and a sensor that is
-    # merely `unavailable` look the same from a template.
-    for device in dr.devices.values():
+    # Iterating `dr.devices` yields DeviceEntry objects, not ids. It used to yield
+    # ids, and feeding an entry to `dr.async_get()` raised `TypeError: cannot use
+    # 'DeviceEntry' as a dict key` on every run from some HA release until
+    # 2026-09-13, which silently published no sensors at all -- and nothing
+    # downstream noticed, because an absent sensor and a sensor that is merely
+    # `unavailable` look the same from a template. Don't use it as a mapping
+    # either (`.values()`, `[id]`): deprecated, and it stops working in 2027.9.
+    for device in dr.devices:
         if device.area_id is None:
             continue
 
