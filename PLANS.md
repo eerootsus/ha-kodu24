@@ -202,18 +202,26 @@ the shift, not the slope (`HEATING_CURVE_TEST.md`).
   the eTRV's 2.5 K trim cap. No trim or target steadies that. Until the swap:
   target 23 on trim +2.5 (the cap), ~21.5–22 in the cold, overshoot likely in mild
   weather (`BETTER_THERMOSTAT.md` "Trims in force").
-- **Fitting it:** Ada's TRVZB threaded straight onto the Oventrop M30 insert, and the
-  radiators are all the same model, so hers likely needs no adapter - check. Remove
-  the eTRV from ZHA. Plan: regulate on her door sensor - ZHA exposes the TRVZB's
-  external input (`switch.trv_sonoff_<room>_external_temperature_sensor` +
-  `number.trv_sonoff_<room>_external_temperature_sensor_value`), which needs a small
-  automation writing the door sensor to it (`trv-climate/room_feed.yaml` is the
-  pattern); on its own sensor + offset like Ada is the fallback. Don't set "closing
-  degree".
-- **Then the repo:** `room_climate.py` needs nothing (it matches TRVZB). Add her to
-  the cases that special-case Ada: `heating_alerts.yaml`, `offset.yaml`,
-  `balancing_test.yaml`, the curve-test map, the Küte view, `heating-check.py`
-  `SWAPS`; drop her from `clock_sync.yaml` (eTRVs only).
+- **Fitting day - the repo is ready on branch `lola-trvzb`** (pushed 2026-11-05;
+  alerts, offset sensors, balancing test, clock sync, Küte view, heating-check,
+  curve test, and the external-input feed `trv-climate/lola_feed.yaml`). Steps:
+  1. Fit it - Ada's threaded straight onto the Oventrop M30 insert, and the
+     radiators are all the same model, so hers likely needs no adapter. Don't set
+     "closing degree".
+  2. Remove her eTRV from ZHA, pair the TRVZB, name the device **"TRV Sonoff Lola"**
+     in Lola's room, and check the ids came out as `climate.trv_sonoff_lola`,
+     `number.trv_sonoff_lola_local_temperature_offset`,
+     `switch.trv_sonoff_lola_external_temperature_sensor` and
+     `number.trv_sonoff_lola_external_temperature_sensor_value` (Ada's came out
+     English, so the instance-language fix holds; rename over the websocket if not).
+  3. On the branch: set Lola's swap time in `heating-check.py` `TRVS` and replace the
+     `<fitting day>` placeholders (`grep -rn '<fitting day>'`). Merge into main.
+  4. `./deploy.sh`, then reload automations and templates; `./dashboard.py apply
+     heating`. Her room sensor needs nothing: `room_climate.py` matches TRVZB.
+  5. Start like Ada: own sensor, local offset to be found, target back to ~21.5.
+     Once settled, set the offset to 0 and turn the external switch on - the feed
+     then writes her room temperature to it. One lever at a time.
+  6. Record the outcome in `BETTER_THERMOSTAT.md` (her trims row) and this file.
 - **What was tried first:** furniture moved off the TRV 2026-10-25 (error 4.5 →
   3.0 K, not enough); automatic offset room feed 2026-10-18/19 (valve stuck ~30 %
   whatever the room did, parked); targets 22 → 23 (10-26) → 22.5 (10-27) → 23
