@@ -1,0 +1,308 @@
+# Condensation / mould risk at the outer walls - advise only, never adjusts anything.
+#
+# Each TRV room has an "Alt" sensor on its outer wall (weight 0, so it does not count
+# toward the room value) and a room reference at the door. Together they say how damp
+# the air is right at the coldest surface:
+#
+#   wall_rh_<room>          the WORSE of
+#                             - the Alt's own humidity reading, and
+#                             - the room's water vapour cooled to the Alt temperature
+#                               (vapour pressure at the room / saturation at the wall).
+#                           The Alt reading is skipped if it has not changed for 12 h:
+#                           the master Alt sat at exactly 80.0 % from 2026-08-17 to
+#                           09-08, which would otherwise have read as three weeks of risk.
+#   wall_dew_margin_<room>  Alt temperature minus the room air's dew point, in K. At 0
+#                           the wall is wet.
+#   wall_rh_<room>_72h      72 h mean of wall_rh (statistics platform).
+#
+# Thresholds, from this house's own history (hourly statistics, 2026-01 .. 11-05):
+# mould needs SUSTAINED damp at a surface (ISO 13788: monthly mean surface RH
+# <= 80 %), so the alert uses the 72 h mean, at 75 %. The worst genuine 72 h mean in
+# any room this year was 74.2 % (Ada, 2026-09-02); the 24 h peaks were ~76 %. The risk
+# season here is summer into October - humid outdoor air, unheated walls - not the
+# dry heated winter (February peaked under 50 %). Dew margin never fell below 3.8 K
+# (kitchen, August), so < 2 K for an hour is a rare, real event.
+#
+# Note the Alt is in the AIR next to the wall, not on its surface, so the surface
+# itself is a little colder and damper than this says - another reason for the margin.
+#
+# Install: part of trv-climate/, declared as `climate_condensation:` in configuration.yaml.
+
+template:
+  - sensor:
+      # --- Ada ---
+      - name: "Wall RH Ada"
+        unique_id: wall_rh_ada
+        unit_of_measurement: "%"
+        device_class: humidity
+        state_class: measurement
+        availability: >
+          {{ states('sensor.climate_ada_s_room_temperature') | is_number
+             and states('sensor.climate_ada_s_room_humidity') | is_number
+             and states('sensor.th01_sonoff_ada_alt_temperature') | is_number }}
+        state: >
+          {% set t = states('sensor.climate_ada_s_room_temperature') | float %}
+          {% set h = states('sensor.climate_ada_s_room_humidity') | float %}
+          {% set w = states('sensor.th01_sonoff_ada_alt_temperature') | float %}
+          {% set es_t = 6.112 * e ** (17.62 * t / (243.12 + t)) %}
+          {% set es_w = 6.112 * e ** (17.62 * w / (243.12 + w)) %}
+          {% set calc = [h * es_t / es_w, 100] | min %}
+          {% set a = states.sensor.th01_sonoff_ada_alt_humidity %}
+          {% set fresh = a is not none and a.state | is_number
+                         and (now() - a.last_changed).total_seconds() < 43200 %}
+          {{ ([calc, a.state | float] | max if fresh else calc) | round(1) }}
+
+      - name: "Wall dew margin Ada"
+        unique_id: wall_dew_margin_ada
+        unit_of_measurement: "K"
+        state_class: measurement
+        availability: >
+          {{ states('sensor.climate_ada_s_room_temperature') | is_number
+             and states('sensor.climate_ada_s_room_humidity') | is_number
+             and states('sensor.th01_sonoff_ada_alt_temperature') | is_number }}
+        state: >
+          {% set t = states('sensor.climate_ada_s_room_temperature') | float %}
+          {% set h = [states('sensor.climate_ada_s_room_humidity') | float, 1] | max %}
+          {% set g = log(h / 100) + 17.62 * t / (243.12 + t) %}
+          {{ (states('sensor.th01_sonoff_ada_alt_temperature') | float - 243.12 * g / (17.62 - g)) | round(1) }}
+
+      # --- Lola ---
+      - name: "Wall RH Lola"
+        unique_id: wall_rh_lola
+        unit_of_measurement: "%"
+        device_class: humidity
+        state_class: measurement
+        availability: >
+          {{ states('sensor.climate_lola_s_room_temperature') | is_number
+             and states('sensor.climate_lola_s_room_humidity') | is_number
+             and states('sensor.th01_sonoff_lola_alt_temperature') | is_number }}
+        state: >
+          {% set t = states('sensor.climate_lola_s_room_temperature') | float %}
+          {% set h = states('sensor.climate_lola_s_room_humidity') | float %}
+          {% set w = states('sensor.th01_sonoff_lola_alt_temperature') | float %}
+          {% set es_t = 6.112 * e ** (17.62 * t / (243.12 + t)) %}
+          {% set es_w = 6.112 * e ** (17.62 * w / (243.12 + w)) %}
+          {% set calc = [h * es_t / es_w, 100] | min %}
+          {% set a = states.sensor.th01_sonoff_lola_alt_humidity %}
+          {% set fresh = a is not none and a.state | is_number
+                         and (now() - a.last_changed).total_seconds() < 43200 %}
+          {{ ([calc, a.state | float] | max if fresh else calc) | round(1) }}
+
+      - name: "Wall dew margin Lola"
+        unique_id: wall_dew_margin_lola
+        unit_of_measurement: "K"
+        state_class: measurement
+        availability: >
+          {{ states('sensor.climate_lola_s_room_temperature') | is_number
+             and states('sensor.climate_lola_s_room_humidity') | is_number
+             and states('sensor.th01_sonoff_lola_alt_temperature') | is_number }}
+        state: >
+          {% set t = states('sensor.climate_lola_s_room_temperature') | float %}
+          {% set h = [states('sensor.climate_lola_s_room_humidity') | float, 1] | max %}
+          {% set g = log(h / 100) + 17.62 * t / (243.12 + t) %}
+          {{ (states('sensor.th01_sonoff_lola_alt_temperature') | float - 243.12 * g / (17.62 - g)) | round(1) }}
+
+      # --- Master ---
+      - name: "Wall RH Master"
+        unique_id: wall_rh_master
+        unit_of_measurement: "%"
+        device_class: humidity
+        state_class: measurement
+        availability: >
+          {{ states('sensor.climate_bedroom_temperature') | is_number
+             and states('sensor.climate_bedroom_humidity') | is_number
+             and states('sensor.th01_sonoff_master_bedroom_alt_temperature') | is_number }}
+        state: >
+          {% set t = states('sensor.climate_bedroom_temperature') | float %}
+          {% set h = states('sensor.climate_bedroom_humidity') | float %}
+          {% set w = states('sensor.th01_sonoff_master_bedroom_alt_temperature') | float %}
+          {% set es_t = 6.112 * e ** (17.62 * t / (243.12 + t)) %}
+          {% set es_w = 6.112 * e ** (17.62 * w / (243.12 + w)) %}
+          {% set calc = [h * es_t / es_w, 100] | min %}
+          {% set a = states.sensor.th01_sonoff_master_bedroom_alt_humidity %}
+          {% set fresh = a is not none and a.state | is_number
+                         and (now() - a.last_changed).total_seconds() < 43200 %}
+          {{ ([calc, a.state | float] | max if fresh else calc) | round(1) }}
+
+      - name: "Wall dew margin Master"
+        unique_id: wall_dew_margin_master
+        unit_of_measurement: "K"
+        state_class: measurement
+        availability: >
+          {{ states('sensor.climate_bedroom_temperature') | is_number
+             and states('sensor.climate_bedroom_humidity') | is_number
+             and states('sensor.th01_sonoff_master_bedroom_alt_temperature') | is_number }}
+        state: >
+          {% set t = states('sensor.climate_bedroom_temperature') | float %}
+          {% set h = [states('sensor.climate_bedroom_humidity') | float, 1] | max %}
+          {% set g = log(h / 100) + 17.62 * t / (243.12 + t) %}
+          {{ (states('sensor.th01_sonoff_master_bedroom_alt_temperature') | float - 243.12 * g / (17.62 - g)) | round(1) }}
+
+      # --- Kitchen ---
+      - name: "Wall RH Kitchen"
+        unique_id: wall_rh_kitchen
+        unit_of_measurement: "%"
+        device_class: humidity
+        state_class: measurement
+        availability: >
+          {{ states('sensor.climate_kitchen_temperature') | is_number
+             and states('sensor.climate_kitchen_humidity') | is_number
+             and states('sensor.th01_sonoff_kitchen_alt_temperature') | is_number }}
+        state: >
+          {% set t = states('sensor.climate_kitchen_temperature') | float %}
+          {% set h = states('sensor.climate_kitchen_humidity') | float %}
+          {% set w = states('sensor.th01_sonoff_kitchen_alt_temperature') | float %}
+          {% set es_t = 6.112 * e ** (17.62 * t / (243.12 + t)) %}
+          {% set es_w = 6.112 * e ** (17.62 * w / (243.12 + w)) %}
+          {% set calc = [h * es_t / es_w, 100] | min %}
+          {% set a = states.sensor.th01_sonoff_kitchen_alt_humidity %}
+          {% set fresh = a is not none and a.state | is_number
+                         and (now() - a.last_changed).total_seconds() < 43200 %}
+          {{ ([calc, a.state | float] | max if fresh else calc) | round(1) }}
+
+      - name: "Wall dew margin Kitchen"
+        unique_id: wall_dew_margin_kitchen
+        unit_of_measurement: "K"
+        state_class: measurement
+        availability: >
+          {{ states('sensor.climate_kitchen_temperature') | is_number
+             and states('sensor.climate_kitchen_humidity') | is_number
+             and states('sensor.th01_sonoff_kitchen_alt_temperature') | is_number }}
+        state: >
+          {% set t = states('sensor.climate_kitchen_temperature') | float %}
+          {% set h = [states('sensor.climate_kitchen_humidity') | float, 1] | max %}
+          {% set g = log(h / 100) + 17.62 * t / (243.12 + t) %}
+          {{ (states('sensor.th01_sonoff_kitchen_alt_temperature') | float - 243.12 * g / (17.62 - g)) | round(1) }}
+
+sensor:
+  - platform: statistics
+    name: "Wall RH Ada 72h"
+    unique_id: wall_rh_ada_72h
+    entity_id: sensor.wall_rh_ada
+    state_characteristic: mean
+    max_age:
+      hours: 72
+    sampling_size: 5000
+    precision: 1
+
+  - platform: statistics
+    name: "Wall RH Lola 72h"
+    unique_id: wall_rh_lola_72h
+    entity_id: sensor.wall_rh_lola
+    state_characteristic: mean
+    max_age:
+      hours: 72
+    sampling_size: 5000
+    precision: 1
+
+  - platform: statistics
+    name: "Wall RH Master 72h"
+    unique_id: wall_rh_master_72h
+    entity_id: sensor.wall_rh_master
+    state_characteristic: mean
+    max_age:
+      hours: 72
+    sampling_size: 5000
+    precision: 1
+
+  - platform: statistics
+    name: "Wall RH Kitchen 72h"
+    unique_id: wall_rh_kitchen_72h
+    entity_id: sensor.wall_rh_kitchen
+    state_characteristic: mean
+    max_age:
+      hours: 72
+    sampling_size: 5000
+    precision: 1
+
+automation:
+  - id: wall_damp_alert
+    alias: Climate - outer wall staying damp
+    description: >
+      72 h mean wall RH at or above 75 % in a room: mould conditions building up.
+      Advise only. Fires once per crossing; the daily re-check repeats it while
+      it lasts.
+    mode: queued
+    trigger:
+      - platform: numeric_state
+        entity_id: sensor.wall_rh_ada_72h
+        above: 75
+        id: ada
+      - platform: numeric_state
+        entity_id: sensor.wall_rh_lola_72h
+        above: 75
+        id: lola
+      - platform: numeric_state
+        entity_id: sensor.wall_rh_master_72h
+        above: 75
+        id: master
+      - platform: numeric_state
+        entity_id: sensor.wall_rh_kitchen_72h
+        above: 75
+        id: kitchen
+      - platform: time
+        at: "19:00:00"
+        id: daily
+    variables:
+      names: {ada: Ada tuba, lola: Lola tuba, master: Kätlyni tuba, kitchen: Köök}
+      damp: >
+        {% set ns = namespace(l=[]) %}
+        {% for k in ['ada', 'lola', 'master', 'kitchen'] %}
+          {% set v = states('sensor.wall_rh_' ~ k ~ '_72h') | float(0) %}
+          {% if v >= 75 %}{% set ns.l = ns.l + [names[k] ~ ' ' ~ v ~ ' %'] %}{% endif %}
+        {% endfor %}
+        {{ ns.l }}
+    condition:
+      - condition: template
+        value_template: "{{ damp | count > 0 }}"
+    action:
+      - action: notify.mobile_app_eeros_iphone_17
+        data:
+          title: "Outer wall damp: {{ damp | join(', ') }}"
+          message: >
+            Over 75 % humidity at the outer wall on a 3-day average - mould
+            conditions. Air the room, heat it, or move furniture off that wall.
+          data:
+            tag: wall-damp
+
+  - id: wall_condensation_alert
+    alias: Climate - outer wall near dew point
+    description: >
+      The outer wall within 2 K of the room air's dew point for an hour:
+      condensation is close. Never seen before 2026-11-05 (lowest 3.8 K).
+    mode: queued
+    trigger:
+      - platform: numeric_state
+        entity_id: sensor.wall_dew_margin_ada
+        below: 2
+        for: "01:00:00"
+        id: ada
+      - platform: numeric_state
+        entity_id: sensor.wall_dew_margin_lola
+        below: 2
+        for: "01:00:00"
+        id: lola
+      - platform: numeric_state
+        entity_id: sensor.wall_dew_margin_master
+        below: 2
+        for: "01:00:00"
+        id: master
+      - platform: numeric_state
+        entity_id: sensor.wall_dew_margin_kitchen
+        below: 2
+        for: "01:00:00"
+        id: kitchen
+    variables:
+      names: {ada: Ada tuba, lola: Lola tuba, master: Kätlyni tuba, kitchen: Köök}
+    action:
+      - action: notify.mobile_app_eeros_iphone_17
+        data:
+          title: "{{ names[trigger.id] }}: wall near dew point"
+          message: >
+            The outer wall is only {{ states('sensor.wall_dew_margin_' ~ trigger.id) }} K
+            above the room air's dew point (wall RH {{ states('sensor.wall_rh_' ~ trigger.id) }} %).
+            Air the room now.
+          data:
+            push:
+              interruption-level: time-sensitive
+            tag: "wall-condensation-{{ trigger.id }}"

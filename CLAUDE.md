@@ -233,6 +233,8 @@ history and `DANFOSS.md` if that logic is ever needed again.)
 
 **trv-climate/heating_alerts.yaml** - Push alert when a TRV room stays under its own target, with the likely cause (curve / trim / valve). Alert only.
 
+**trv-climate/condensation.yaml** - Mould/condensation risk at the outer walls (2026-11-05), from each room's Alt sensor and its door reference: `wall_rh_<room>` (worse of the Alt's own RH and the room's vapour at the wall temperature; a stuck Alt RH is ignored), `wall_dew_margin_<room>`, and a 72 h mean. Pushes at a 72 h mean >= 75 % or a dew margin < 2 K for an hour; thresholds and this year's history are in its header. Advise only. The risk season here is summer into October, not winter.
+
 **trv-climate/balancing_test.yaml** - `script.balancing_test`: the repeatable before/after measurement for radiator balancing (all valves shut, then all fully open, each TRV's reading sampled every 5 min, targets restored; a watchdog restores them if it is interrupted). Results in `sensor.balancing_test_result` (this run + the previous one). The one place that writes TRV setpoints, and only while it runs.
 
 **trv-climate/clock_sync.yaml** - Writes the time to any eTRV reporting `Invalid_clock_information` (on the flag, and nightly at 03:30), pushes only if that does not clear it. The stairwell went 2026-10-01..25 without a clock unnoticed after `set_time()` was dropped. Clock only, never a heating setting.

@@ -342,9 +342,6 @@ Zigbee. Avoid Tuya/Aqara TRVs.
   on/off times (30–60 min). Bathroom loops must stay on year-round. Logic in HA,
   in this repo. **Physical install first, then the logic** — record which relay
   drives which zone and room while wiring.
-- **Condensation-risk check** from the outer-wall Alt sensors: room dew point vs
-  Alt temperature (Lola's Alt read 4.8 °C below her door sensor through January
-  2026).
 - **Better light automations.**
 - **Matter lights + extra downstairs lighting, Matter smoke detectors** — on a
   separate Thread mesh (see below).
