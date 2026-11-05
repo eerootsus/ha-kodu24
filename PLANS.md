@@ -191,7 +191,9 @@ The kitchen trim is settled against its door sensor: +2.5 → +2.0 (2026-10-25) 
 +1.5 (2026-11-05, `BETTER_THERMOSTAT.md` "Trims in force"). What is left is flow,
 not trim: in the 11-04 cold it ran 0.1–0.4 short at 93–98 % valve. After §1's
 kitchen step, decide whether the curve (0.9 / +3 since 2026-10-19) needs shift +4 -
-the shift, not the slope (`HEATING_CURVE_TEST.md`).
+the shift, not the slope (`HEATING_CURVE_TEST.md`). Or let the curve test decide:
+it is deployed off and does exactly this (shift +1 on a mild-weather shortfall),
+once started after Lola's TRVZB.
 
 ### 3. Lola's room
 
@@ -221,10 +223,13 @@ the shift, not the slope (`HEATING_CURVE_TEST.md`).
   5. Start like Ada: own sensor, local offset to be found, target back to ~21.5.
      Once settled, set the offset to 0 and turn the external switch on - the feed
      then writes her room temperature to it. One lever at a time.
-  6. In `trv-climate/trim_check.yaml` (on main, newer than the branch) swap her
+  6. Curve test: the branch already lists her as a TRVZB (`sonoff` list in
+     `curve-test/heating_curve_test.yaml`). Once her offset is found and the trims
+     have settled, `script.curve_test_start` (`HEATING_CURVE_TEST.md`).
+  7. In `trv-climate/trim_check.yaml` swap her
      entry to `number.trv_sonoff_lola_local_temperature_offset` with her TRVZB
      offset - until then it pushes nightly that her eTRV trim is missing.
-  7. Record the outcome in `BETTER_THERMOSTAT.md` (her trims row) and this file.
+  8. Record the outcome in `BETTER_THERMOSTAT.md` (her trims row) and this file.
 - **What was tried first:** furniture moved off the TRV 2026-10-25 (error 4.5 →
   3.0 K, not enough); automatic offset room feed 2026-10-18/19 (valve stuck ~30 %
   whatever the room did, parked); targets 22 → 23 (10-26) → 22.5 (10-27) → 23

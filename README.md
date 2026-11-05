@@ -62,8 +62,10 @@ and needs the SSH add-on to accept your key (two are authorized; see
 `CLAUDE.md` "Transport gotchas"). **Edit here, not in
 `/config`** — deploys overwrite the live copies.
 
-`curve-test/` is deliberately not deployed: it steps the heating curve down to
-find the house's tolerance floor, so it goes live only on a conscious decision.
+`curve-test/` is deployed but switched off: once started (`script.curve_test_start`)
+it raises the heating curve on a sustained room shortfall and records how cold each
+curve survived (`HEATING_CURVE_TEST.md`). Starting it is a deliberate decision, not
+a deploy.
 
 Dashboards are storage mode, so the YAML under `*/dashboard/` is a record, not
 what HA loads — see the dashboard section in `CLAUDE.md` for how to change them

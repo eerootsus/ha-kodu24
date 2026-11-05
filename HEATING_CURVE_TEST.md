@@ -1,18 +1,25 @@
 # Heating curve test
 
-Finds the lowest Vitodens 100 heating-curve slope that still holds the house, so we
-know whether the top-floor radiators can run at heat-pump flow temperatures.
+Holds the Vitodens 100 heating curve, raises it only when the house proves it too
+low, and records how cold each curve survived - so we know whether the top-floor
+radiators can run at heat-pump flow temperatures, and the curve stays as low as
+holds the house.
 
 `curve-test/heating_curve_test.yaml` is a self-contained HA package.
 
-> **Not deployed — alert-only chosen instead (2026-10-17).** With per-room trims in
-> force and every room meant to hit its *own* target, a shortfall can be the curve,
-> the trim or the valve, and an automatic raise would blur which. Eero raises the
-> slope by hand; `trv-climate/heating_alerts.yaml` pushes an alert that names the
-> likely cause from the valve opening (>= 80 % = curve). Before ever enabling this
-> package: its start script defends a fixed 21.0 °C, checks the living room against
-> that same line, still lists Lola as unmonitored (her sensors work now), gates on
-> the sunlit Vitodens sensor, and `curve_test_abort` restores 1.2, not today's 0.9.
+> **Deployed switched off (2026-11-05).** `curve_test:` is in `configuration.yaml`
+> and `deploy.sh`, but nothing acts until `script.curve_test_start` turns
+> `input_boolean.curve_test_enabled` on. **Start it once Lola's TRVZB is on and the
+> trims have settled** (`PLANS.md` §2–3): until then her stopgap target (23 on a
+> maxed eTRV trim) and the 2026-11-05 trim changes would read as curve shortfalls.
+>
+> History: written 2026-08 to *descend* the slope from 1.2; not deployed on
+> 2026-10-17, when alert-only (`trv-climate/heating_alerts.yaml`) was chosen while
+> trims went in. Reworked 2026-11-05: rooms judged against their own TRV targets,
+> all five rooms, ascend-only by default, raises the shift in mild weather and the
+> slope in real cold within caps, heating weather from met.no, abort restores the
+> curve it started from. The alert stays: the test only acts on the curve, and only
+> once started.
 
 ## Curve in force
 
@@ -79,10 +86,10 @@ pump is ever finished. If 1.2 was never justified, that has been leaking money f
 2. **Heating season.** The revert automation only evaluates below 12 °C outside;
    step-down does not check this, so starting in September wastes steps on mild
    weather. Start when the heating is genuinely working.
-3. **Blind zones — none now.** Lola's room has two labelled sensors, and the
-   stairwell got a door sensor (SNZB-02P, weight 2) on 2026-10-25. The package's
-   room list still has only Ada, master and the kitchen - add Lola and the
-   stairwell before enabling.
+3. **All five rooms are watched**, each against its own TRV target - so the
+   targets have to mean the room. Lola's 23 does not (stopgap on a maxed eTRV
+   trim); her TRVZB fixes that, and adding `lola` to the package's `sonoff` list is
+   part of fitting it.
 
    (Between some HA upgrade and 2026-09-13 *every* room was blind: `danfoss.py`, now `room_climate.py`,
    threw on each run and all ten sensors read `unavailable`. Fixed. Worth
@@ -103,18 +110,28 @@ pump is ever finished. If 1.2 was never justified, that has been leaking money f
   sensors are brand-agnostic, so the test survives a valve swap; the diagnosis map
   reads a TRVZB's `hvac_action` instead of demand.
 
-**Target is a fixed number, not a TRV setpoint.** This was written when Better
-Thermostat was expected to move setpoints and apply calibration offsets. BT was
-dropped, but the reasoning holds for the eTRVs' own setpoints too:
-`input_number.curve_test_target_temp` (default 21.0 °C) is the comfort line being
-defended, independent of whatever any valve is currently aiming at.
+**Each room against its own TRV target.** Originally a fixed 21.0 for every room,
+from when Better Thermostat was expected to move setpoints under the test. With the
+trims in force the dial is meant to mean the room (`BETTER_THERMOSTAT.md`), so each
+radiator room is judged against its own TRV target, like the shortfall alert. A
+target at or below 10 °C (off / summer) drops the room out.
+`input_number.curve_test_target_temp` is now only the living room's line (it has no
+TRV); `curve_test_bathroom_target` is the bathrooms'.
 
-**Optimistic descent, automatic recovery.** Step down 0.1 every
-`curve_test_step_days` (default 7). If any monitored room sits more than
-`curve_test_tolerance` (default 0.5 K) below target for 90 continuous minutes in
-heating weather, step back up, latch `curve_test_floor_found`, and stop descending.
+**Raise on a shortfall, shift or slope.** If any radiator room sits more than
+`curve_test_tolerance` (default 0.5 K) below its target for 90 continuous minutes
+in heating weather (met.no air below 12 °C), or an underfloor room below its line,
+the curve goes up one step: the **shift** +1 when met.no's air temperature is at or
+above `curve_test_raise_slope_below` (default 0 °C), the **slope** +0.1 below it -
+the same rule as the hand changes (§ "Curve in force"). Caps:
+`curve_test_max_shift` (5) and `curve_test_max_slope` (1.2); at both, it only
+pushes. One raise per episode - the room has to recover before the next.
 
-The revert automation **stays armed after the floor is found**. A slope validated in
+**Descent is optional.** In descent mode (slope floor below the slope in force) the
+slope also steps down 0.1 every `curve_test_step_days` (default 7) while nothing
+fails, and a genuine failure latches `curve_test_floor_found` and stops it.
+
+The raise automation **stays armed after the floor is found**. A slope validated in
 November at −2 °C has not been tested at −15 °C; when that arrives, the curve is
 pushed back up automatically. This is what makes it safe to leave running unattended.
 
@@ -146,58 +163,55 @@ It is used only in that direction.
 −4 °C" is a very different claim from "0.9 held at −15 °C". Do not size a heat pump
 off a slope validated in mild weather.
 
-## Ascend-only mode (start low, raise if needed)
+## Ascend-only mode (the default)
 
-The slope was set to **0.9** manually in Aug 2026 on a start-low-and-raise plan. To run
-that instead of descending, set `curve_test_min_slope` to the current slope (0.9):
-step-down then fails its own condition and never fires. What remains is the half that
-matters for this strategy — hold, monitor, **raise 0.1 on any sustained shortfall**,
-record how cold it survived.
+`script.curve_test_start` records the curve in force (for abort) and sets the slope
+floor to the slope in force, so step-down fails its own condition and never fires.
+What remains: hold, monitor, **raise on any sustained shortfall**, record how cold
+it survived. Because the step never rolls over, `curve_test_step_min_outside`
+accumulates the coldest temperature survived since the last raise, which *is* the
+result: "0.9 / +3 held, coldest −11 °C." `input_text.curve_test_result` carries
+failures in one readable line.
 
-Because the step never rolls over in this mode, `curve_test_step_min_outside`
-accumulates the coldest temperature the slope has survived since starting, which *is*
-the result: "0.9 held, coldest −11 °C." `input_text.curve_test_result` carries the same
-in one readable line.
+It fails toward comfort and never probes downward on data you cannot rely on. To
+descend instead, lower `input_number.curve_test_min_slope` by hand after starting.
 
-Ascend-only is the better choice if the valves are not yet trustworthy: it fails toward
-comfort, and never probes downward on data you cannot rely on.
+## Install and run
 
-## Install
+Deployed by `./deploy.sh` (`curve-test/` is in its manifest, `curve_test:` in
+`configuration.yaml`). New helpers need a reload of `input_boolean`, `input_number`,
+`input_datetime`, `input_text`, `template`, `automation` and `script` (or a restart).
 
-```
-config/
-└── curve-test/
-    └── heating_curve_test.yaml
-```
-
-```yaml
-homeassistant:
-  packages:
-    curve_test: !include curve-test/heating_curve_test.yaml
-```
-
-Restart HA, then run `script.curve_test_start` (sets defaults, stamps the step, and
-enables). `script.curve_test_abort` disables the test and restores slope **1.2** —
-note that is the old gas-boiler curve, not the 0.9 the boiler runs today, so an
-abort *raises* the slope. Check the hard-coded value in
-`curve-test/heating_curve_test.yaml` before relying on it.
+- **Start:** `script.curve_test_start` - records the curve in force, sets the
+  defaults (tolerance 0.5 K, caps 1.2 / +5, slope-below 0 °C, living room 21,
+  bathrooms 22), ascend-only, and enables.
+- **Abort:** `script.curve_test_abort` - disables and restores the recorded starting
+  curve. If start never ran, it leaves the curve alone and says so (a never-set
+  helper sits at its minimum, slope 0.2 / shift −13, which must never reach the
+  boiler).
+- **Pause without restoring:** turn `input_boolean.curve_test_enabled` off.
 
 ## Entities
 
 | Entity | Purpose |
 |---|---|
-| `input_boolean.curve_test_enabled` | master switch |
+| `input_boolean.curve_test_enabled` | master switch (off until started) |
 | `input_boolean.curve_test_floor_found` | latched once a shortfall occurred |
-| `input_number.curve_test_target_temp` | comfort line, default 21.0 °C |
+| `input_number.curve_test_target_temp` | living room line, default 21.0 °C |
+| `input_number.curve_test_bathroom_target` | bathrooms' line, default 22.0 °C |
 | `input_number.curve_test_tolerance` | allowed deficit, default 0.5 K |
 | `input_number.curve_test_step_days` | dwell per step, default 7 |
-| `input_number.curve_test_min_slope` | descent floor, default 0.6 |
+| `input_number.curve_test_min_slope` | descent floor; start sets it to the slope in force (ascend-only) |
+| `input_number.curve_test_max_slope` / `_max_shift` | raise caps, 1.2 / +5 |
+| `input_number.curve_test_raise_slope_below` | met.no air below which a raise is slope, not shift (0 °C) |
+| `input_number.curve_test_start_slope` / `_start_shift` | the curve abort restores |
 | `input_number.curve_test_best_validated_slope` | **the result** |
 | `input_number.curve_test_best_validated_outside` | how cold it was proven at |
-| `sensor.curve_test_worst_deficit` | max shortfall across monitored rooms |
+| `sensor.curve_test_rooms` | the five radiator rooms: room, own target, deficit, demand entity |
+| `sensor.curve_test_worst_deficit` | max shortfall across them |
 | `sensor.curve_test_worst_room` | which room is failing |
-| `sensor.curve_test_blind_zones` | advisory TRV temps for Lola / Trepihall |
-| `sensor.curve_test_status` | idle / stepping / floor found |
+| `sensor.curve_test_failure_diagnosis` | curve / trv_not_calling / trv_unreachable / underfloor / ok |
+| `sensor.curve_test_status` | idle / holding (ascend-only) / stepping down / floor found / paused |
 
 Notifications go to `notify.mobile_app_eeros_iphone_17`, threaded as `curve-test`:
 a daily digest at 20:00 and an alert on each step change.

@@ -239,6 +239,8 @@ history and `DANFOSS.md` if that logic is ever needed again.)
 
 **trv-climate/trim_check.yaml** - Reads every TRV trim back from the device (`homeassistant.update_entity` is a fresh ZHA read) at 03:45 and on remount signals, pushes if one differs from its `intended` map. Never writes. **Change the map whenever a trim changes.** A failed read keeps the cached value, so it can miss a reset, never invent one.
 
+**curve-test/heating_curve_test.yaml** - Deployed but **off** (2026-11-05). Once `script.curve_test_start` runs it holds the boiler curve, raises it on a 90-min room shortfall against each room's own TRV target (shift in mild weather, slope in real cold, capped), and records how cold each curve survived. The one automation here that writes a heating setting; bounded, logged, one switch. Start after Lola's TRVZB and settled trims. `HEATING_CURVE_TEST.md`.
+
 **trv-climate/room_feed.yaml** - **Parked, not loaded** (2026-10-19). Fed Lola's room
 temperature to her TRV (Danfoss automatic offset mode) for two nights; the valve
 barely responded, so she is back on a fixed trim. Kept as the record and for reuse

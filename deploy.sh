@@ -60,18 +60,14 @@ MANIFEST=(
   "battery-monitor/   battery-monitor/      yes"
   "workshop-heating/  workshop-heating/     yes"
   "heating-pressure/  heating-pressure/     yes"
+  "curve-test/        curve-test/           yes"
   "chores/            chores/               yes"
   "themes/            themes/               no"
 )
 
-# Deliberately NOT in the manifest, because neither is referenced from
-# configuration.yaml's `packages:` block -- copying them would put files in
-# /config that HA never loads, which reads like they are running when they are
-# not:
-#   curve-test/  -- not a passive package: it steps the Vitodens heating curve
-#                   down to find the house's tolerance floor. Deploying it
-#                   changes how the heating runs, so it goes live only on a
-#                   deliberate decision, never as part of a routine deploy.
+# curve-test/ is deployed (since 2026-11-05) but acts only while
+# input_boolean.curve_test_enabled is on; `script.curve_test_start` is the
+# deliberate decision that turns it on, not a deploy.
 
 cd "$(dirname "$0")"
 
