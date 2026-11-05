@@ -14,6 +14,11 @@ housekeeping packages that have nowhere better to live:
 - **`trv-climate/heating_alerts.yaml`** — push alert when a TRV room stays under
   its own target, naming the likely knob (curve shift / trim / valve fault), plus
   an alert when a room's sensors go silent. Alert only; nothing is adjusted.
+- **`trv-climate/condensation.yaml`** — mould and condensation risk at the outer
+  walls, from each room's outer-wall "Alt" sensor and its door reference: wall
+  humidity, dew-point margin, and a push when the wall stays damp (72 h mean
+  ≥ 75 %) or nears the dew point. Advise only. Here the risk is summer into
+  October, not winter.
 - **`heating-check.py`** — per-room "how well does each room hold its target"
   over a week, against a fixed pre-trim baseline, with degree-days and gas per
   degree-day so different weeks compare.
@@ -36,7 +41,10 @@ housekeeping packages that have nowhere better to live:
 - **`battery-monitor/`** — weekly battery nudge, plus immediate alerts for
   safety devices.
 - **`backup-monitor/`** — push alerts for the off-site backups running on
-  `alpine-docker`. The backup jobs themselves live in the `unraid` repo.
+  `alpine-docker` (the jobs themselves live in the `unraid` repo), and for HA's
+  own backups: `ha_backup_copies.py` checks that the newest automatic backup is
+  on the Yellow, in Nabu Casa and on the Hetzner Storage Box - two off-site
+  copies, not one.
 - **`chores/`** — household chore rotation, notifications and dashboard cards
   (see `chores/README.md`). Merged in from the former `ha-chores` repo with
   its history intact.
