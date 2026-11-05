@@ -47,6 +47,10 @@
 template:
   - sensor:
       # --- Ada (Sonoff TRVZB since 2026-10-26) ---
+      # Its current_temperature already has `local_temperature_offset` applied
+      # (-1.4 -> -1.8 moved the reading down 0.4 within seconds, 2026-11-05), so the
+      # offset is taken back out: these then read the raw sensor error like the eTRV
+      # rows, and the trim to set is MINUS the settled value.
       - name: "TRV offset Ada"
         unique_id: trv_offset_ada
         unit_of_measurement: "°C"
@@ -58,6 +62,7 @@ template:
           {{ room > -900 and trv > -900 }}
         state: >
           {{ (state_attr('climate.trv_sonoff_ada','current_temperature') | float
+              - states('number.trv_sonoff_ada_local_temperature_offset') | float(0)
               - states('sensor.climate_ada_s_room_temperature') | float) | round(2) }}
 
       - name: "TRV offset Ada settled"
@@ -80,6 +85,7 @@ template:
              and (trv - sp) | abs <= 1.0 }}
         state: >
           {{ (state_attr('climate.trv_sonoff_ada','current_temperature') | float
+              - states('number.trv_sonoff_ada_local_temperature_offset') | float(0)
               - states('sensor.climate_ada_s_room_temperature') | float) | round(2) }}
 
       # --- Master ---

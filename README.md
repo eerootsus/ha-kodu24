@@ -4,9 +4,10 @@ Home Assistant configuration for the house. It began as climate control alone,
 which is why most of it is still TRVs, and now also carries the general
 housekeeping packages that have nowhere better to live:
 
-- **`trv-climate/` + `danfoss.py`** — pyscript climate sensors for Danfoss
-  TRVs (documented below). They are observability, not control: Better Thermostat
-  was trialled for control and removed, so the TRVs regulate themselves.
+- **`trv-climate/` + `room_climate.py`** — pyscript climate sensors for the
+  TRVs - Danfoss eTRVs, one Sonoff TRVZB (documented below). They are
+  observability, not control: Better Thermostat was trialled for control and
+  removed, so the TRVs regulate themselves.
 - **`trv-climate/offset.yaml`** — measures how far each eTRV's own sensor sits
   from the real room, so the per-room trim is a number rather than a guess.
   Read the `_settled` sensors; see `BETTER_THERMOSTAT.md`.
@@ -71,7 +72,7 @@ from the shell and keep the record in step.
 
 Pyscript-based climate control for Danfoss TRVs in Home Assistant.
 
-`danfoss.py` is **sensor aggregation only** — it performs no writes to the TRVs.
+`room_climate.py` is **sensor aggregation only** — it performs no writes to the TRVs.
 It was trimmed that way for Better Thermostat, which was then trialled and removed
 (`BETTER_THERMOSTAT.md`). So nothing applies room-based control today: each eTRV
 runs its own PID on its own internal sensor, and these sensors feed the dashboard
@@ -93,14 +94,14 @@ room-based control is ever wanted back.
 
 ## Home Assistant Setup
 
-`./deploy.sh` does all of this — `danfoss.py` and `trv-climate/` are both in its
+`./deploy.sh` does all of this — `room_climate.py` and `trv-climate/` are both in its
 manifest and `climate_sensors:` is already declared in the tracked
 `configuration.yaml`. What lands where:
 
 ```
 config/
 ├── pyscript/
-│   └── danfoss.py                    <- main pyscript
+│   └── room_climate.py               <- main pyscript
 ├── trv-climate/
 │   └── climate.yaml                  <- template sensors with unique_ids
 └── configuration.yaml

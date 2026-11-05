@@ -28,7 +28,7 @@
 # A second set of triggers (<room>_nodata) alerts when a room has had no reading
 # for 3 h. Without it a dead sensor would read as a room that is fine: the
 # shortfall template cannot evaluate, so it simply never fires. If ALL rooms go
-# silent at once, suspect danfoss.py (see CLAUDE.md, the 2026-09-13 fix).
+# silent at once, suspect room_climate.py (see CLAUDE.md, the 2026-09-13 fix).
 #
 # Install: declared as `climate_alerts:` in configuration.yaml.
 
@@ -134,7 +134,7 @@ automation:
                   message: >
                     {{ name }} has had no room reading for 3 h, so the below-target
                     alert cannot see it. Check the room sensors' batteries / Zigbee,
-                    or if every room is silent, `ha core logs | grep danfoss`.
+                    or if every room is silent, `ha core logs | grep room_climate`.
                   data:
                     push:
                       thread-id: heating

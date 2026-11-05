@@ -172,7 +172,7 @@ Two facts that govern any mesh work here:
 
 This is not a standalone Python project - it runs within Home Assistant's PyScript integration.
 
-**Installation:** none of it is manual any more. `danfoss.py` and `trv-climate/` are
+**Installation:** none of it is manual any more. `room_climate.py` and `trv-climate/` are
 both in `deploy.sh`'s manifest and `climate_sensors:` is declared in the tracked
 `configuration.yaml`, so `./deploy.sh` is the whole procedure. A changed module is
 picked up by `pyscript.reload`; the template sensors need `template.reload`.
@@ -190,11 +190,16 @@ No build step required. Dependencies in `requirements.txt` are Home Assistant's 
 > **the failure is invisible from the UI**: an absent sensor and an `unavailable`
 > one look identical from a template, and this install writes no
 > `home-assistant.log`, so the traceback only ever appeared in `ha core logs`.
-> If climate goes quiet again, read `ha core logs | grep danfoss` first.
+> If climate goes quiet again, read `ha core logs | grep room_climate` first.
+>
+> **Same class of failure, 2026-10-26 → 11-05:** the module only published areas
+> holding an `eTRV0103`, so when Ada's TRV became a Sonoff TRVZB her room sensor
+> froze at its last value - stale, not absent, so even the no-data alert stayed
+> quiet. `TRV_MODELS` now lists both; add any new TRV model there.
 
-**danfoss.py** - Main PyScript module containing:
+**room_climate.py** (named `danfoss.py` until 2026-11-05) - Main PyScript module containing:
 
-danfoss.py is **sensor-aggregation only** — it performs **no writes to the TRVs**
+room_climate.py is **sensor-aggregation only** — it performs **no writes to the TRVs**
 and does not control heating. It was trimmed that way to make room for Better
 Thermostat; **BT was then trialled and removed** (2026-09-13, it offered nothing
 meaningful — see `BETTER_THERMOSTAT.md`), so nothing applies room-based control

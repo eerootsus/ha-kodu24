@@ -214,8 +214,9 @@ template:
       # catches the mesh dropping writes.
       #
       # ⚠️ ON SWAPPING TRVs (e.g. to Sonoff TRVZB): update the room -> demand-entity
-      # map below. TRVZB has no pi_heating_demand; use its valve-position or
-      # hvac_action entity instead. If an entity here does not exist the diagnosis
+      # map below. TRVZB has no pi_heating_demand: map its climate entity instead
+      # and the diagnosis reads hvac_action (heating = 100, idle = 0) - done for Ada
+      # on 2026-11-05 after her swap on 2026-10-26. If an entity here does not exist the diagnosis
       # returns `no_diagnosis`, which is treated as inconclusive — it will pause the
       # descent rather than invent a curve floor, but the test is then blind until
       # the map is fixed.
@@ -225,7 +226,7 @@ template:
           {% set target = states('input_number.curve_test_target_temp') | float(21.0) %}
           {% set tol = states('input_number.curve_test_tolerance') | float(0.5) %}
           {% set map = {
-               'sensor.climate_ada_s_room_temperature':  'sensor.trv_danfoss_ada_pi_heating_demand',
+               'sensor.climate_ada_s_room_temperature':  'climate.trv_sonoff_ada',
                'sensor.climate_bedroom_temperature':     'sensor.trv_danfoss_master_pi_heating_demand',
                'sensor.climate_kitchen_temperature':     'sensor.trv_danfoss_kitchen_pi_heating_demand' } %}
           {% set ns = namespace(worst=None, deficit=-99, trv=None) %}
@@ -243,7 +244,13 @@ template:
           {% elif ns.deficit <= tol %}ok
           {% elif not has_value(ns.trv) and states[ns.trv] is not defined %}no_diagnosis
           {% else %}
-            {% set dem = states(ns.trv) | float(-1) %}
+            {# A climate entity (Ada's TRVZB) has no demand %, only hvac_action. #}
+            {% if ns.trv.startswith('climate.') %}
+              {% set a = state_attr(ns.trv, 'hvac_action') %}
+              {% set dem = 100 if a == 'heating' else 0 if a == 'idle' else -1 %}
+            {% else %}
+              {% set dem = states(ns.trv) | float(-1) %}
+            {% endif %}
             {% set age = (as_timestamp(now()) - as_timestamp(states[ns.trv].last_updated, 0)) / 60 %}
             {% if dem < 0 or age > 120 %}trv_unreachable
             {% elif dem <= 1 %}trv_not_calling
@@ -253,13 +260,14 @@ template:
         attributes:
           detail: >
             {% set map = {
-                 'sensor.climate_ada_s_room_temperature':  'sensor.trv_danfoss_ada_pi_heating_demand',
+                 'sensor.climate_ada_s_room_temperature':  'climate.trv_sonoff_ada',
                  'sensor.climate_bedroom_temperature':     'sensor.trv_danfoss_master_pi_heating_demand',
                  'sensor.climate_kitchen_temperature':     'sensor.trv_danfoss_kitchen_pi_heating_demand' } %}
             {% set out = [] %}
             {% for room, trv in map.items() %}
               {% set out = out + [ (state_attr(room,'friendly_name') or room) ~ ' ' ~ states(room)
-                                   ~ '°C / demand ' ~ states(trv) ~ '%' ] %}
+                                   ~ '°C / ' ~ (state_attr(trv, 'hvac_action') if trv.startswith('climate.')
+                                                else 'demand ' ~ states(trv) ~ '%') ] %}
             {% endfor %}
             {{ out | join(' | ') }} | flow {{ states('sensor.vicare_supply_temperature') }}°C
             | burner {{ states('binary_sensor.vicare_burner_active') }}

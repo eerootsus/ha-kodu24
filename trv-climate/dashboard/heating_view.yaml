@@ -12,7 +12,7 @@
 #
 # Why the room line does not show the thermostat's own "current temperature":
 # that is the eTRV's internal sensor, which reads 1.5-3 C warm (see
-# BETTER_THERMOSTAT.md). The room average from danfoss.py is what the trims aim
+# BETTER_THERMOSTAT.md). The room average from room_climate.py is what the trims aim
 # at, so that is what the room cards show, coloured by distance from target:
 # green within 0.5, light-blue/blue below, amber/deep-orange above.
 #
@@ -237,7 +237,8 @@ sections:
       \ ~ s %}\n{%- set room = (states(r) | float(none)) if r else none %}\n{%- set trv = state_attr(c,\
       \ 'current_temperature') | float(none) %}\n{%- set sp = state_attr(c, 'temperature') | float(none)\
       \ %}\n{%- set settled = states('sensor.trv_offset_' ~ s ~ '_settled') | float(none) %}\n{%- set\
-      \ raw = (trv - room) if (trv is not none and room is not none) else none %}\n{#- The room's weighted\
+      \ raw = (trv - (states('number.trv_sonoff_ada_local_temperature_offset')\
+      \ | float(0) if s == 'ada' else 0) - room) if (trv is not none and room is not none) else none %}\n{#- The room's weighted\
       \ sensors: a name containing \"Alt\" goes to the Alt column. #}\n{%- set ns = namespace(main=none,\
       \ alt=none) %}\n{%- for l in wlabels %}{% for d in label_devices(l) if area_id(d) == area %}\n{%-\
       \ set t = namespace(v=none) %}\n{%- for e in device_entities(d) if is_state_attr(e, 'device_class',\

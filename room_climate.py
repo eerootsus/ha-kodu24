@@ -6,7 +6,7 @@ external sensors labelled `sensor_weight_X`.
 
 It deliberately performs NO writes to the TRVs. That was done to make room for
 Better Thermostat, which was then trialled and removed (2026-09-13) — so nothing
-applies room-based control now, and each eTRV runs its own PID on its internal
+applies room-based control now, and each TRV runs its own PID on its internal
 sensor. These sensors are therefore observability plus the input to the
 heating-curve test; see BETTER_THERMOSTAT.md for the decision and the options for
 getting room-based control back.
@@ -15,6 +15,8 @@ The previous Zigbee control logic (time sync, radiator covered, load balancing,
 external-sensor feed, retry queue) lives only in git history now. See DANFOSS.md
 for the eTRV behaviour that led here (§2.6: the native external-sensor feed holds
 an anticipatory ~1% valve opening, so it was retired).
+
+Named danfoss.py until 2026-11-05; renamed once it also covered the TRVZB.
 """
 
 from logging import Logger
@@ -23,7 +25,11 @@ from homeassistant.helpers import area_registry, device_registry, entity_registr
 from homeassistant.helpers.device_registry import DeviceEntry
 from homeassistant.components.sensor import SensorDeviceClass
 
-DEVICE_MODEL = "eTRV0103"
+# TRV models that mark an area as a heated room. Matching one model only is how
+# Ada's room went dark: her eTRV was swapped for a TRVZB on 2026-10-26, her area
+# stopped matching, and `sensor.climate_ada_s_room_temperature` froze at its last
+# value (21.2) - a stale number, so not even the no-data alert fired.
+TRV_MODELS = {"eTRV0103", "TRVZB"}
 
 LABEL_SENSOR_WEIGHT_PREFIX = "sensor_weight_"
 
@@ -57,7 +63,7 @@ def get_all_climate_devices() -> tuple[dict[str, list[DeviceEntry]], dict[str, l
         area_id = device.area_id
 
         # Check if TRV
-        if device.model == DEVICE_MODEL:
+        if device.model in TRV_MODELS:
             if area_id not in trv_devices_by_area:
                 trv_devices_by_area[area_id] = []
             trv_devices_by_area[area_id].append(device)

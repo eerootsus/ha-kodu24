@@ -54,7 +54,7 @@ MANIFEST=(
   # actually loads. Tracked since 2026-09-05 -- it was unversioned before, and
   # that is how battery-monitor stayed undeployed and silent.
   "configuration.yaml configuration.yaml    no"
-  "danfoss.py         pyscript/danfoss.py   no"
+  "room_climate.py    pyscript/room_climate.py no"
   "trv-climate/       trv-climate/          yes"
   "backup-monitor/    backup-monitor/       yes"
   "battery-monitor/   battery-monitor/      yes"
