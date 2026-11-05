@@ -8,7 +8,7 @@ housekeeping packages that have nowhere better to live:
   TRVs - Danfoss eTRVs, one Sonoff TRVZB (documented below). They are
   observability, not control: Better Thermostat was trialled for control and
   removed, so the TRVs regulate themselves.
-- **`trv-climate/offset.yaml`** — measures how far each eTRV's own sensor sits
+- **`trv-climate/offset.yaml`** — measures how far each TRV's own sensor sits
   from the real room, so the per-room trim is a number rather than a guess.
   Read the `_settled` sensors; see `BETTER_THERMOSTAT.md`.
 - **`trv-climate/heating_alerts.yaml`** — push alert when a TRV room stays under
@@ -58,7 +58,8 @@ housekeeping packages that have nowhere better to live:
 ```
 
 Runs over the tailnet (HA is not reachable from the workstation's LAN segment)
-and needs the SSH add-on holding this workstation's key. **Edit here, not in
+and needs the SSH add-on to accept your key (two are authorized; see
+`CLAUDE.md` "Transport gotchas"). **Edit here, not in
 `/config`** — deploys overwrite the live copies.
 
 `curve-test/` is deliberately not deployed: it steps the heating curve down to
@@ -70,11 +71,12 @@ from the shell and keep the record in step.
 
 ## Climate
 
-Pyscript-based climate control for Danfoss TRVs in Home Assistant.
+Pyscript room-climate sensors for the radiator TRVs: four Danfoss eTRV0103s, and
+a Sonoff TRVZB on Ada's radiator since 2026-10-26 (Lola's is next).
 
 `room_climate.py` is **sensor aggregation only** — it performs no writes to the TRVs.
 It was trimmed that way for Better Thermostat, which was then trialled and removed
-(`BETTER_THERMOSTAT.md`). So nothing applies room-based control today: each eTRV
+(`BETTER_THERMOSTAT.md`). So nothing applies room-based control today: each TRV
 runs its own PID on its own internal sensor, and these sensors feed the dashboard
 and the heating-curve test.
 
@@ -82,10 +84,14 @@ and the heating-curve test.
 
 - Publishes one weighted virtual temperature/humidity sensor per area
   (`sensor.climate_{area_id}_temperature` / `_humidity`). An area with no usable
-  external sensor is published as `unavailable` rather than omitted — that is
-  Stairwell's normal state, not a fault
+  external sensor is published as `unavailable` rather than omitted, so a dead
+  sensor shows (every TRV room has one since 2026-10-25)
 - Weights come from device labels (`sensor_weight_X`); TRVs find the areas but
   their own temperatures are **excluded**, so heating does not skew the average
+- Only TRVs whose model is in `TRV_MODELS` (`eTRV0103`, `TRVZB`) count. A TRV of
+  any other model leaves its room unpublished - and an already-published sensor
+  then freezes at its last value rather than going `unavailable`, which is how
+  Ada's room went blind 2026-10-26 → 11-05
 
 Removed in the Better Thermostat cutover: the external-sensor feed, weekly time
 sync, radiator-covered writes, load-balancing disable, and the Zigbee retry queue.
@@ -117,7 +123,7 @@ Pyscript picks up a changed module on `pyscript.reload`; the template sensors ne
 ### Virtual Temperature Sensors
 
 The pyscript creates virtual sensors (`sensor.climate_{area_id}_temperature`) by:
-1. Finding all TRVs assigned to each area — this decides *which* areas get a sensor
+1. Finding all TRVs (of a model in `TRV_MODELS`) assigned to each area — this decides *which* areas get a sensor
 2. Reading the labelled external sensors in those areas
 3. Calculating the weighted average from those sensors alone. **TRV temperatures
    are not in it at all** (an earlier version gave them weight 0.5); a valve's own
@@ -146,14 +152,13 @@ went with the rest of the control logic. The label is inert now.
 ### Enable History Graphs for Load Estimates
 
 **Already done** — this block is in the tracked `configuration.yaml`. Kept here as
-the reason it is there: the TRV load estimate sensors carry no `state_class`, so HA
-records no history for them without it.
+the reason it is there: the eTRV load estimate sensors carry no `state_class`, so HA
+records no history for them without it. (Ada's line went with her eTRV; the TRVZB
+has no load estimate.)
 
 ```yaml
 homeassistant:
   customize:
-    sensor.trv_danfoss_ada_load_estimate:
-      state_class: measurement
     sensor.trv_danfoss_kitchen_load_estimate:
       state_class: measurement
     sensor.trv_danfoss_lola_load_estimate:
@@ -189,7 +194,8 @@ before trusting that a write landed.
 
 When you add TRVs to a new area:
 
-1. The pyscript will automatically create `sensor.climate_{area_id}_temperature`
+1. The pyscript will automatically create `sensor.climate_{area_id}_temperature`,
+   provided the TRV's model is in `TRV_MODELS` in `room_climate.py` (add it there if not)
 2. Add a new entry to `trv-climate/climate.yaml`:
 
 ```yaml
@@ -209,7 +215,8 @@ When you add TRVs to a new area:
 `battery-monitor/battery_monitor.yaml` — a weekly Sunday-morning digest of dead and
 low batteries, plus an immediate alert when a **leak/smoke sensor** goes offline
 (a flat battery on those fails silently: no alert, and no warning that there is no
-alert). Copy to `config/battery-monitor/` and include as a package.
+alert). Deployed by `deploy.sh` and declared under `packages:` in
+`configuration.yaml`.
 
 Threshold `sensor.battery_warning_level` is **20 %** (40 % until 2026-10-25, for lead
 time while the mesh was thin; see the feedback loop below). It is fixed in the YAML,

@@ -8,7 +8,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 **This repo is the source of truth for the Kodu 24 smart home.** Open work and plans live in `PLANS.md`; the Obsidian vault's `Projects/Smart home.md` only holds TODO-feeding next-action lines that point here. Record new findings and plans in the repo, not the vault, and move a `PLANS.md` item's outcome into the relevant doc once it is built.
 
-The climate half is a PyScript helper for Danfoss eTRV0103 Zigbee thermostatic radiator valves (TRVs). It publishes per-room virtual temperature/humidity sensors from external room sensors (since 2026-10-17 the door sensor; the outer-wall Alts are weight 0). It does **not** control heating: each eTRV regulates on its own internal sensor, corrected by a per-room trim set by hand (`BETTER_THERMOSTAT.md` "Trims in force"; Better Thermostat was trialled and dropped as an obscuring layer). Automation here advises — `trv-climate/heating_alerts.yaml` names the knob, a human turns it.
+The climate half is a PyScript helper for the Zigbee thermostatic radiator valves (TRVs): four Danfoss eTRV0103s and, on Ada's radiator since 2026-10-26, a Sonoff TRVZB (Lola's is next, `PLANS.md` §3). It publishes per-room virtual temperature/humidity sensors from external room sensors (since 2026-10-17 the door sensor; the outer-wall Alts are weight 0). It does **not** control heating: each TRV regulates on its own internal sensor, corrected by a per-room trim set by hand (`BETTER_THERMOSTAT.md` "Trims in force"; Better Thermostat was trialled and dropped as an obscuring layer). Automation here advises — `trv-climate/heating_alerts.yaml` names the knob, a human turns it.
 
 ## Setup & Deployment
 
@@ -210,8 +210,9 @@ room_climate.py is **sensor-aggregation only** — it performs **no writes to th
 and does not control heating. It was trimmed that way to make room for Better
 Thermostat; **BT was then trialled and removed** (2026-09-13, it offered nothing
 meaningful — see `BETTER_THERMOSTAT.md`), so nothing applies room-based control
-now. Each eTRV regulates on its own internal sensor with the external feed still
-disabled, and these sensors are observability plus the heating-curve test's input.
+now. Each TRV regulates on its own internal sensor (the eTRVs' external feed is
+still disabled, the TRVZB's external input is off), and these sensors are
+observability plus the heating-curve test's input.
 
 - **Weighted Calculation**: `calculate_weighted_climate()` computes a per-area
   weighted average from external sensors labelled `sensor_weight_X` (TRV
@@ -227,6 +228,8 @@ retry queue — was removed so the script can never interfere with BT. (See git
 history and `DANFOSS.md` if that logic is ever needed again.)
 
 **trv-climate/climate.yaml** - Template sensor definitions wrapping pyscript-created sensors for proper HA UI management.
+
+**trv-climate/offset.yaml** - Per-room TRV sensor error (TRV reading − room), raw and `_settled`; the settled value is what a trim should match. Ada's TRVZB reports its reading with its offset already applied, so hers adds it back. The stairwell has none yet.
 
 **trv-climate/heating_alerts.yaml** - Push alert when a TRV room stays under its own target, with the likely cause (curve / trim / valve). Alert only.
 
@@ -251,7 +254,8 @@ What that leaves, and it matters with heating season coming: the external feed i
 still disabled on the four eTRVs (`0x4015 = -8000`; Ada has a Sonoff TRVZB since
 2026-10-26, see `PLANS.md` §7), so each one regulates on its
 **internal** sensor, which sits on the radiator and reads warm. That is corrected
-with a static per-room trim (`regulation_setpoint_offset`, set 2026-10-17 —
+with a static per-room trim (`regulation_setpoint_offset`; on the TRVZB,
+`local_temperature_offset` with the opposite sign; set 2026-10-17 —
 values and rationale in `BETTER_THERMOSTAT.md` "Trims in force").
 `DANFOSS.md` is the curated eTRV Zigbee/feature reference.
 
@@ -270,4 +274,4 @@ Configure in Home Assistant UI on devices:
 
 ## Adding New Areas
 
-Areas are auto-detected from HA device assignments. Add corresponding template sensors to `trv-climate/climate.yaml` following existing pattern.
+Areas are auto-detected from HA device assignments: an area gets a sensor when it holds a TRV whose model is in `room_climate.py`'s `TRV_MODELS`. Add corresponding template sensors to `trv-climate/climate.yaml` following existing pattern.

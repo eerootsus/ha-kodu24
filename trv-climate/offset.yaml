@@ -39,8 +39,8 @@
 # a few genuinely cold weeks and read the mean. Expect nothing until then - with
 # summer setpoints at 5 C the settled condition is never true, which is correct.
 #
-# Stairwell is absent on purpose: it has no labelled external sensor, so there is no
-# truth to compare against.
+# Stairwell is absent: it had no room sensor when this was written. It has one since
+# 2026-10-25 (door sensor), so its two sensors are still to add (PLANS.md HA work).
 #
 # Install: part of trv-climate/, declared as `climate_offset:` in configuration.yaml.
 

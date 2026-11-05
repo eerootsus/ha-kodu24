@@ -112,11 +112,12 @@ template:
       # Radiator circuit (top floor). Worst shortfall across the rooms currently
       # reporting.
       #
-      # Lola's room and Trepihall are absent by circumstance, not design: Lola has
-      # TWO Sonoff TH01s fitted but both batteries are dead, so the weighted virtual
-      # sensor has no inputs. Replace the batteries and they rejoin automatically —
-      # no change needed here. Until then `rooms_reporting` shows 3, not 5, and the
-      # test is validating the curve against three of five radiator rooms.
+      # Lola's room and Trepihall are NOT in the list below. Both have working room
+      # sensors now (Lola's batteries were replaced; the stairwell got a door sensor
+      # 2026-10-25), so add `sensor.climate_lola_s_room_temperature` and
+      # `sensor.climate_trepihall_temperature` here (and to the diagnosis map) before
+      # enabling the test. Until then it validates the curve against three of five
+      # radiator rooms.
       - name: Curve test worst deficit
         unique_id: curve_test_worst_deficit
         unit_of_measurement: "K"

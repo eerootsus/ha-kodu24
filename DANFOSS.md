@@ -29,7 +29,7 @@ Demand settles to 0% only when the PID concludes no heat is needed for a sustain
 period *and* its anticipatory terms have wound down. From the live data, the
 decisive factor was **whether an external room sensor is being fed**:
 
-- **No external sensor** (e.g. Stairwell — virtual sensor `unavailable`): standard
+- **No external sensor** (Stairwell — never fed one): standard
   internal estimation; the loop settled cleanly to **0% / idle**.
 - **External sensor fed** (the other rooms): engages the active control path
   (§2.3 automatic-offset or §2.4 covered-radiator algorithm), which holds the
@@ -63,9 +63,10 @@ above setpoint — exactly the Stairwell behavior.
 This *was* the summer mechanism, as `update_heating_season`: disable external
 sensors above 18 °C outdoor, resume below 16 °C, hysteresis in between, driven by
 `sensor.vicare_outside_temperature`. **That function no longer exists.** The feed is
-now off permanently — `0x4015 = -8000` is written once, by hand, on all five — so
-Better Thermostat can own the setpoint without the eTRV's own control path fighting
-it. The outdoor-threshold job moved into BT's own summer-off setting.
+now off permanently — `0x4015 = -8000` was written once, by hand, on all five
+eTRVs (four since Ada's became a TRVZB, 2026-10-26) — originally so Better
+Thermostat could own the setpoint; BT is gone and the feed stayed off. Summer-off
+is now physical: the radiator master valves are closed (`PLANS.md` §1).
 
 Caveat: with the external sensor off, a valve will still open if the room drops
 below its setpoint (e.g. a cool summer morning against a winter setpoint). In
@@ -75,7 +76,7 @@ so valves stay closed.
 ### How this automation drives the eTRVs
 
 **It does not, and neither does anything else.** As of the Better Thermostat
-cutover `danfoss.py` writes nothing to the TRVs — it publishes
+cutover `room_climate.py` (then `danfoss.py`) writes nothing to the TRVs — it publishes
 `sensor.climate_<area>_temperature` / `_humidity` and stops there. BT was then
 trialled and removed (`BETTER_THERMOSTAT.md`), so each eTRV now runs its own PID on
 its **internal** sensor, with the external feed still disabled from the BT prep.
@@ -242,7 +243,7 @@ from external but locally closed. Disabled in Covered Radiator mode.
 
 ## What reads this document
 
-`danfoss.py` no longer maps onto any of it — see "How this automation drives the
+`room_climate.py` (formerly `danfoss.py`) no longer maps onto any of it — see "How this automation drives the
 eTRVs" above. The attribute reference is here for three consumers:
 
 - **Whatever replaces room-based control**, if anything does. Note `0x404B`

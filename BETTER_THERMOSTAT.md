@@ -31,22 +31,24 @@ use each eTRV as a calibrated actuator instead.
 ## Where control actually sits now
 
 ```
-labelled room sensors  ──►  danfoss.py  ──►  sensor.climate_<area>_*
+labelled room sensors  ──►  room_climate.py  ──►  sensor.climate_<area>_*
                                                    (observability + curve test)
 
-eTRV internal sensor   ──►  eTRV's own PID  ──►  valve
+TRV internal sensor    ──►  TRV's own PID   ──►  valve
                             setpoint set by hand / schedule
 ```
 
-**Nothing applies room-based control.** Each eTRV regulates on its own internal
-sensor, because the external feed is disabled (`0x4015 = -8000`, left over from the
-BT preparation and **not** reverted). `danfoss.py` still publishes the weighted room
+**Nothing applies room-based control.** Each TRV regulates on its own internal
+sensor: the four eTRVs because their external feed is disabled (`0x4015 = -8000`,
+left over from the BT preparation and **not** reverted), and Ada's Sonoff TRVZB
+(since 2026-10-26) because its external-sensor input is switched off.
+`room_climate.py` (named `danfoss.py` until 2026-11-05) still publishes the weighted room
 sensors, but nothing consumes them for control — they are for the dashboard and for
 `HEATING_CURVE_TEST.md`.
 
 Worth knowing before the heating season: an eTRV's internal sensor sits on the
 radiator, so it reads warm and the valve throttles early. That is the inaccuracy the
-external-sensor feature exists to correct, and it is currently off on all five. The
+external-sensor feature exists to correct, and it is currently off on every TRV. The
 options — **the static trim was chosen and set on 2026-10-17**, see "Trims in force"
 below:
 
@@ -57,7 +59,7 @@ below:
 - **Trim it with a static per-room offset.** Needs no continuous feed and no code,
   just one number per room, which is why it is the one being prepared for.
 
-### Trims in force (set 2026-10-17)
+### Trims in force (first set 2026-10-17; current value in bold)
 
 > **Taking the head off resets the trim to 0 on the device** (found 2026-10-27):
 > after the 2026-10-26 preset visit kitchen and master read `0x404B = 0` while HA
@@ -67,11 +69,13 @@ below:
 
 The goal is that the dial means the room: at 22 the room should be about 22. Set
 from the first cold fortnight, as each room's shortfall below its setpoint, before
-the `_settled` sensors had any data:
+the `_settled` sensors had any data. **Ada's row is the TRVZB's
+`local_temperature_offset`, with the opposite sign:** −1.8 there does what +1.8 does
+on an eTRV.
 
 | Room | `regulation_setpoint_offset` | Room vs setpoint before | Note |
 |---|---|---|---|
-| Ada | +1.4 → **+2.0** → TRVZB | −1.2 … −1.4 | Raised 2026-10-18: reached 22.0 at 23:00, then throttled to ~20 % and settled 0.6 short overnight - TRV read exactly 22 + 1.4, settled error ~2.0. Target 22 → 21 on 2026-10-21 (Kätlyn): settled in ~2 days and held 20.8–21.1 from 10-23 - trim confirmed. **Replaced 2026-10-26** by a Sonoff TRVZB (`climate.trv_sonoff_ada`, M30 thread, no adapter collar): the eTRV's collar failed at the preset visit and its adaptation run never finished. Starts on local offset 0 - trim to be found. **2026-10-27: first TRVZB settings** - it read ~1.2 K above the room and its default −1.0 K switching band let the room sit at 20.6–21.0 on a 22 target overnight: local offset **−1.2** (negative = reads lower = heats more), control accuracy **−0.2**, target **21.5**. ZHA truncates the offset to tenths (−1.2 landed as −1.1); written as −1.21 and read back as −1.2. **2026-10-27 21:00: −1.4** (written as −1.41, read back −1.4): first day 0.5 K short on average, and at 21:00 it read 22.0 and sat idle on a 21.5 target with the room at 21.2. **2026-11-05: −1.8** (target 22 since 10-30): on −1.4 it held 21.9–22.0 in the mild days to 11-01, then fell 0.6–0.9 short as it got colder - TRV reading minus room grew +0.3 → +1.2 K. −1.8 aims mild days ~22.1, cold nights ~21.4. Ada's room sensor had been frozen at 21.2 since the swap (`room_climate.py` matched eTRVs only), so the Diagnostika table and alerts were blind to her until this was fixed. |
+| Ada | +1.4 → **+2.0** → TRVZB | −1.2 … −1.4 | Raised 2026-10-18: reached 22.0 at 23:00, then throttled to ~20 % and settled 0.6 short overnight - TRV read exactly 22 + 1.4, settled error ~2.0. Target 22 → 21 on 2026-10-21 (Kätlyn): settled in ~2 days and held 20.8–21.1 from 10-23 - trim confirmed. **Replaced 2026-10-26** by a Sonoff TRVZB (`climate.trv_sonoff_ada`, M30 thread, no adapter collar): the eTRV's collar failed at the preset visit and its adaptation run never finished. Starts on local offset 0 - trim to be found. **2026-10-27: first TRVZB settings** - it read ~1.2 K above the room and its default −1.0 K switching band let the room sit at 20.6–21.0 on a 22 target overnight: local offset **−1.2** (negative = reads lower = heats more), control accuracy **−0.2**, target **21.5**. ZHA truncates the offset to tenths (−1.2 landed as −1.1); written as −1.21 and read back as −1.2. **2026-10-27 21:00: −1.4** (written as −1.41, read back −1.4): first day 0.5 K short on average, and at 21:00 it read 22.0 and sat idle on a 21.5 target with the room at 21.2. **2026-11-05: −1.8** (target 22 since 10-30): on −1.4 it held 21.9–22.0 in the mild days to 11-01, then fell 0.6–0.9 short as it got colder - TRV reading minus room grew +0.3 → +1.2 K. −1.8 aims mild days ~22.1, cold nights ~21.4. Ada's room sensor had been frozen at 21.2 since the swap (`room_climate.py` matched eTRVs only), so the Diagnostika table and alerts were blind to her until this was fixed. Same day, target 22 → **21.5** (Eero), in line with Master and the kitchen; the −1.8 offset carries over unchanged. |
 | Master | +1.5 → +2.2 → +2.0 → +1.5 → **+1.0** | −1.3 … −1.6 | +2.2 on 2026-10-17 16:03 (throttling 0.7 short). Back to +2.0 on 2026-10-18: held 22.0–22.6, i.e. a touch over. Tuning rule: err slightly under target, not over. Uncontrolled heat in: nearest the manifold, en-suite floor loops, and the **manifold is inside its wall** - expect it to need the smallest trim (`PLANS.md` §1). 2026-10-19: 22.5–22.8 overnight with the valve at 6–7 % - uncontrolled heat dominates; 1.5 lets the valve close. Target 22 → 21 on 2026-10-21 (Kätlyn): settled in ~2 days to 21.2–21.6, i.e. 0.2–0.5 over and drifting down - steady, left alone. **2026-10-27: trim found reset to 0 after the preset visit, rewritten +1.5; target 21.5** (house felt chilly with 22 + no trim). **2026-11-05: +1.0** - on +1.5 / 21.5 it ran +0.6…+0.9 over from 10-30 to 11-03 with the valve at 2–8 %, back to ±0.3 only in the 11-04 cold. Read back from the device: `0x404B = 10`. |
 | Lola | +2.0 → +2.5 → 0 + room feed → **+2.5** | −1.8 … −2.2 | 2026-10-18/19: automatic offset mode tried (`trv-climate/room_feed.yaml`, now parked) - valve stuck ~25–35 % whatever the room did (20.8 at night, 22.6 in sun). Back on the +2.5 trim 2026-10-19 20:07, which had held 22.1–22.3 on night 1 (misses only in morning sun). Next: free the TRV, then the TRVZB (`PLANS.md` §3). **2026-10-26: target 22 → 23** - her eTRV reads ~3.4 K warm, past the 2.5 cap; overnight 21.2 → 22.4 with the valve ~98 %. TRVZB for her next. **2026-10-27: → 22.5** (22.7 and rising at 23); her head reading tracks the boiler cycling, so she is erratic on any setting - TRVZB is the fix. **2026-11-05: → 23 again** as a stopgap until her TRVZB arrives (in the post, due the week of 11-09). Trim read back from the device as `0x404B = 25`, the cap. On 22.5 she held target in the milder days to 11-01 (valve ~98 %, error +1.8…+2.5), then ran 1.1–1.4 short from 11-02 with the valve throttled to 23–30 %: the head read 25.1 = 22.5 + 2.5 and thought it had arrived, while its error over the door sensor had grown to +3.4…+4.0. The error swings ~2 K with valve opening, so expect overshoot on 23 in mild weather |
 | Kitchen | +2.5 → +2.0 → **+1.5** | −2.1 … −2.5; TRV reads ~3 K warm | Still ~0.5 K short at best - **against the outer-wall sensor** (`TH01 Sonoff Kitchen Alt`), the only one until 2026-10-25. A door sensor (SNZB-02P, weight 2) was added then and the Alt went to weight 0; first reading door 21.9 vs Alt 20.5, so the shortfall above is overstated by ~1.4 K. Against the door sensor the TRV reads only ~1 K warm (22.4 vs 21.4), so +2.5 would aim the room at ~22.5 on a 21 target: trimmed to +2.0 on 2026-10-25 12:37. Its valve sat at ~95 % for days at the old 22 target: that was the trim making the TRV chase 24.5 on its own sensor, not starvation - the kitchen is a 9 m run, level with Lola (`PLANS.md` §1). Next check: whether 21 holds on a cold night. **2026-10-27: trim found reset to 0 after the preset visit, rewritten +2.0; target 21.5.** **2026-11-05: +1.5** - +0.2…+0.5 over in the milder days 10-31..11-03; in the 11-04 cold it fell 0.1–0.4 short at 93–98 % valve, i.e. curve-limited, so a smaller trim costs nothing there. Read back: `0x404B = 15`. |
@@ -101,18 +105,13 @@ morning sun (22.6, valve still 94 %): her boxed-in TRV cannot feel the room
 warming - first room where automatic offset mode would clearly help, after the
 curtain/headboard fix.
 
-> **SETTINGS FROZEN since 2026-10-19 until the radiator balancing visit**
-> (`PLANS.md` §1). Curve 0.9 / +3, trims Ada +2.0 · Master +1.5 · Kitchen +2.0 ·
-> Stairwell 0, Lola +2.5 (room feed tried and parked 2026-10-19). Too many levers moved at once already;
-> before the radiators are balanced every trim or curve change partly compensates
-> for the imbalance and would need redoing. Observe only (Diagnostika table,
-> alerts, `./heating-check.py`). Exceptions: safety, or a room clearly
-> uncomfortable for days - and then one lever, recorded here.
-> **Exception taken 2026-10-25 12:37: Kitchen trim +2.5 → +2.0.** Not a tuning
-> step but a correction of the reference: the +2.5 was sized against the
-> outer-wall Alt, and the new door sensor reads ~1.4 K warmer (see the table).
-> Same day the kitchen and stairwell targets went 22 → 21 by hand (Ada and Master
-> went 22 → 21 on 2026-10-21). Rooms take ~2 days to settle after a change.
+> **Settings were frozen 2026-10-19 → 2026-10-26** for the radiator balancing visit
+> (`PLANS.md` §1): before balancing, every trim or curve change partly compensates
+> for the imbalance and would need redoing. One exception was taken (2026-10-25
+> 12:37, kitchen +2.5 → +2.0, a correction to the new door sensor rather than a
+> tuning step). The presets went in on 2026-10-26, which ended the freeze; the trims
+> have been tuned since (table above). What stands: one lever at a time, and rooms
+> take ~2 days to settle after a change.
 
 **Second night (2026-10-18 → 19), colder (7.8 → 2 °C):** Ada and the kitchen
 fully open all night and short (Ada 22.1 → 21.6 on her door sensor) → curve shift
@@ -130,7 +129,9 @@ door sensor alone; the outer-wall Alts went to `sensor_weight_0`. Rooms read
 **Alert:** `trv-climate/heating_alerts.yaml` pushes a notification when a room stays
 more than 0.5 °C under its own target for 3 h in heating weather, naming the likely
 cause from the valve: ≥ 80 % open → raise the heating curve; partly open → the trim
-is too small; ≤ 1 % → stuck valve or mesh. Alert only — nothing is adjusted.
+is too small; ≤ 1 % → stuck valve or mesh. Ada's TRVZB reports no valve %, so for
+her it reads `hvac_action`: calling and short → curve; idle and short → make its local
+offset more negative. Alert only — nothing is adjusted.
 
 **Check with `./heating-check.py`** — it prints, per room, setpoint, room average,
 shortfall vs setpoint (hour by hour against the setpoint in force), valve demand,
@@ -139,18 +140,15 @@ settled offset and trim, side by side with a fixed pre-trim baseline
 and gas per degree-day so different weeks can be compared. Everything but the
 weather comes from long-term statistics, so any window can be recomputed later.
 
-**Kitchen** is the outlier because its TRV sits at the radiator end boxed in
-between a couch and the wall, so the head reads a trapped warm pocket — the offset
-stayed ~3 K for days with demand pinned at 1 %, never decaying the way an exposed
-TRV's does when the valve shuts. Curtained radiators in the other rooms fare
-better: a curtain is open top and bottom and closed only at night. Covered mode
-(`0x4016 = TRUE` + external feed) is Danfoss's answer for this case and was used
-last winter, but the house ran hot with it, so it is not the fix being pursued. If
-+2.5 is not enough, the remaining lever is physical — a gap behind the couch. **Lola's** TRV is a milder case of the same thing (curtains + headboard), which is
-why her error jumped most when the valve opened. For both: try the physical fix
-first (curtains gathered away, a gap at the headboard / couch) and watch TRV−tuba in
-the Diagnostika table fall; if furniture cannot move, automatic offset mode (§2.3,
-external feed, `0x4016 = FALSE`) on just these two TRVs is the contained experiment.
+**Warm pockets.** The kitchen looked like the worst case - its TRV boxed in between
+a couch and the wall, the offset ~3 K for days - but most of that was its outer-wall
+reference: against the door sensor (from 2026-10-25) its head reads only ~1–1.5 K
+warm. **Lola's** is the real one (curtains + headboard): moving the furniture
+(2026-10-25) cut her error 4.5 → 3.0 K, but in cold weather it is +3.4…+4.0 K, past
+the eTRV's 2.5 K cap, and it swings ~2 K with valve opening. Covered mode
+(`0x4016 = TRUE` + external feed) was used last winter but the house ran hot with
+it, and automatic offset mode (§2.3) was tried on Lola 2026-10-18/19 without effect
+(`trv-climate/room_feed.yaml`, parked). Her fix is a TRVZB (`PLANS.md` §3).
 
 Write gotcha: `number.set_value` with `1.4` landed as **1.3** (the value is sent in
 0.1 K units and 1.4 × 10 truncates to 13). `1.41` gave 14. Read the entity back
@@ -171,6 +169,11 @@ publishes while the valve is modulating against a setpoint the room is near, whi
 the equilibrium the trim has to be right for. Both feed long-term statistics; give it
 a few genuinely cold weeks and read the mean off a statistics graph card
 (`trv-climate/dashboard/offset_card.yaml`).
+
+Ada's TRVZB applies its offset to the reading it reports, so her offset sensors add
+it back to give the raw error, and the value to write there is **minus** the settled
+number. The stairwell has had a room sensor since 2026-10-25 but no offset sensors
+yet (`PLANS.md` HA work).
 
 Nothing will appear until the heating actually runs — at summer setpoints the gate is
 never open, which is correct, not broken.
@@ -200,9 +203,9 @@ honest. It was unavailable on Lola until 2026-09-13; it is now on all four rooms
 have an external sensor, under matching entity ids. Keep all four on the same knob so
 they stay comparable.
 
-Both are currently **0.0** on every TRV. Verify the sign on one room before rolling
-it out — set it, wait for the room to re-settle, and check the offset sensor moves
-toward zero rather than away.
+`local_temperature_offset` is 0 on every eTRV; the trims in force are all
+`regulation_setpoint_offset`. (The TRVZB is different: there `local_temperature_offset`
+*is* the trim, and it does change the reported reading.)
 
 ## Target architecture that was planned (not built)
 
@@ -212,7 +215,7 @@ sensor.climate_<area>_temperature        target temp + calibration            (a
                                           outdoor threshold (summer off)
 ```
 
-- **danfoss.py is now sensor-aggregation only:** `update_room_climate_sensors`
+- **danfoss.py (now `room_climate.py`) was made sensor-aggregation only:** `update_room_climate_sensors`
   publishes the weighted `sensor.climate_<area>_temperature` (BT's per-room input)
   plus its helpers. **All TRV writes were removed** (time sync, radiator-covered,
   load-balancing, external-sensor feed, retry queue) so it cannot fight BT.
@@ -222,13 +225,13 @@ sensor.climate_<area>_temperature        target temp + calibration            (a
 
 ## Per-room mapping
 
-| Room | eTRV climate entity | BT external sensor input |
+| Room | TRV climate entity | Room sensor (was BT's input) |
 |------|---------------------|--------------------------|
 | Ada | `climate.trv_sonoff_ada` (TRVZB) | `sensor.climate_ada_s_room_temperature` |
 | Master/Bedroom | `climate.trv_danfoss_master` | `sensor.climate_bedroom_temperature` |
 | Kitchen | `climate.trv_danfoss_kitchen` | `sensor.climate_kitchen_temperature` |
 | Lola | `climate.trv_danfoss_lola` | `sensor.climate_lola_s_room_temperature` |
-| Stairwell | `climate.trv_danfoss_stairwell` | (no external sensor — TRV internal only) |
+| Stairwell | `climate.trv_danfoss_stairwell` | `sensor.climate_trepihall_temperature` (door sensor since 2026-10-25) |
 
 ## Setup steps (not to be followed — kept for what they changed on the devices)
 
@@ -254,12 +257,16 @@ Steps 2's device changes were applied and are still live. The rest was abandoned
 4. **Verify:** with a room above target, BT should drive the eTRV to its off/5 °C
    state and `pi_heating_demand` should reach **0** (the thing native mode never did).
 
-`danfoss.py` was trimmed to sensor-aggregation only for this plan. That trimming
+`danfoss.py` (renamed `room_climate.py` 2026-11-05) was trimmed to sensor-aggregation only for this plan. That trimming
 stands — it writes nothing to the TRVs — even though BT is gone, so **if room-based
 control is ever wanted again the control logic has to come back from git history or
 be rewritten**. See "Where control actually sits now" above.
 
 ## Firmware & config baseline (verified)
+
+As of 2026-09-13, when all five were eTRVs. Ada's was replaced by a Sonoff TRVZB on
+2026-10-26 (firmware `0x00001404`, no update offered as of 2026-11-05), so "all five"
+below means the eTRVs of the time.
 
 - **Firmware is already uniform and current:** all five report
   `sw_version = 0x00000020`, and every `update.*_firmware` entity is `off`
@@ -431,8 +438,9 @@ was settled on. Ids are what matter for templating, so this was left alone.
 
 ## Open issue: radiator TRVs stuck at 1 % (summer warmth)
 
-Four radiator TRVs (ada, master, kitchen, lola) hold `pi_heating_demand = 1 %` and
-the radiators stay warm in summer; only **stairwell** idles at 0 %. Because the
+Four radiator TRVs (ada, master, kitchen, lola) held `pi_heating_demand = 1 %` and
+the radiators stayed warm in summer 2026 (Ada's eTRV has since been replaced by a
+TRVZB, and Lola's is next; a TRVZB drives its valve directly and should close fully); only **stairwell** idles at 0 %. Because the
 boiler must keep circulating (~25 °C) to feed the **bathroom underfloor loops**,
 the loop stays hot and a 1 % valve still passes heat — so turning heating off at
 the boiler isn't an option; the radiator valves themselves must close.

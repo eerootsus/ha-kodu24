@@ -79,12 +79,12 @@ pump is ever finished. If 1.2 was never justified, that has been leaking money f
 2. **Heating season.** The revert automation only evaluates below 12 °C outside;
    step-down does not check this, so starting in September wastes steps on mild
    weather. Start when the heating is genuinely working.
-3. **Blind zones — one now, not two.** Lola's room has since been fitted with two
-   labelled sensors (`TH01 Sonoff Lola` and `Lola Alt`, both `sensor_weight_2`), so
-   only **Stairwell/Trepihall** has no external sensor and stays unmonitored. It is
-   also the one TRV that idles correctly, which makes it the least urgent gap.
+3. **Blind zones — none now.** Lola's room has two labelled sensors, and the
+   stairwell got a door sensor (SNZB-02P, weight 2) on 2026-10-25. The package's
+   room list still has only Ada, master and the kitchen - add Lola and the
+   stairwell before enabling.
 
-   (Between some HA upgrade and 2026-09-13 *every* room was blind: `danfoss.py`
+   (Between some HA upgrade and 2026-09-13 *every* room was blind: `danfoss.py`, now `room_climate.py`,
    threw on each run and all ten sensors read `unavailable`. Fixed. Worth
    re-checking before enabling the test, because with every monitored room
    unavailable nothing can register a shortfall and the descent runs unopposed to
@@ -99,8 +99,9 @@ pump is ever finished. If 1.2 was never justified, that has been leaking money f
   temperature (`DANFOSS.md` §2.6), so demand cannot distinguish "needs heat" from
   "idle".
 - The mesh is unreliable; TRV reads may be stale.
-- The TRVs are candidates for replacement (Sonoff TRVZB). Room sensors are
-  brand-agnostic, so the test survives a valve swap.
+- The TRVs are being replaced by Sonoff TRVZBs (Ada 2026-10-26, Lola next). Room
+  sensors are brand-agnostic, so the test survives a valve swap; the diagnosis map
+  reads a TRVZB's `hvac_action` instead of demand.
 
 **Target is a fixed number, not a TRV setpoint.** This was written when Better
 Thermostat was expected to move setpoints and apply calibration offsets. BT was
