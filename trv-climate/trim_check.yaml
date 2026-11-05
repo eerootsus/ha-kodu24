@@ -1,0 +1,96 @@
+# TRV trim check - reads each trim back from the device and pushes when it is not
+# what was set.
+#
+# Why: taking an eTRV's head off resets its trim (0x404B) to 0 on the device, while
+# ZHA's number entity keeps showing the old value - it is a cache, refreshed only by
+# a report or a read. After the 2026-10-26 preset visit the kitchen and master ran a
+# night ~1 K short on a lost trim with HA showing +2.0 / +1.5 (BETTER_THERMOSTAT.md
+# "Trims in force").
+#
+# How: `homeassistant.update_entity` on a ZHA number entity is a fresh device read
+# (zha 2.3.1, NumberConfigurationEntity.async_update: allow_cache=False), so after
+# it the state is the device's value. Caveat: a read that fails (TRV asleep, out of
+# reach) leaves the cached value in place, so a failed read looks like a match.
+# That is why it runs nightly as well as on the remount signals - several chances.
+#
+# Advise, don't rewrite: a mismatch is pushed with the value to write; a human
+# writes it. (Write gotcha: `number.set_value` truncates to tenths, so 1.4 can land
+# as 1.3 - write 1.41 and read back.)
+#
+# `intended` is the one place the trims in force are written down for a machine;
+# BETTER_THERMOSTAT.md "Trims in force" is the human record with the reasons.
+# **Change both when you change a trim.**
+#
+# Remount signals: an eTRV whose head comes off loses its clock too, so the clock
+# error flag (also clock_sync.yaml's trigger) is the best one; a TRV coming back
+# from unavailable is the other.
+#
+# Install: declared as `climate_trim_check:` in configuration.yaml.
+
+automation:
+  - id: trv_trim_check
+    alias: "TRV - trim check"
+    description: "Reads every TRV trim back from the device and pushes if one differs from the intended value. Never writes. Source: ha-kodu24/trv-climate/trim_check.yaml."
+    mode: single
+    max_exceeded: silent
+    triggers:
+      - trigger: time
+        at: "03:45:00"
+      - trigger: state
+        entity_id:
+          - sensor.trv_danfoss_kitchen_software_error
+          - sensor.trv_danfoss_stairwell_software_error
+          - sensor.trv_danfoss_lola_software_error
+          - sensor.trv_danfoss_master_software_error
+        attribute: Invalid_clock_information
+        to: true
+        for: "00:05:00"
+      - trigger: state
+        entity_id:
+          - climate.trv_danfoss_kitchen
+          - climate.trv_danfoss_stairwell
+          - climate.trv_danfoss_lola
+          - climate.trv_danfoss_master
+          - climate.trv_sonoff_ada
+        from: "unavailable"
+        for: "00:05:00"
+    variables:
+      # Trim entity -> intended value. eTRVs: regulation_setpoint_offset (+ = heats
+      # more). TRVZB: local_temperature_offset (opposite sign, - = heats more).
+      intended:
+        number.trv_danfoss_kitchen_regulation_setpoint_offset: 1.5
+        number.trv_danfoss_master_regulation_setpoint_offset: 1.0
+        number.trv_danfoss_lola_regulation_setpoint_offset: 2.5
+        number.trv_danfoss_stairwell_regulation_setpoint_offset: -0.5
+        number.trv_sonoff_ada_local_temperature_offset: -1.8
+    actions:
+      # One entity at a time: a sleepy TRV that misses its read must not stop the rest.
+      - repeat:
+          for_each: "{{ intended.keys() | list }}"
+          sequence:
+            - action: homeassistant.update_entity
+              continue_on_error: true
+              target:
+                entity_id: "{{ repeat.item }}"
+      - variables:
+          wrong: >
+            {% set ns = namespace(l=[]) %}
+            {% for e, want in intended.items() %}
+              {% set have = states(e) | float(none) %}
+              {% if have is none or (have - want) | abs > 0.05 %}
+                {% set ns.l = ns.l + [e ~ ': ' ~ states(e) ~ ', intended ' ~ want] %}
+              {% endif %}
+            {% endfor %}
+            {{ ns.l }}
+      - if: "{{ wrong | count > 0 }}"
+        then:
+          - action: notify.mobile_app_eeros_iphone_17
+            data:
+              title: "TRV trim not as set"
+              message: >
+                Read back from the device: {{ wrong | join('; ') }}. Rewrite it
+                (number.set_value, e.g. 1.41 for 1.4) and read back - or, if the
+                change was deliberate, update trim_check.yaml.
+              data:
+                push:
+                  thread-id: heating

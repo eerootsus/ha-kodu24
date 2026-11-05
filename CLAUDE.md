@@ -237,6 +237,8 @@ history and `DANFOSS.md` if that logic is ever needed again.)
 
 **trv-climate/clock_sync.yaml** - Writes the time to any eTRV reporting `Invalid_clock_information` (on the flag, and nightly at 03:30), pushes only if that does not clear it. The stairwell went 2026-10-01..25 without a clock unnoticed after `set_time()` was dropped. Clock only, never a heating setting.
 
+**trv-climate/trim_check.yaml** - Reads every TRV trim back from the device (`homeassistant.update_entity` is a fresh ZHA read) at 03:45 and on remount signals, pushes if one differs from its `intended` map. Never writes. **Change the map whenever a trim changes.** A failed read keeps the cached value, so it can miss a reset, never invent one.
+
 **trv-climate/room_feed.yaml** - **Parked, not loaded** (2026-10-19). Fed Lola's room
 temperature to her TRV (Danfoss automatic offset mode) for two nights; the valve
 barely responded, so she is back on a fixed trim. Kept as the record and for reuse

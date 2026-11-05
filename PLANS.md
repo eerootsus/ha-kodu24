@@ -221,7 +221,10 @@ the shift, not the slope (`HEATING_CURVE_TEST.md`).
   5. Start like Ada: own sensor, local offset to be found, target back to ~21.5.
      Once settled, set the offset to 0 and turn the external switch on - the feed
      then writes her room temperature to it. One lever at a time.
-  6. Record the outcome in `BETTER_THERMOSTAT.md` (her trims row) and this file.
+  6. In `trv-climate/trim_check.yaml` (on main, newer than the branch) swap her
+     entry to `number.trv_sonoff_lola_local_temperature_offset` with her TRVZB
+     offset - until then it pushes nightly that her eTRV trim is missing.
+  7. Record the outcome in `BETTER_THERMOSTAT.md` (her trims row) and this file.
 - **What was tried first:** furniture moved off the TRV 2026-10-25 (error 4.5 →
   3.0 K, not enough); automatic offset room feed 2026-10-18/19 (valve stuck ~30 %
   whatever the room did, parked); targets 22 → 23 (10-26) → 22.5 (10-27) → 23
@@ -292,13 +295,6 @@ Zigbee. Avoid Tuya/Aqara TRVs.
 
 ## HA work (no visit needed)
 
-- **Trim check next to the clock sync.** A remount resets an eTRV's trim to 0
-  (2026-10-27: kitchen and master ran a night short, HA still showing the old
-  values). Keep the intended trims in one place, read `0x404B` back from each device
-  (on a remount signal and nightly), push when they differ - advise, don't rewrite
-  silently. Needed before any further preset visit. A manual read-back is a
-  websocket `zha/devices/clusters/attributes/value` call (cluster `0x0201`, attribute
-  `0x404B`, manufacturer `0x1246`; the value is in 0.1 K) - done that way 2026-11-05.
 
 - **Immich backup-silence sensor** — "no new assets for 14 days". The initial sync
   finished 2026-09-03 (~11k photos), so the baseline exists. A phone backup can stop

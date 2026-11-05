@@ -64,8 +64,12 @@ below:
 > **Taking the head off resets the trim to 0 on the device** (found 2026-10-27):
 > after the 2026-10-26 preset visit kitchen and master read `0x404B = 0` while HA
 > still showed +2.0 / +1.5 - ZHA's number entity is a cache and only refreshes on a
-> report or a read. Both rooms ran a night ~1 K short before it was spotted. After any
-> remount, read the trim back from the device and rewrite it (`PLANS.md` HA work).
+> report or a read. Both rooms ran a night ~1 K short before it was spotted. Since
+> 2026-11-05 `trv-climate/trim_check.yaml` reads every trim back from the device
+> nightly and on remount signals, and pushes a mismatch (it never rewrites). Its
+> `intended` map must follow this table. A one-off read by hand: websocket
+> `zha/devices/clusters/attributes/value`, cluster `0x0201`, attribute `0x404B`,
+> manufacturer `0x1246`, value in 0.1 K.
 
 The goal is that the dial means the room: at 22 the room should be about 22. Set
 from the first cold fortnight, as each room's shortfall below its setpoint, before
