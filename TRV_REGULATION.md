@@ -299,6 +299,11 @@ Settled along the way, and worth not re-litigating:
 
 ### Known gap: Lola has no `timestamp` sensor (accepted 2026-09-13)
 
+> **Moot since 2026-11-05:** ZHA no longer provides this sensor on *any* eTRV - on
+> kitchen, master and stairwell it was only a restored registry entry, `unavailable`
+> with no real value in recorder history. Those three were disabled (not deleted,
+> so a future ZHA that brings it back finds them). Nothing uses it.
+
 The one feature not on all five. **Do not re-investigate from scratch** — this is what
 was already ruled out.
 
