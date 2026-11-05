@@ -195,7 +195,11 @@ needs another shift step.
   (`trv-climate/room_feed.yaml`, parked 2026-10-19) did not help - the valve sat at
   ~30 % whatever the room did. Free the TRV first; if the trim then holds in sun
   and on cold nights, done.
-- **If not: the Sonoff TRVZB on her radiator** (doubles as §7's test). Regulating
+- **If not: the Sonoff TRVZB on her radiator** (doubles as §7's test). **Ordered, in
+  the post 2026-11-05, due the week of 11-09;** she runs on target 23 with the eTRV
+  trim at its +2.5 cap until then (`BETTER_THERMOSTAT.md`). When it goes on:
+  add her to the TRVZB cases (alerts, offset, balancing, curve-test, Küte view,
+  `heating-check.py` `SWAPS`) as was done for Ada. Regulating
   on her door sensor as an external temperature, it sidesteps the pocket; it also
   closes fully (no summer 1 % hold). Check before relying on it: which TRVZB
   external-sensor settings ZHA exposes (Zigbee2MQTT supports them fully), and which
