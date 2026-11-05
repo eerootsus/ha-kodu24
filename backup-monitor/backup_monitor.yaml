@@ -12,6 +12,12 @@
 #             exactly what a health check wants.
 # All five report through the same webhook.
 #
+# Plus HA's own backups (2026-11-05), which are not a webhook job: automatic
+# backups go to the Yellow, Nabu Casa and the Hetzner Storage Box (sub-account
+# u647127-sub3, Supervisor mount `hetzner_ha`), and ha_backup_copies.py (pyscript,
+# deployed to pyscript/) checks the newest one is in all three. See
+# `binary_sensor.backup_ha_healthy` and the `backup_ha_copies` automation.
+#
 # Not climate-related, but it lives here for the same reason battery-monitor
 # does: this is the de facto HA config repo. The backup jobs themselves and
 # their rationale are documented in the `unraid` repo (notes/offsite-backup.md).
@@ -306,6 +312,18 @@ template:
                   and (now().timestamp()
                        - (state_attr('input_datetime.backup_mail_last_ok', 'timestamp') | float(0))) < 93600) }}
 
+      # HA's own backups (2026-11-05). Not a webhook job: ha_backup_copies.py asks
+      # the backup manager whether the newest automatic backup is in all three
+      # locations (Yellow, Nabu Casa, Hetzner), encrypted off-site. Healthy also
+      # needs that check to have run in the last 2 h - pyscript failing at
+      # startup (as it did on the 2026.11.0 update) must not read as fine.
+      - name: Backup HA healthy
+        unique_id: backup_ha_healthy
+        state: >
+          {% set s = states.sensor.ha_backup_copies %}
+          {{ s is not none and s.state == 'ok'
+             and (now() - s.last_updated).total_seconds() < 7200 }}
+
 automation:
   - id: backup_job_report
     alias: Backup - report from alpine-docker
@@ -362,6 +380,36 @@ automation:
                     tag: "backup-{{ trigger.json.job }}"
         # 'running' falls through deliberately: last_seen is already updated,
         # which is the entire purpose of that state.
+
+  - id: backup_ha_copies
+    alias: Backup - HA backup missing a copy
+    description: >
+      HA's own backups, checked by ha_backup_copies.py: the newest automatic
+      backup must be in every location (two off-site), encrypted off-site, and
+      under 26 h old. 30 min of grace covers a backup mid-upload and a restart.
+    mode: single
+    trigger:
+      - platform: state
+        entity_id: binary_sensor.backup_ha_healthy
+        to: "off"
+        for: "00:30:00"
+    action:
+      - service: notify.mobile_app_eeros_iphone_17
+        data:
+          title: "HA backup needs attention"
+          message: >
+            {% set p = state_attr('sensor.ha_backup_copies', 'problems') %}
+            {% if states('sensor.ha_backup_copies') in ['unknown', 'unavailable'] %}
+              The copy check is not running - read ha core logs | grep ha_backup_copies.
+            {% elif p %}
+              {{ p | join('; ') }}
+            {% else %}
+              The copy check has not run for over 2 h - is pyscript up?
+            {% endif %}
+          data:
+            push:
+              interruption-level: time-sensitive
+            tag: backup-ha
 
   - id: backup_dead_man
     alias: Backup - dead-man switch
@@ -637,7 +685,8 @@ automation:
       Covers all six jobs. It listed only the three VM ones until 2026-09-13,
       which left `pool` and `zpool` with no safety net at all: a job stuck in
       `fail` keeps refreshing last_seen, so the dead-man switch never sees it and
-      the immediate push is the only other signal.
+      the immediate push is the only other signal. HA's own backup copies
+      joined 2026-11-05.
     mode: single
     trigger:
       - platform: time
@@ -686,6 +735,10 @@ automation:
             {% set vm_age = (now().timestamp() - vm_seen) / 3600 %}
             {% if vm_age > 26 %}
               {% set ns.p = ns.p + [ 'VM disk check silent for ' ~ (vm_age | round(0)) ~ ' h' ] %}
+            {% endif %}
+            {% if is_state('binary_sensor.backup_ha_healthy', 'off') %}
+              {% set p = state_attr('sensor.ha_backup_copies', 'problems') %}
+              {% set ns.p = ns.p + [ 'HA backup: ' ~ (p | join(', ') if p else 'copy check not running') ] %}
             {% endif %}
             {{ ns.p | join('; ') }}
       - condition: template

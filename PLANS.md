@@ -257,6 +257,10 @@ In-wall relays behind a switch; real routers (~64 children). ⚠️ Need a
 - **Bathroom fan relay** — needed for humidity control anyway (see HA work), and
   a downstairs router.
 - **Plug-in router in the master bedroom corner** (not a ZBMINIR2).
+- **Paulmann light (living room) - keep it powered, control it over Zigbee.** It is a
+  router, and it drops off the mesh whenever it is switched off at the wall (offline
+  since 2026-11-04 18:28). Fix: power it permanently and add a Zigbee switch that sends
+  commands instead of cutting power, like the kitchen lamps in §6.
 - **Dead corner** (rssi −100).
 
 **Why downstairs matters:** the laundry leak sensor hangs off the living-room
@@ -299,7 +303,6 @@ Zigbee. Avoid Tuya/Aqara TRVs.
 ---
 
 ## HA work (no visit needed)
-
 
 - **Immich backup-silence sensor** — "no new assets for 14 days". The initial sync
   finished 2026-09-03 (~11k photos), so the baseline exists. A phone backup can stop

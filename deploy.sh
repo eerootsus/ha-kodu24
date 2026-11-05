@@ -55,6 +55,7 @@ MANIFEST=(
   # that is how battery-monitor stayed undeployed and silent.
   "configuration.yaml configuration.yaml    no"
   "room_climate.py    pyscript/room_climate.py no"
+  "backup-monitor/ha_backup_copies.py pyscript/ha_backup_copies.py no"
   "trv-climate/       trv-climate/          yes"
   "backup-monitor/    backup-monitor/       yes"
   "battery-monitor/   battery-monitor/      yes"
