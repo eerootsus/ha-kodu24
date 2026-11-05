@@ -60,7 +60,7 @@ automation:
         id: lola
         value_template: >
           {% set room = states('sensor.climate_lola_s_room_temperature') | float(none) %}
-          {% set sp = state_attr('climate.trv_danfoss_lola', 'temperature') | float(none) %}
+          {% set sp = state_attr('climate.trv_sonoff_lola', 'temperature') | float(none) %}
           {{ room is not none and sp is not none
              and state_attr('weather.forecast_kodu', 'temperature') | float(99) < 12
              and sp - room > 0.5 }}
@@ -109,7 +109,12 @@ automation:
       rooms: "{{ {'kitchen': ['Köök', 'sensor.climate_kitchen_temperature'], 'ada': ['Ada tuba', 'sensor.climate_ada_s_room_temperature'], 'lola': ['Lola tuba', 'sensor.climate_lola_s_room_temperature'], 'master': ['Kätlyni tuba', 'sensor.climate_bedroom_temperature'], 'stairwell': ['Trepihall', 'sensor.climate_trepihall_temperature']} }}"
       name: "{{ rooms[key][0] }}"
       room: "{{ states(rooms[key][1]) | float(0) }}"
-      climate: "{{ 'climate.trv_sonoff_ada' if key == 'ada' else 'climate.trv_danfoss_' ~ key }}"
+      # Sonoff TRVZBs: Ada since 2026-10-26, Lola since <fitting day>.
+      sonoff: "{{ key in ['ada', 'lola'] }}"
+      climate: "{{ ('climate.trv_sonoff_' if sonoff else 'climate.trv_danfoss_') ~ key }}"
+      # TRVZB regulating on the room temperature written to its external input
+      # (lola_feed.yaml): its own sensor and offset are out of the loop then.
+      external: "{{ sonoff and is_state('switch.trv_sonoff_' ~ key ~ '_external_temperature_sensor', 'on') }}"
       sp: "{{ state_attr(climate, 'temperature') | float(0) }}"
       trv: "{{ state_attr(climate, 'current_temperature') }}"
       trim: "{{ states('number.trv_danfoss_' ~ key ~ '_regulation_setpoint_offset') | float(0) }}"
@@ -118,7 +123,8 @@ automation:
       # purpose there, so "raise the trim" would be wrong advice.
       fed: "{{ states('number.trv_danfoss_' ~ key ~ '_external_temperature_sensor') | float(-80) > -80 }}"
       cause: >
-        {% if key == 'ada' %}Sonoff TRVZB, which reports no valve %: it is {{ 'calling for heat' if is_state_attr(climate, 'hvac_action', 'heating') else 'not calling' }}, reading {{ trv }} °C against target {{ sp }}. Not calling = it reads warm: lower its local temperature offset (now {{ states('number.trv_sonoff_ada_local_temperature_offset') }}). Calling and still short = the radiator cannot deliver: raise the heating curve shift.
+        {% if external %}Sonoff TRVZB regulating on the room temperature fed to it (last value {{ states('number.trv_sonoff_' ~ key ~ '_external_temperature_sensor_value') }} °C): it is {{ 'calling for heat' if is_state_attr(climate, 'hvac_action', 'heating') else 'not calling' }}. Not calling = check the feed is current (lola_feed.yaml) - if the TRV has fallen back to its own sensor, it reads the warm pocket. Calling and still short = the radiator cannot deliver: raise the heating curve shift.
+        {% elif sonoff %}Sonoff TRVZB, which reports no valve %: it is {{ 'calling for heat' if is_state_attr(climate, 'hvac_action', 'heating') else 'not calling' }}, reading {{ trv }} °C against target {{ sp }}. Not calling = it reads warm: lower its local temperature offset (now {{ states('number.trv_sonoff_' ~ key ~ '_local_temperature_offset') }}). Calling and still short = the radiator cannot deliver: raise the heating curve shift.
         {% elif valve >= 80 %}Valve {{ valve | int }} % open and still short: the radiator cannot deliver at {{ states('sensor.vicare_supply_temperature') }} °C supply. Raise the heating curve: shift +1 (now {{ states('number.vitodens_100_heating_curve_shift') }}, slope {{ states('number.vitodens_100_heating_curve_slope') }}). Use the shift for mild-weather shortfalls; the slope only if rooms fall short in real cold.
         {% elif valve > 1 and fed %}Valve only {{ valve | int }} % open although the TRV is fed the room temperature (automatic offset): check that room_feed.yaml is still writing (last value {{ states('number.trv_danfoss_' ~ key ~ '_external_temperature_sensor') }} °C), then give the TRV's self-correction time - or go back to a fixed trim.
         {% elif valve > 1 %}Valve only {{ valve | int }} % open: the TRV is throttling, reading {{ trv }} °C against target + trim {{ sp + trim }}. Its sensor error outgrew the trim{{ ' - and the trim is already at the +2.5 maximum' if trim >= 2.5 else '; raise the trim' }}.

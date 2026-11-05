@@ -67,6 +67,7 @@ homeassistant:
     climate_clock_sync: !include trv-climate/clock_sync.yaml
     climate_trim_check: !include trv-climate/trim_check.yaml
     curve_test: !include curve-test/heating_curve_test.yaml
+    climate_lola_feed: !include trv-climate/lola_feed.yaml
     backup_monitor: !include backup-monitor/backup_monitor.yaml
     battery_monitor: !include battery-monitor/battery_monitor.yaml
     workshop_heating: !include workshop-heating/workshop_heating.yaml

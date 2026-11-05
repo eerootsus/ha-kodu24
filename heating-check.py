@@ -70,6 +70,8 @@ ROOMS = [  # (label, trv slug, room sensor or None)
 # negated so the trim column means the same thing for both.
 TRVS = {
     "ada": [("danfoss", None), ("sonoff", "2026-10-26 18:34")],
+    # FITTING DAY: set the time the TRVZB took over (local), then merge.
+    "lola": [("danfoss", None), ("sonoff", "2026-11-09 00:00")],
 }
 
 HOST = os.environ.get("HA_HOST", "homeassistant.tail7c95c3.ts.net")

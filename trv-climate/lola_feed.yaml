@@ -1,0 +1,59 @@
+# Lola's room temperature to her Sonoff TRVZB's external-sensor input.
+#
+# Why: her radiator TRV sits in a warm pocket (curtains + headboard) and its own
+# sensor follows the water, not the room - on the eTRV the error was +3.4…+4.0 K in
+# the cold and swung ~2 K with the boiler cycling, past what any fixed trim can hold
+# (TRV_REGULATION.md "Trims in force", PLANS.md §3). Regulating on the door
+# sensor sidesteps the pocket.
+#
+# The switch is the lever, not this file: the automation writes only while
+# `switch.trv_sonoff_lola_external_temperature_sensor` is on. Turn it on by hand
+# when the TRV is settled on its own sensor; turn it off to go back. Loaded but
+# idle until then.
+#
+# Unlike the parked eTRV feed (room_feed.yaml) there is no season gate: the TRVZB
+# drives its valve directly, so a feed does not hold it open in summer.
+#
+# Cadence: on every new room value (room_climate.py publishes every 5 min) and a
+# 10-min heartbeat. A missing room reading is skipped, not written; what the TRVZB
+# does when the value goes stale is NOT verified yet - watch the first time a
+# sensor battery dies, and the heating alert's "no room temperature" fires at 3 h.
+#
+# Not verified either: whether `local_temperature_offset` still applies once the
+# external input is on. Set it to 0 before switching over, and compare the TRV's
+# reported temperature with the room.
+#
+# Install: declared as `climate_lola_feed:` in configuration.yaml.
+
+automation:
+  - id: lola_trvzb_feed
+    alias: "Lola - room temperature to TRVZB"
+    description: "Writes Lola's room temperature to her TRVZB's external-sensor input while its external switch is on. Source: ha-kodu24/trv-climate/lola_feed.yaml."
+    mode: single
+    max_exceeded: silent
+    triggers:
+      - trigger: state
+        entity_id: sensor.climate_lola_s_room_temperature
+      - trigger: time_pattern
+        minutes: "/10"
+      - trigger: state
+        entity_id: switch.trv_sonoff_lola_external_temperature_sensor
+        to: "on"
+      - trigger: state
+        entity_id: climate.trv_sonoff_lola
+        from: "unavailable"
+      - trigger: homeassistant
+        event: start
+    variables:
+      room: "{{ states('sensor.climate_lola_s_room_temperature') | float(none) }}"
+    conditions:
+      - condition: state
+        entity_id: switch.trv_sonoff_lola_external_temperature_sensor
+        state: "on"
+      - "{{ room is not none }}"
+    actions:
+      - action: number.set_value
+        target:
+          entity_id: number.trv_sonoff_lola_external_temperature_sensor_value
+        data:
+          value: "{{ room | round(1) }}"
