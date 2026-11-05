@@ -229,7 +229,7 @@ history and `DANFOSS.md` if that logic is ever needed again.)
 
 **trv-climate/climate.yaml** - Template sensor definitions wrapping pyscript-created sensors for proper HA UI management.
 
-**trv-climate/offset.yaml** - Per-room TRV sensor error (TRV reading − room), raw and `_settled`; the settled value is what a trim should match. Ada's TRVZB reports its reading with its offset already applied, so hers adds it back. The stairwell has none yet.
+**trv-climate/offset.yaml** - Per-room TRV sensor error (TRV reading − room), raw and `_settled`; the settled value is what a trim should match. Ada's TRVZB reports its reading with its offset already applied, so hers adds it back. The stairwell's (added 2026-11-05) reads negative: its head sits in a draught.
 
 **trv-climate/heating_alerts.yaml** - Push alert when a TRV room stays under its own target, with the likely cause (curve / trim / valve). Alert only.
 

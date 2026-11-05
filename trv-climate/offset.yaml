@@ -39,8 +39,8 @@
 # a few genuinely cold weeks and read the mean. Expect nothing until then - with
 # summer setpoints at 5 C the settled condition is never true, which is correct.
 #
-# Stairwell is absent: it had no room sensor when this was written. It has one since
-# 2026-10-25 (door sensor), so its two sensors are still to add (PLANS.md HA work).
+# Stairwell joined 2026-11-05, once it had a room sensor (door sensor since
+# 2026-10-25). Its head sits in a draught and reads COLD, so its offset is negative.
 #
 # Install: part of trv-climate/, declared as `climate_offset:` in configuration.yaml.
 
@@ -195,3 +195,39 @@ template:
         state: >
           {{ (state_attr('climate.trv_danfoss_lola','current_temperature') | float
               - states('sensor.climate_lola_s_room_temperature') | float) | round(2) }}
+
+      # --- Stairwell ---
+      - name: "TRV offset Stairwell"
+        unique_id: trv_offset_stairwell
+        unit_of_measurement: "°C"
+        device_class: temperature
+        state_class: measurement
+        availability: >
+          {% set room = states('sensor.climate_trepihall_temperature') | float(-999) %}
+          {% set trv = state_attr('climate.trv_danfoss_stairwell','current_temperature') | float(-999) %}
+          {{ room > -900 and trv > -900 }}
+        state: >
+          {{ (state_attr('climate.trv_danfoss_stairwell','current_temperature') | float
+              - states('sensor.climate_trepihall_temperature') | float) | round(2) }}
+
+      - name: "TRV offset Stairwell settled"
+        unique_id: trv_offset_stairwell_settled
+        unit_of_measurement: "°C"
+        device_class: temperature
+        state_class: measurement
+        # Unavailable unless the valve is genuinely regulating against a setpoint its
+        # own reading is near. `demand > 0` drops the hours the valve is shut (error ~0);
+        # `demand < 100` drops flat-out warm-up, where the error is largest and least
+        # representative. Chained comparisons are avoided - Jinja does not treat
+        # `0 < x < 100` the way Python does.
+        availability: >
+          {% set room = states('sensor.climate_trepihall_temperature') | float(-999) %}
+          {% set trv = state_attr('climate.trv_danfoss_stairwell','current_temperature') | float(-999) %}
+          {% set sp = state_attr('climate.trv_danfoss_stairwell','temperature') | float(-999) %}
+          {% set dem = states('sensor.trv_danfoss_stairwell_pi_heating_demand') | float(-1) %}
+          {{ room > -900 and trv > -900 and sp > -900
+             and dem > 0 and dem < 100
+             and (trv - sp) | abs <= 1.0 }}
+        state: >
+          {{ (state_attr('climate.trv_danfoss_stairwell','current_temperature') | float
+              - states('sensor.climate_trepihall_temperature') | float) | round(2) }}

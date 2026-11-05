@@ -291,10 +291,6 @@ Zigbee. Avoid Tuya/Aqara TRVs.
   silently. Needed before any further preset visit. A manual read-back is a
   websocket `zha/devices/clusters/attributes/value` call (cluster `0x0201`, attribute
   `0x404B`, manufacturer `0x1246`; the value is in 0.1 K) - done that way 2026-11-05.
-- **Stairwell offset sensors.** It has a room sensor since 2026-10-25, but
-  `trv-climate/offset.yaml` still skips it from when it had none. Add
-  `trv_offset_stairwell` / `_settled` like the other eTRV rooms; its head sits in a
-  draught and reads cold, so expect a negative offset.
 
 - **Immich backup-silence sensor** — "no new assets for 14 days". The initial sync
   finished 2026-09-03 (~11k photos), so the baseline exists. A phone backup can stop

@@ -172,8 +172,8 @@ a few genuinely cold weeks and read the mean off a statistics graph card
 
 Ada's TRVZB applies its offset to the reading it reports, so her offset sensors add
 it back to give the raw error, and the value to write there is **minus** the settled
-number. The stairwell has had a room sensor since 2026-10-25 but no offset sensors
-yet (`PLANS.md` HA work).
+number. The stairwell got its offset sensors on 2026-11-05 (room sensor since
+2026-10-25); its head reads cold, so its offset is negative.
 
 Nothing will appear until the heating actually runs — at summer setpoints the gate is
 never open, which is correct, not broken.
