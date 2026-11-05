@@ -8,7 +8,7 @@ It deliberately performs NO writes to the TRVs. That was done to make room for
 Better Thermostat, which was then trialled and removed (2026-09-13) — so nothing
 applies room-based control now, and each TRV runs its own PID on its internal
 sensor. These sensors are therefore observability plus the input to the
-heating-curve test; see BETTER_THERMOSTAT.md for the decision and the options for
+heating-curve test; see TRV_REGULATION.md for the decision and the options for
 getting room-based control back.
 
 The previous Zigbee control logic (time sync, radiator covered, load balancing,

@@ -29,7 +29,7 @@
 # pushes. One raise per shortfall episode: the room must recover before the next.
 #
 # Pass/fail: every radiator room against ITS OWN TRV target (the dial is meant to
-# mean the room, BETTER_THERMOSTAT.md), more than curve_test_tolerance short for
+# mean the room, TRV_REGULATION.md), more than curve_test_tolerance short for
 # 90 min in heating weather; the underfloor rooms (living room, both bathrooms)
 # against their own lines, year-round. Room temperature only - a valve's demand is
 # used solely to tell a curve limit from a TRV fault (failure diagnosis below).

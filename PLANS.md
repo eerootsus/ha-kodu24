@@ -3,7 +3,7 @@
 The repo is the source of truth for the Kodu 24 smart home. This file holds what
 is *not built yet*: installs waiting for a visit, HA work waiting for an evening,
 and the background those need. What is built is documented where it lives
-(`README.md` for the map, `CLAUDE.md` for how things work, `BETTER_THERMOSTAT.md`
+(`README.md` for the map, `CLAUDE.md` for how things work, `TRV_REGULATION.md`
 for TRV control, `HEATING_CURVE_TEST.md` for the boiler curve).
 
 The Obsidian vault (`Projects/Smart home.md`) only carries next-action lines for
@@ -19,7 +19,7 @@ built and delete it from this file.
 ### 1. Hydraulic balance — radiator valve presets
 
 **Presets set 2026-10-26** (below), which ended the settings freeze
-(`BETTER_THERMOSTAT.md`). Still open here: step 4 (fine-tune by temperature drop)
+(`TRV_REGULATION.md`). Still open here: step 4 (fine-tune by temperature drop)
 and the kitchen decision under "Watching".
 
 **Why (2026-10-17/18):** all radiators share one pump and nothing has ever been
@@ -188,7 +188,7 @@ freed by the visit rather than a flow change - judge her on the next days, not t
 ### 2. Curve shift - decide on the kitchen in the cold
 
 The kitchen trim is settled against its door sensor: +2.5 → +2.0 (2026-10-25) →
-+1.5 (2026-11-05, `BETTER_THERMOSTAT.md` "Trims in force"). What is left is flow,
++1.5 (2026-11-05, `TRV_REGULATION.md` "Trims in force"). What is left is flow,
 not trim: in the 11-04 cold it ran 0.1–0.4 short at 93–98 % valve. After §1's
 kitchen step, decide whether the curve (0.9 / +3 since 2026-10-19) needs shift +4 -
 the shift, not the slope (`HEATING_CURVE_TEST.md`). Or let the curve test decide:
@@ -203,7 +203,7 @@ once started after Lola's TRVZB.
   0.2 K, and in cold weather its error over the door sensor is +3.4…+4.0 K, past
   the eTRV's 2.5 K trim cap. No trim or target steadies that. Until the swap:
   target 23 on trim +2.5 (the cap), ~21.5–22 in the cold, overshoot likely in mild
-  weather (`BETTER_THERMOSTAT.md` "Trims in force").
+  weather (`TRV_REGULATION.md` "Trims in force").
 - **Fitting day - the repo is ready on branch `lola-trvzb`** (pushed 2026-11-05;
   alerts, offset sensors, balancing test, clock sync, Küte view, heating-check,
   curve test, and the external-input feed `trv-climate/lola_feed.yaml`). Steps:
@@ -229,7 +229,7 @@ once started after Lola's TRVZB.
   7. In `trv-climate/trim_check.yaml` swap her
      entry to `number.trv_sonoff_lola_local_temperature_offset` with her TRVZB
      offset - until then it pushes nightly that her eTRV trim is missing.
-  8. Record the outcome in `BETTER_THERMOSTAT.md` (her trims row) and this file.
+  8. Record the outcome in `TRV_REGULATION.md` (her trims row) and this file.
 - **What was tried first:** furniture moved off the TRV 2026-10-25 (error 4.5 →
   3.0 K, not enough); automatic offset room feed 2026-10-18/19 (valve stuck ~30 %
   whatever the room did, parked); targets 22 → 23 (10-26) → 22.5 (10-27) → 23
@@ -286,7 +286,7 @@ adapter collar gave trouble at the preset visit and its adaptation run never
 completed; the TRVZB threads straight onto the Oventrop M30 insert. The eTRV was
 removed from ZHA. Ada missed the "after" balancing run for it.
 
-Settled since: local offset **−1.8** and control accuracy −0.2 (`BETTER_THERMOSTAT.md`
+Settled since: local offset **−1.8** and control accuracy −0.2 (`TRV_REGULATION.md`
 "Trims in force"; negative offset = reads lower = heats more); firmware `0x00001404`,
 no update offered (2026-11-05); ZHA exposes its external-sensor input (switch +
 value), not used on Ada. The repo handles it - `room_climate.py` `TRV_MODELS`, and

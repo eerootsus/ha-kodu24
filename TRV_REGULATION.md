@@ -1,32 +1,19 @@
-# Better Thermostat: evaluated, and dropped
+# TRV regulation: how each radiator valve controls its room
 
-**Outcome (2026-09-13): Better Thermostat was installed, trialled and removed.** It
-offered nothing meaningful over the eTRVs' own control, so the integration is gone
-and there is no `climate.*_better_thermostat` entity.
+Each TRV regulates on its own sensor, corrected by a per-room trim set by hand. This
+file is the record of that: where control sits, the **trims in force** (the table
+`trv-climate/trim_check.yaml`'s `intended` map must follow), how to measure and set a
+trim, and the device baseline behind it. `DANFOSS.md` is the eTRV device reference.
 
-**The real reason, in Eero's words (2026-10-17):** it "seemed like another
-obfuscation layer on top of everything, making balancing even harder". With BT,
-the curve, the external feeds and the TRVs' own logic all in play, a cold room had
-too many suspects. Everything was reset to a plain baseline instead (curve 0.9, no
-external feeds, TRVs on their own sensors). **Design rule since:** automation here
-*advises* and a human adjusts - the heating alert names the knob, it does not turn
-it. Any future automatic loop must be slow, bounded, logged with its reasons on the
-dashboard, and switchable off in one place. This file is kept as the
-record of why it was tried, what was changed on the TRVs for it, and — below — what
-that leaves us with, because several of those device changes are **still in force**.
+**Design rule (Eero, 2026-10-17):** automation here *advises* and a human adjusts -
+the heating alert names the knob, it does not turn it. Any future automatic loop must
+be slow, bounded, logged with its reasons on the dashboard, and switchable off in one
+place.
 
-Read `DANFOSS.md` for the device reference. What follows is history plus the
-current baseline.
-
-## What we were trying to fix
-
-The Danfoss eTRV's **native external room sensor** feature gives accurate
-room-based control but holds an anticipatory ~1 % valve opening that never fully
-closes (see `DANFOSS.md` — the PID floor, observed year-round on every
-externally-fed TRV; only the one TRV *without* an external sensor idles at 0 %).
-With this firmware you cannot have both accurate external-sensor control **and** a
-fully-closing valve. The plan was to hand control to **Better Thermostat (BT)** and
-use each eTRV as a calibrated actuator instead.
+The current setup grew out of a **Better Thermostat trial that was dropped**
+(2026-09-13); several device changes made for it are still in force (the eTRVs'
+external feed disabled, `room_climate.py` writing nothing). The trial is recorded at
+the end, under "History: Better Thermostat".
 
 ## Where control actually sits now
 
@@ -211,22 +198,6 @@ they stay comparable.
 `regulation_setpoint_offset`. (The TRVZB is different: there `local_temperature_offset`
 *is* the trim, and it does change the reported reading.)
 
-## Target architecture that was planned (not built)
-
-```
-weighted room sensors (danfoss.py)  ──►  Better Thermostat (per room)  ──►  eTRV
-sensor.climate_<area>_temperature        target temp + calibration            (actuator)
-                                          outdoor threshold (summer off)
-```
-
-- **danfoss.py (now `room_climate.py`) was made sensor-aggregation only:** `update_room_climate_sensors`
-  publishes the weighted `sensor.climate_<area>_temperature` (BT's per-room input)
-  plus its helpers. **All TRV writes were removed** (time sync, radiator-covered,
-  load-balancing, external-sensor feed, retry queue) so it cannot fight BT.
-- **eTRV native external sensor is turned OFF** so it doesn't fight BT:
-  `prioritize external temperature sensor = off` and external sensor = `-8000`
-  (done on all TRVs).
-
 ## Per-room mapping
 
 | Room | TRV climate entity | Room sensor (was BT's input) |
@@ -236,35 +207,6 @@ sensor.climate_<area>_temperature        target temp + calibration            (a
 | Kitchen | `climate.trv_danfoss_kitchen` | `sensor.climate_kitchen_temperature` |
 | Lola | `climate.trv_danfoss_lola` | `sensor.climate_lola_s_room_temperature` |
 | Stairwell | `climate.trv_danfoss_stairwell` | `sensor.climate_trepihall_temperature` (door sensor since 2026-10-25) |
-
-## Setup steps (not to be followed — kept for what they changed on the devices)
-
-Steps 2's device changes were applied and are still live. The rest was abandoned.
-
-1. **Install Better Thermostat** via HACS (Integrations → Better Thermostat), then
-   restart HA.
-2. **Disable the eTRV native external sensor** on every TRV so BT has sole control:
-   `switch.*prioritize_external_temperature_sensor` → off and external = `-8000`.
-   (Already done on all five; danfoss.py no longer pushes `0x4015`.)
-3. **Add a Better Thermostat** per room (Settings → Devices & Services → Add →
-   Better Thermostat) with:
-   - **Thermostat:** the eTRV climate entity (table above)
-   - **Temperature sensor:** the room's `sensor.climate_<area>_temperature`
-   - **Outdoor sensor:** `sensor.vicare_outside_temperature` + outdoor threshold
-     (e.g. 18 °C) → this is the summer-off mechanism, replacing `update_heating_season`
-   - **Calibration type:** **Target Temperature Based** (Danfoss's offset is capped
-     at ±2.5 K — too small; let BT drive the setpoint instead)
-   - **Algorithm:** start **Normal**; revisit AI Time Based / PID later
-   - **Window sensors:** optional; if used, disable the eTRV's own open-window
-     detection to avoid double-handling
-   - **Tolerance:** small (e.g. 0.3 °C) to limit valve cycling
-4. **Verify:** with a room above target, BT should drive the eTRV to its off/5 °C
-   state and `pi_heating_demand` should reach **0** (the thing native mode never did).
-
-`danfoss.py` (renamed `room_climate.py` 2026-11-05) was trimmed to sensor-aggregation only for this plan. That trimming
-stands — it writes nothing to the TRVs — even though BT is gone, so **if room-based
-control is ever wanted again the control logic has to come back from git history or
-be rewritten**. See "Where control actually sits now" above.
 
 ## Firmware & config baseline (verified)
 
@@ -428,18 +370,6 @@ A cosmetic leftover: `switch.trv_danfoss_<room>_prioritize_external_temperature_
 now displays as "Prioritise" — en-GB in the translated name, US spelling in the id that
 was settled on. Ids are what matter for templating, so this was left alone.
 
-## Status — 2026-09-13
-
-- **Better Thermostat: installed, trialled, removed.** It offered nothing meaningful
-  over the eTRVs' own control. `/config/custom_components/` holds only `hacs` and
-  `pyscript`; no BT entity exists. Not a regression — a decision.
-- **Room sensors: working again.** They had been dead for some time — `danfoss.py`
-  threw on every run after an HA change to the device registry (fixed 2026-09-13).
-  Four rooms report; Stairwell is `unavailable` because it has no labelled external
-  sensor, which is correct rather than broken.
-- **TRVs: running on their own internal sensors**, setpoints set by hand. Four still
-  sit at `pi_heating_demand = 1` and Stairwell at 0.
-
 ## Open issue: radiator TRVs stuck at 1 % (summer warmth)
 
 Four radiator TRVs (ada, master, kitchen, lola) held `pi_heating_demand = 1 %` and
@@ -477,6 +407,89 @@ can be turned on for a cold summer night until they are reopened.
 **If the mesh is improved later:** re-deploy `trv_debug.py` (attribute dump) and
 `trv_unstick.py` (cycle covered + setpoint nudge), re-run on the reliable network,
 and confirm writes land via fresh read-back before trusting any result.
+
+## History: Better Thermostat (trialled and dropped 2026-09-13)
+
+This file was `BETTER_THERMOSTAT.md` until 2026-11-05.
+
+**Outcome (2026-09-13): Better Thermostat was installed, trialled and removed.** It
+offered nothing meaningful over the eTRVs' own control, so the integration is gone
+and there is no `climate.*_better_thermostat` entity.
+
+**The real reason, in Eero's words (2026-10-17):** it "seemed like another
+obfuscation layer on top of everything, making balancing even harder". With BT,
+the curve, the external feeds and the TRVs' own logic all in play, a cold room had
+too many suspects. Everything was reset to a plain baseline instead (curve 0.9, no
+external feeds, TRVs on their own sensors), and the design rule at the top of this
+file came out of it. What follows is why it was tried and what was changed on the
+TRVs for it; the device changes that are still in force are described above.
+
+### What we were trying to fix
+
+The Danfoss eTRV's **native external room sensor** feature gives accurate
+room-based control but holds an anticipatory ~1 % valve opening that never fully
+closes (see `DANFOSS.md` — the PID floor, observed year-round on every
+externally-fed TRV; only the one TRV *without* an external sensor idles at 0 %).
+With this firmware you cannot have both accurate external-sensor control **and** a
+fully-closing valve. The plan was to hand control to **Better Thermostat (BT)** and
+use each eTRV as a calibrated actuator instead.
+
+### Target architecture that was planned (not built)
+
+```
+weighted room sensors (danfoss.py)  ──►  Better Thermostat (per room)  ──►  eTRV
+sensor.climate_<area>_temperature        target temp + calibration            (actuator)
+                                          outdoor threshold (summer off)
+```
+
+- **danfoss.py (now `room_climate.py`) was made sensor-aggregation only:** `update_room_climate_sensors`
+  publishes the weighted `sensor.climate_<area>_temperature` (BT's per-room input)
+  plus its helpers. **All TRV writes were removed** (time sync, radiator-covered,
+  load-balancing, external-sensor feed, retry queue) so it cannot fight BT.
+- **eTRV native external sensor is turned OFF** so it doesn't fight BT:
+  `prioritize external temperature sensor = off` and external sensor = `-8000`
+  (done on all TRVs).
+
+### Setup steps (not to be followed — kept for what they changed on the devices)
+
+Steps 2's device changes were applied and are still live. The rest was abandoned.
+
+1. **Install Better Thermostat** via HACS (Integrations → Better Thermostat), then
+   restart HA.
+2. **Disable the eTRV native external sensor** on every TRV so BT has sole control:
+   `switch.*prioritize_external_temperature_sensor` → off and external = `-8000`.
+   (Already done on all five; danfoss.py no longer pushes `0x4015`.)
+3. **Add a Better Thermostat** per room (Settings → Devices & Services → Add →
+   Better Thermostat) with:
+   - **Thermostat:** the eTRV climate entity (table above)
+   - **Temperature sensor:** the room's `sensor.climate_<area>_temperature`
+   - **Outdoor sensor:** `sensor.vicare_outside_temperature` + outdoor threshold
+     (e.g. 18 °C) → this is the summer-off mechanism, replacing `update_heating_season`
+   - **Calibration type:** **Target Temperature Based** (Danfoss's offset is capped
+     at ±2.5 K — too small; let BT drive the setpoint instead)
+   - **Algorithm:** start **Normal**; revisit AI Time Based / PID later
+   - **Window sensors:** optional; if used, disable the eTRV's own open-window
+     detection to avoid double-handling
+   - **Tolerance:** small (e.g. 0.3 °C) to limit valve cycling
+4. **Verify:** with a room above target, BT should drive the eTRV to its off/5 °C
+   state and `pi_heating_demand` should reach **0** (the thing native mode never did).
+
+`danfoss.py` (renamed `room_climate.py` 2026-11-05) was trimmed to sensor-aggregation only for this plan. That trimming
+stands — it writes nothing to the TRVs — even though BT is gone, so **if room-based
+control is ever wanted again the control logic has to come back from git history or
+be rewritten**. See "Where control actually sits now" above.
+
+### Status — 2026-09-13
+
+- **Better Thermostat: installed, trialled, removed.** It offered nothing meaningful
+  over the eTRVs' own control. `/config/custom_components/` holds only `hacs` and
+  `pyscript`; no BT entity exists. Not a regression — a decision.
+- **Room sensors: working again.** They had been dead for some time — `danfoss.py`
+  threw on every run after an HA change to the device registry (fixed 2026-09-13).
+  Four rooms report; Stairwell is `unavailable` because it has no labelled external
+  sensor, which is correct rather than broken.
+- **TRVs: running on their own internal sensors**, setpoints set by hand. Four still
+  sit at `pi_heating_demand = 1` and Stairwell at 0.
 
 ## Sources
 - Danfoss Ally PID quirks / unstick (cycle radiator_covered + setpoint) — https://github.com/Koenkk/zigbee2mqtt/discussions/19495

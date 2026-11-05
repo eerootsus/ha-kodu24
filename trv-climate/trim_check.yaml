@@ -4,7 +4,7 @@
 # Why: taking an eTRV's head off resets its trim (0x404B) to 0 on the device, while
 # ZHA's number entity keeps showing the old value - it is a cache, refreshed only by
 # a report or a read. After the 2026-10-26 preset visit the kitchen and master ran a
-# night ~1 K short on a lost trim with HA showing +2.0 / +1.5 (BETTER_THERMOSTAT.md
+# night ~1 K short on a lost trim with HA showing +2.0 / +1.5 (TRV_REGULATION.md
 # "Trims in force").
 #
 # How: `homeassistant.update_entity` on a ZHA number entity is a fresh device read
@@ -18,7 +18,7 @@
 # as 1.3 - write 1.41 and read back.)
 #
 # `intended` is the one place the trims in force are written down for a machine;
-# BETTER_THERMOSTAT.md "Trims in force" is the human record with the reasons.
+# TRV_REGULATION.md "Trims in force" is the human record with the reasons.
 # **Change both when you change a trim.**
 #
 # Remount signals: an eTRV whose head comes off loses its clock too, so the clock

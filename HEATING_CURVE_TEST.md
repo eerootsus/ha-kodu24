@@ -112,7 +112,7 @@ pump is ever finished. If 1.2 was never justified, that has been leaking money f
 
 **Each room against its own TRV target.** Originally a fixed 21.0 for every room,
 from when Better Thermostat was expected to move setpoints under the test. With the
-trims in force the dial is meant to mean the room (`BETTER_THERMOSTAT.md`), so each
+trims in force the dial is meant to mean the room (`TRV_REGULATION.md`), so each
 radiator room is judged against its own TRV target, like the shortfall alert. A
 target at or below 10 °C (off / summer) drops the room out.
 `input_number.curve_test_target_temp` is now only the living room's line (it has no
@@ -265,12 +265,12 @@ the underfloor. So the curve test is really asking **"what tank temperature does
 radiator circuit need?"** — which is exactly the number that decides whether the heat
 pump can serve radiators at all, or only the underfloor.
 
-The summer problem recorded in `BETTER_THERMOSTAT.md` (radiators warm while the
+The summer problem recorded in `TRV_REGULATION.md` (radiators warm while the
 underfloor runs) needs no decoupling after all: the radiator master valves between
 boiler and manifold shut the radiator feed alone (`PLANS.md` §1, "Every summer").
 
 ## Sources
 
 - Panasonic WH-MDC07J3E5 COP/SCOP — `Kodu 24/2022 Õhkvesi küte/Specification_Sheet_5051.pdf`
-- Danfoss residual 1 % demand — `DANFOSS.md` §2.6, `BETTER_THERMOSTAT.md`
+- Danfoss residual 1 % demand — `DANFOSS.md` §2.6, `TRV_REGULATION.md`
 - Viessmann ViCare entities — `sensor.vicare_*`, `number.vitodens_100_*`

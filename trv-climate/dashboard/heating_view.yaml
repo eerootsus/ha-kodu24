@@ -12,7 +12,7 @@
 #
 # Why the room line does not show the thermostat's own "current temperature":
 # that is the eTRV's internal sensor, which reads 1.5-3 C warm (see
-# BETTER_THERMOSTAT.md). The room average from room_climate.py is what the trims aim
+# TRV_REGULATION.md). The room average from room_climate.py is what the trims aim
 # at, so that is what the room cards show, coloured by distance from target:
 # green within 0.5, light-blue/blue below, amber/deep-orange above.
 #

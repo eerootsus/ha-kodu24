@@ -10,7 +10,7 @@ housekeeping packages that have nowhere better to live:
   removed, so the TRVs regulate themselves.
 - **`trv-climate/offset.yaml`** — measures how far each TRV's own sensor sits
   from the real room, so the per-room trim is a number rather than a guess.
-  Read the `_settled` sensors; see `BETTER_THERMOSTAT.md`.
+  Read the `_settled` sensors; see `TRV_REGULATION.md`.
 - **`trv-climate/heating_alerts.yaml`** — push alert when a TRV room stays under
   its own target, naming the likely knob (curve shift / trim / valve fault), plus
   an alert when a room's sensors go silent. Alert only; nothing is adjusted.
@@ -78,7 +78,7 @@ a Sonoff TRVZB on Ada's radiator since 2026-10-26 (Lola's is next).
 
 `room_climate.py` is **sensor aggregation only** — it performs no writes to the TRVs.
 It was trimmed that way for Better Thermostat, which was then trialled and removed
-(`BETTER_THERMOSTAT.md`). So nothing applies room-based control today: each TRV
+(`TRV_REGULATION.md`). So nothing applies room-based control today: each TRV
 runs its own PID on its own internal sensor, and these sensors feed the dashboard
 and the heating-curve test.
 

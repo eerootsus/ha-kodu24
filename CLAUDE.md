@@ -8,7 +8,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 **This repo is the source of truth for the Kodu 24 smart home.** Open work and plans live in `PLANS.md`; the Obsidian vault's `Projects/Smart home.md` only holds TODO-feeding next-action lines that point here. Record new findings and plans in the repo, not the vault, and move a `PLANS.md` item's outcome into the relevant doc once it is built.
 
-The climate half is a PyScript helper for the Zigbee thermostatic radiator valves (TRVs): four Danfoss eTRV0103s and, on Ada's radiator since 2026-10-26, a Sonoff TRVZB (Lola's is next, `PLANS.md` §3). It publishes per-room virtual temperature/humidity sensors from external room sensors (since 2026-10-17 the door sensor; the outer-wall Alts are weight 0). It does **not** control heating: each TRV regulates on its own internal sensor, corrected by a per-room trim set by hand (`BETTER_THERMOSTAT.md` "Trims in force"; Better Thermostat was trialled and dropped as an obscuring layer). Automation here advises — `trv-climate/heating_alerts.yaml` names the knob, a human turns it.
+The climate half is a PyScript helper for the Zigbee thermostatic radiator valves (TRVs): four Danfoss eTRV0103s and, on Ada's radiator since 2026-10-26, a Sonoff TRVZB (Lola's is next, `PLANS.md` §3). It publishes per-room virtual temperature/humidity sensors from external room sensors (since 2026-10-17 the door sensor; the outer-wall Alts are weight 0). It does **not** control heating: each TRV regulates on its own internal sensor, corrected by a per-room trim set by hand (`TRV_REGULATION.md` "Trims in force"; Better Thermostat was trialled and dropped as an obscuring layer). Automation here advises — `trv-climate/heating_alerts.yaml` names the knob, a human turns it.
 
 ## Setup & Deployment
 
@@ -124,7 +124,7 @@ Reload all), so a package can deploy cleanly and still show nothing until then.
 
 `./heating-check.py` compares how each room holds its setpoint over a window
 (default: last 7 days) against the fixed pre-trim baseline week, with weather and
-gas-per-degree-day for context. Same ssh transport; see `BETTER_THERMOSTAT.md`
+gas-per-degree-day for context. Same ssh transport; see `TRV_REGULATION.md`
 "Trims in force".
 
 ## Zigbee mesh topology
@@ -168,7 +168,7 @@ Two facts that govern any mesh work here:
   (Settings → Devices & Services → ZHA → device → Reconfigure). Cache first, then
   reconfigure — the other order re-reads the attribute, finds it still cached as
   unsupported, and skips it. Done for the TRVs on 2026-09-13; see
-  `BETTER_THERMOSTAT.md`.
+  `TRV_REGULATION.md`.
 - **New ZHA entities are slugged in HA's instance language** (`language: et` here), so
   a reconfigure creates `number.<area>_<device>_kohalik_temperatuuri_nihe` next to
   older English-slugged siblings. Display names are unaffected — `friendly_name` is
@@ -209,7 +209,7 @@ No build step required. Dependencies in `requirements.txt` are Home Assistant's 
 room_climate.py is **sensor-aggregation only** — it performs **no writes to the TRVs**
 and does not control heating. It was trimmed that way to make room for Better
 Thermostat; **BT was then trialled and removed** (2026-09-13, it offered nothing
-meaningful — see `BETTER_THERMOSTAT.md`), so nothing applies room-based control
+meaningful — see `TRV_REGULATION.md`), so nothing applies room-based control
 now. Each TRV regulates on its own internal sensor (the eTRVs' external feed is
 still disabled, the TRVZB's external input is off), and these sensors are
 observability plus the heating-curve test's input.
@@ -260,7 +260,7 @@ still disabled on the four eTRVs (`0x4015 = -8000`; Ada has a Sonoff TRVZB since
 **internal** sensor, which sits on the radiator and reads warm. That is corrected
 with a static per-room trim (`regulation_setpoint_offset`; on the TRVZB,
 `local_temperature_offset` with the opposite sign; set 2026-10-17 —
-values and rationale in `BETTER_THERMOSTAT.md` "Trims in force").
+values and rationale in `TRV_REGULATION.md` "Trims in force").
 `DANFOSS.md` is the curated eTRV Zigbee/feature reference.
 
 ## Device Labels
