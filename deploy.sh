@@ -92,6 +92,10 @@ for entry in "${MANIFEST[@]}"; do
   read -r src dst mirror <<<"$entry"
   [[ -e "$src" ]] || { echo "  skip $src (not in repo)"; continue; }
   DEL=""; [[ "$mirror" == "yes" ]] && DEL="--delete"
+  # A pyscript module kept beside its package (backup-monitor/ha_backup_copies.py)
+  # has its own single-file entry into pyscript/, so the directory copy skips it.
+  # Only for directory entries: a filter also matches a file named outright.
+  PYX=(); [[ "$src" == */ ]] && PYX=(--exclude '*.py')
   echo "  $src -> $HA_CONFIG/$dst${DEL:+  (mirrored)}"
   ssh "${SSH_OPTS[@]}" "$HA_USER@$HA_HOST" "mkdir -p '$(dirname "$HA_CONFIG/$dst")'"
   # --itemize-changes so both dry and real runs say what actually moved; a
@@ -100,7 +104,7 @@ for entry in "${MANIFEST[@]}"; do
   # where those users do not exist. Everything under /config is root-owned and
   # the add-on connects as root, so leaving ownership alone is correct.
   rsync -a --no-owner --no-group $DEL $DRY --itemize-changes \
-        --exclude 'dashboard/' --exclude '*.md' --exclude '__pycache__/' \
+        --exclude 'dashboard/' --exclude '*.md' --exclude '__pycache__/' "${PYX[@]}" \
         -e "ssh ${SSH_OPTS[*]}" \
         "$src" "$HA_USER@$HA_HOST:$HA_CONFIG/$dst"
 done
