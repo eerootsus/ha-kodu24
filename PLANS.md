@@ -304,9 +304,29 @@ Zigbee. Avoid Tuya/Aqara TRVs.
 
 ## HA work (no visit needed)
 
-- **Immich backup-silence sensor** — "no new assets for 14 days". The initial sync
-  finished 2026-09-03 (~11k photos), so the baseline exists. A phone backup can stop
-  silently; belongs with `backup-monitor/`.
+- **Immich backup-silence check - drafted 2026-11-05, waiting to be deployed.** Daily,
+  per person: `fail` when someone's photo+video count has not grown in 14 days (a
+  phone backup can stop silently). Runs on the VM, which already hosts Immich, so its
+  admin API key (1Password "Immich", field `API key`) never leaves it, and reports HA
+  job `immich` through the backup webhook (dead-man switch, healthy strip, recap).
+  Both halves are on branches named `immich-check`: the script
+  `scripts/vm/immich-upload-check` in `unraid`, and the HA side
+  (`backup-monitor/backup_monitor.yaml`) here. The script was tested against the live
+  API. Not deployed because the remote session's key (`oroma`) is not authorized on the
+  VM. **Deploy together**, or the dead-man switch pages after 26 h:
+  1. On the VM: `apk add jq` if missing; copy the script to
+     `/etc/periodic/daily/immich-upload-check` (mode 0755); write
+     `IMMICH_API_KEY=…` to `/root/.config/immich-upload-check.env` (mode 0600).
+  2. Run it once by hand: the first run sets the baseline and reports `ok`.
+  3. Merge `immich-check` in both repos; `./deploy.sh --restart` (new `input_*`
+     helpers need the restart).
+  4. In `unraid`: add it to `CLAUDE.md`'s daily-cron list and to the catch-up
+     schedule in `cron-catchup.sh` if the dailies are listed there by name.
+  - **Also explore HA's core Immich integration** (not set up). It was not used for
+    this check because, as far as known, it exposes server totals rather than
+    per-user counts, and it would put an admin key in HA. Worth a look for what
+    else it offers (storage use, per-user data, media source for dashboards) and
+    whether it could replace any of the VM script.
 - **Bathroom fan on humidity** (after its relay is in): trigger on a fast rise
   (e.g. +8 points in 10 min = shower) or on being ~15 points above a reference room,
   off when back within a few points; minimum and maximum run time. Not a fixed %:
