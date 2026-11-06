@@ -51,14 +51,32 @@ on the door sensor (from 2026-10-25) it sits about on target, and its valve at
 of flow. But it is the room most likely to fall short in real cold, and the
 reason is its size, not distance.
 
-**The master bedroom has three heat sources besides its radiator:** it is the
+**The master bedroom has heat its radiator does not control:** it is the
 shortest run (most flow), the en-suite floor loops warm it through the wall, and
-**the manifold itself sits inside the master bedroom wall** — distribution pipes
-give off heat whenever the system circulates, valve open or not. So the master
-needs throttling beyond what its size suggests and the smallest trim of any room,
-and will never fully close its own heat off. If it still runs warm after
-balancing, insulating the manifold cavity/pipes is the remaining lever (it also
-keeps that heat for the rooms that need it).
+it is **surrounded by heated rooms on three sides**, so it loses little heat to
+begin with. The manifold also sits inside its wall, but Eero judges that effect
+negligible (2026-11-06). So the master needs throttling beyond what its size
+suggests and the smallest trim of any room, and will never fully close its own
+heat off.
+
+Seen on the night of 11-05/06 (target 21.5, trim +1.0): the room held 22.0–22.2 all night as
+outside fell 8.9 → 6.1 °C, with the valve at 5–6 % and the head only +0.3…+0.7 K
+over the room (Lola's, actually heating, reads +3…+4). The radiator was all but shut,
+so the ~0.6 K over is the heat it does not control, as on 10-19 (+0.5…+0.8 at 6–7 %)
+and after 10-21 (+0.2…+0.5): about the same overshoot at every target. The trim
+plays a small part: +1.0 aims the head at 22.5, which it read, so the TRV kept a
+little flow; +0.4 would match its real error and let it close fully, worth a couple
+of tenths at most.
+**Test:** a night on trim 0 - if the room still holds ~22, the radiator is irrelevant
+and the only lever left is the curve (supply ~40 °C that night vs ~35 in the
+baseline week), which every room shares. Turning the en-suite loop down is **not an
+option for now** (Eero, 2026-11-06), and the neighbours are structural, so expect
+~0.5 K over in Master until then. In effect the Master radiator is the **reserve**:
+for when the en-suite door is closed (no floor-loop heat in) or in real cold; at
+~6 °C outside the room does not need it. Unverified below ~3.5 °C (11-04, still
+over at 2–8 %), and the door's state is not tracked, so a cold night with the door
+shut is the case to watch. Change the
+`intended` map in `trv-climate/trim_check.yaml` for the night, or expect its push.
 
 **Where to balance:** bottom-connected radiators ("altühendusega") with a
 **built-in valve insert** - the eTRV sits on it - and a **Honeywell 1/2" straight
@@ -202,8 +220,9 @@ once started after Lola's TRVZB.
   hours it swung 1–2.8 K with the boiler cycling 33–64 °C while the room moved
   0.2 K, and in cold weather its error over the door sensor is +3.4…+4.0 K, past
   the eTRV's 2.5 K trim cap. No trim or target steadies that. Until the swap:
-  target 23 on trim +2.5 (the cap), ~21.5–22 in the cold, overshoot likely in mild
-  weather (`TRV_REGULATION.md` "Trims in force").
+  target 22.5 on trim +2.5 (the cap), aiming the room at ~21.5 like the rest;
+  21.3–21.8 on a ~6 °C night (11-05/06)
+  (`TRV_REGULATION.md` "Trims in force").
 - **Fitting day - the repo is ready on branch `lola-trvzb`** (pushed 2026-11-05;
   alerts, offset sensors, balancing test, clock sync, Küte view, heating-check,
   curve test, and the external-input feed `trv-climate/lola_feed.yaml`). Steps:
@@ -233,7 +252,7 @@ once started after Lola's TRVZB.
 - **What was tried first:** furniture moved off the TRV 2026-10-25 (error 4.5 →
   3.0 K, not enough); automatic offset room feed 2026-10-18/19 (valve stuck ~30 %
   whatever the room did, parked); targets 22 → 23 (10-26) → 22.5 (10-27) → 23
-  (11-05). Sensor swap ruled out 2026-10-26 (the door one warmed by hand jumped as
+  → 22.5 (11-05, same afternoon). Sensor swap ruled out 2026-10-26 (the door one warmed by hand jumped as
   `TH01 Sonoff Lola`). After the swap, watch whether preset 4 costs her: valve flat
   out and room below ~21 at night = back to 5–6.
 - **Humidity** (7-day mean 67 %, >70 % most nights) is the **plants** — thin them

@@ -10,7 +10,7 @@ holds the house.
 > **Deployed switched off (2026-11-05).** `curve_test:` is in `configuration.yaml`
 > and `deploy.sh`, but nothing acts until `script.curve_test_start` turns
 > `input_boolean.curve_test_enabled` on. **Start it once Lola's TRVZB is on and the
-> trims have settled** (`PLANS.md` §2–3): until then her stopgap target (23 on a
+> trims have settled** (`PLANS.md` §2–3): until then her stopgap target (22.5 on a
 > maxed eTRV trim) and the 2026-11-05 trim changes would read as curve shortfalls.
 >
 > History: written 2026-08 to *descend* the slope from 1.2; not deployed on
@@ -87,7 +87,7 @@ pump is ever finished. If 1.2 was never justified, that has been leaking money f
    step-down does not check this, so starting in September wastes steps on mild
    weather. Start when the heating is genuinely working.
 3. **All five rooms are watched**, each against its own TRV target - so the
-   targets have to mean the room. Lola's 23 does not (stopgap on a maxed eTRV
+   targets have to mean the room. Lola's 22.5 does not (stopgap on a maxed eTRV
    trim); her TRVZB fixes that, and adding `lola` to the package's `sonoff` list is
    part of fitting it.
 
