@@ -59,7 +59,7 @@ automation:
       # more). TRVZB: local_temperature_offset (opposite sign, - = heats more).
       intended:
         number.trv_danfoss_kitchen_regulation_setpoint_offset: 1.5
-        number.trv_danfoss_master_regulation_setpoint_offset: 1.0
+        number.trv_danfoss_master_regulation_setpoint_offset: 0.0  # 1.0; 0 for the 11-06/07 test night (PLANS.md §1)
         number.trv_danfoss_lola_regulation_setpoint_offset: 2.5
         number.trv_danfoss_stairwell_regulation_setpoint_offset: -0.5
         number.trv_sonoff_ada_local_temperature_offset: -1.8

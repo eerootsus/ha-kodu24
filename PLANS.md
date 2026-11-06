@@ -67,7 +67,7 @@ and after 10-21 (+0.2…+0.5): about the same overshoot at every target. The tri
 plays a small part: +1.0 aims the head at 22.5, which it read, so the TRV kept a
 little flow; +0.4 would match its real error and let it close fully, worth a couple
 of tenths at most.
-**Test:** a night on trim 0 - if the room still holds ~22, the radiator is irrelevant
+**Test:** a night on trim 0 (**running 11-06/07**, set 08:27) - if the room still holds ~22, the radiator is irrelevant
 and the only lever left is the curve (supply ~40 °C that night vs ~35 in the
 baseline week), which every room shares. Turning the en-suite loop down is **not an
 option for now** (Eero, 2026-11-06), and the neighbours are structural, so expect
