@@ -67,7 +67,7 @@ and after 10-21 (+0.2…+0.5): about the same overshoot at every target. The tri
 plays a small part: +1.0 aims the head at 22.5, which it read, so the TRV kept a
 little flow; +0.4 would match its real error and let it close fully, worth a couple
 of tenths at most.
-**Test:** a night on trim 0 (**running 11-06/07**, set 08:27) - if the room still holds ~22, the radiator is irrelevant
+**Test:** a night on trim 0 (set 11-06 08:27) - if the room still holds ~22, the radiator is irrelevant
 and the only lever left is the curve (supply ~40 °C that night vs ~35 in the
 baseline week), which every room shares. Turning the en-suite loop down is **not an
 option for now** (Eero, 2026-11-06), and the neighbours are structural, so expect
@@ -75,8 +75,12 @@ option for now** (Eero, 2026-11-06), and the neighbours are structural, so expec
 for when the en-suite door is closed (no floor-loop heat in) or in real cold; at
 ~6 °C outside the room does not need it. Unverified below ~3.5 °C (11-04, still
 over at 2–8 %), and the door's state is not tracked, so a cold night with the door
-shut is the case to watch. Change the
-`intended` map in `trv-climate/trim_check.yaml` for the night, or expect its push.
+shut is the case to watch.
+**Result (read 11-09): trim 0 kept.** It ran four nights rather than one, and the room held
+the target without its radiator: night mean +0.6 / +0.2 / +0.3 / 0.0 K on 21.5 (outside
+5.8–7.5 °C), valve 3–6 % throughout. On 11-09 the whole house ran 0.5–0.9 K cool with
+every valve throttled (Master −0.7 by day); every room shared the dip, so it is not
+Master's trim. Raise it again only on a cold night or with the en-suite door shut.
 
 **Where to balance:** bottom-connected radiators ("altühendusega") with a
 **built-in valve insert** - the eTRV sits on it - and a **Honeywell 1/2" straight
@@ -228,7 +232,9 @@ once started after Lola's TRVZB.
   curve test, and the external-input feed `trv-climate/lola_feed.yaml`). Steps:
   1. Fit it - Ada's threaded straight onto the Oventrop M30 insert, and the
      radiators are all the same model, so hers likely needs no adapter. Don't set
-     "closing degree".
+     "closing degree". **While the head is off, press the valve pin in and out by
+     hand** and note whether it springs back freely: a stiff pin would make her
+     result a test of the pin, not of the TRV (see "Decision" below).
   2. Remove her eTRV from ZHA, pair the TRVZB, name the device **"TRV Sonoff Lola"**
      in Lola's room, and check the ids came out as `climate.trv_sonoff_lola`,
      `number.trv_sonoff_lola_local_temperature_offset`,
@@ -249,6 +255,18 @@ once started after Lola's TRVZB.
      entry to `number.trv_sonoff_lola_local_temperature_offset` with her TRVZB
      offset - until then it pushes nightly that her eTRV trim is missing.
   8. Record the outcome in `TRV_REGULATION.md` (her trims row) and this file.
+- **Decision (Eero, 2026-11-10): Lola is the test for all of them.** If her room
+  improves on the TRVZB, the remaining eTRVs (kitchen, Master, stairwell) get one too.
+  Why: on 11-09 the kitchen eTRV reported 1 % while Kätlyn found the radiator warm all
+  over, then ran 94-97 % all night (11-10 02:00-09:00, outside 7-8 °C) with the room
+  stuck at 20.3 and its head reading only 22.7 - the radiator no longer follows the
+  head. The device itself reported no error, a successful adaptation run and the
+  right trim, so no alert can see this. Eero recalls the same behaviour last winter,
+  so it is not from the 10-26 remount. The eTRVs sit on the M30 inserts via an
+  adapter collar; the TRVZB threads on directly, so the swap replaces head and
+  coupling, not the pin. **Pass:** after ~3 days to find her offset, nights within
+  ±0.3 K of target, as Ada's have been (−0.1…−0.3, 11-05..09), against −1.0…−1.8
+  on the eTRV. Kitchen first after her: it is the one now visibly failing.
 - **What was tried first:** furniture moved off the TRV 2026-10-25 (error 4.5 →
   3.0 K, not enough); automatic offset room feed 2026-10-18/19 (valve stuck ~30 %
   whatever the room did, parked); targets 22 → 23 (10-26) → 22.5 (10-27) → 23
