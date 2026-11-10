@@ -239,7 +239,9 @@ history and `DANFOSS.md` if that logic is ever needed again.)
 
 **trv-climate/clock_sync.yaml** - Writes the time to any eTRV reporting `Invalid_clock_information` (on the flag, and nightly at 03:30), pushes only if that does not clear it. The stairwell went 2026-10-01..25 without a clock unnoticed after `set_time()` was dropped. Clock only, never a heating setting.
 
-**trv-climate/trim_check.yaml** - Reads every TRV trim back from the device (`homeassistant.update_entity` is a fresh ZHA read) at 03:45 and on remount signals, pushes if one differs from its `intended` map. Never writes. **Change the map whenever a trim changes.** A failed read keeps the cached value, so it can miss a reset, never invent one.
+**trv-climate/trim_adjust.yaml** (2026-11-10) - The trims as helpers, `input_number.trv_trim_<room>`, in "+ heats more" units for every room (Ada's TRVZB offset is minus hers): **set a trim there, never on the device** - `trv_trim_apply` writes it, reads it back and retries. `trv_trim_adjust` (off unless `input_boolean.trv_trim_adjust`) steps a room's trim ±0.5 when its 2-h mean is > 0.3 K off its own target, at most once per 2 h, but never raises a room whose valve is already flat out (that is the boiler's). Every step is pushed. The first piece of the "logic lives in HA" principle below.
+
+**trv-climate/trim_check.yaml** - Reads every TRV trim back from the device (`homeassistant.update_entity` is a fresh ZHA read) at 03:45 and on remount signals, pushes if one differs from its `input_number.trv_trim_<room>` helper. Never writes. A failed read keeps the cached value, so it can miss a reset, never invent one.
 
 **curve-test/heating_curve_test.yaml** - Deployed but **off** (2026-11-05). Once `script.curve_test_start` runs it holds the boiler curve, raises it on a 90-min room shortfall against each room's own TRV target (shift in mild weather, slope in real cold, capped), and records how cold each curve survived. The one automation here that writes a heating setting; bounded, logged, one switch. Start after Lola's TRVZB and settled trims. `HEATING_CURVE_TEST.md`.
 

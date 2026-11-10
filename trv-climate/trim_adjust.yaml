@@ -1,0 +1,316 @@
+# TRV trims as HA helpers, written to the devices, and adjusted to hold each room
+# at its dial.
+#
+# Why (Eero, 2026-11-10, CLAUDE.md "Control principle"): all heating logic lives in
+# HA, the TRVs are plain valves. Whatever a room is set to is what it should get,
+# windy days included - and the TRV trim is the main knob; the boiler curve only
+# for a room whose valve is already fully open. On 11-09/10 a south wind onto the
+# long south wall took every room 0.6-1.3 K under target with the valves throttled
+# (`PLANS.md` "Wind compensation"): their heads did not feel it, the door sensors
+# did. This closes that loop through the trim, slowly.
+#
+# Three parts:
+#
+# 1. `input_number.trv_trim_<room>` - THE trim in force, one per room, in "+ heats
+#    more" units for every room. For an eTRV that is its regulation_setpoint_offset;
+#    for Ada's TRVZB it is minus its local_temperature_offset (a TRVZB heats more
+#    with a NEGATIVE offset). Change a trim here (dashboard or set_value), never on
+#    the device: part 2 writes it, trim_check.yaml compares the device against it.
+#    TRV_REGULATION.md "Trims in force" stays the human record with the reasons.
+#
+# 2. `trv_trim_apply` - writes a helper change to its TRV, reads it back, retries
+#    (sleepy devices), pushes if it does not land. Always on: it is how a trim is
+#    set, by hand or by part 3. It ignores the helper appearing (from_state none),
+#    so a restart or the first deploy writes nothing.
+#
+# 3. `trv_trim_adjust` - OFF until `input_boolean.trv_trim_adjust` is turned on.
+#    Every 30 min, per room, in heating weather (met.no < 12 °C):
+#      - the room's 2-hour mean (statistics sensors below) against its own TRV target;
+#      - under by more than 0.3 K and the valve throttled  -> trim +0.5;
+#        over by more than 0.3 K                           -> trim -0.5;
+#      - under with the valve fully open (eTRV demand >= 80 %, TRVZB calling) is
+#        NOT a trim matter - the boiler is short; leave it to the curve
+#        (heating_alerts.yaml says so; the curve is not automated here);
+#      - at most one step per room per 2 h (the helper's last change), so the room
+#        has time to answer before the next step, and an eTRV is not woken often;
+#      - bounds: eTRV -2.5..+2.5 (the device's own range), TRVZB -2.0..+4.0.
+#    Every step is pushed and logged with the numbers behind it, and the last action
+#    per room is shown in `input_text.trv_trim_adjust_last`.
+#    It does not reset trims when the weather changes: a room over target after the
+#    wind drops gets stepped back down by the same rule.
+#
+# Known limits: Lola's eTRV is at +2.5, the cap, so the adjuster cannot raise her
+# (the TRVZB is her fix, PLANS.md §3). A remount resets an eTRV trim to 0 on the
+# device; trim_check.yaml catches that (03:45 and on remount signals) - the helper
+# keeps the intended value, so rewriting it is one set_value of the same number
+# (or toggle it ±0.1 and back).
+#
+# Install: declared as `climate_trim_adjust:` in configuration.yaml. First deploy:
+# restart (new helpers), then seed each helper with the trim in force (they start
+# at their minimum; part 2 ignores that first appearance).
+
+input_number:
+  trv_trim_kitchen:
+    name: TRV trim kitchen
+    min: -2.5
+    max: 2.5
+    step: 0.1
+    unit_of_measurement: K
+    mode: box
+  trv_trim_master:
+    name: TRV trim master
+    min: -2.5
+    max: 2.5
+    step: 0.1
+    unit_of_measurement: K
+    mode: box
+  trv_trim_lola:
+    name: TRV trim Lola
+    min: -2.5
+    max: 2.5
+    step: 0.1
+    unit_of_measurement: K
+    mode: box
+  trv_trim_stairwell:
+    name: TRV trim stairwell
+    min: -2.5
+    max: 2.5
+    step: 0.1
+    unit_of_measurement: K
+    mode: box
+  trv_trim_ada:
+    name: TRV trim Ada (TRVZB, = minus its offset)
+    min: -2.0
+    max: 4.0
+    step: 0.1
+    unit_of_measurement: K
+    mode: box
+
+input_boolean:
+  trv_trim_adjust:
+    name: TRV trim auto-adjust
+    icon: mdi:tune-vertical
+
+input_text:
+  trv_trim_adjust_last:
+    name: TRV trim adjust - last action
+    max: 255
+
+sensor:
+  # Two-hour room means: one step decision should rest on a settled reading, not a
+  # 5-minute blip (a door opening, the oven). Time-weighted (average_step), because a
+  # steady room writes few state changes; the buffer reloads from the recorder after
+  # a restart.
+  - platform: statistics
+    name: trim_adjust_kitchen_room_2h
+    unique_id: trim_adjust_kitchen_room_2h
+    entity_id: sensor.climate_kitchen_temperature
+    state_characteristic: average_step
+    max_age: { hours: 2 }
+    sampling_size: 200
+    keep_last_sample: true
+    precision: 2
+  - platform: statistics
+    name: trim_adjust_master_room_2h
+    unique_id: trim_adjust_master_room_2h
+    entity_id: sensor.climate_bedroom_temperature
+    state_characteristic: average_step
+    max_age: { hours: 2 }
+    sampling_size: 200
+    keep_last_sample: true
+    precision: 2
+  - platform: statistics
+    name: trim_adjust_lola_room_2h
+    unique_id: trim_adjust_lola_room_2h
+    entity_id: sensor.climate_lola_s_room_temperature
+    state_characteristic: average_step
+    max_age: { hours: 2 }
+    sampling_size: 200
+    keep_last_sample: true
+    precision: 2
+  - platform: statistics
+    name: trim_adjust_stairwell_room_2h
+    unique_id: trim_adjust_stairwell_room_2h
+    entity_id: sensor.climate_trepihall_temperature
+    state_characteristic: average_step
+    max_age: { hours: 2 }
+    sampling_size: 200
+    keep_last_sample: true
+    precision: 2
+  - platform: statistics
+    name: trim_adjust_ada_room_2h
+    unique_id: trim_adjust_ada_room_2h
+    entity_id: sensor.climate_ada_s_room_temperature
+    state_characteristic: average_step
+    max_age: { hours: 2 }
+    sampling_size: 200
+    keep_last_sample: true
+    precision: 2
+
+  # The TRVZB reports no valve %, only whether it is calling: "flat out" for it is
+  # calling most of the last 2 h. history_stats needs a state, hvac_action is an
+  # attribute, hence the template binary sensor in between.
+  - platform: history_stats
+    name: trim_adjust_ada_calling_2h
+    unique_id: trim_adjust_ada_calling_2h
+    entity_id: binary_sensor.trim_adjust_ada_calling
+    state: "on"
+    type: ratio
+    start: "{{ now() - timedelta(hours=2) }}"
+    end: "{{ now() }}"
+
+template:
+  - binary_sensor:
+      - name: trim_adjust_ada_calling
+        unique_id: trim_adjust_ada_calling
+        state: "{{ is_state_attr('climate.trv_sonoff_ada', 'hvac_action', 'heating') }}"
+
+automation:
+  - id: trv_trim_apply
+    alias: "TRV - write trim to device"
+    description: "Writes an input_number.trv_trim_<room> change to its TRV, reads it back, retries, pushes if it does not land. Source: ha-kodu24/trv-climate/trim_adjust.yaml."
+    mode: queued
+    triggers:
+      - trigger: state
+        entity_id:
+          - input_number.trv_trim_kitchen
+          - input_number.trv_trim_master
+          - input_number.trv_trim_lola
+          - input_number.trv_trim_stairwell
+          - input_number.trv_trim_ada
+    conditions:
+      # The helper appearing (restart, first deploy) is not a change to write.
+      - "{{ trigger.from_state is not none and trigger.from_state.state not in ['unknown', 'unavailable'] }}"
+      - "{{ trigger.to_state.state not in ['unknown', 'unavailable'] }}"
+    variables:
+      room: "{{ trigger.entity_id.split('trv_trim_')[1] }}"
+      trim: "{{ trigger.to_state.state | float }}"
+      sonoff: "{{ room == 'ada' }}"
+      entity: >
+        {{ 'number.trv_sonoff_ada_local_temperature_offset' if sonoff
+           else 'number.trv_danfoss_' ~ room ~ '_regulation_setpoint_offset' }}
+      want: "{{ (-trim if sonoff else trim) | round(1) }}"
+      # number.set_value truncates to tenths (1.4 lands as 1.3): nudge away from zero.
+      write: "{{ want + (0.01 if want > 0 else -0.01 if want < 0 else 0) }}"
+    actions:
+      - repeat:
+          sequence:
+            - action: number.set_value
+              continue_on_error: true
+              target:
+                entity_id: "{{ entity }}"
+              data:
+                value: "{{ write }}"
+            - delay: "00:00:20"
+            - action: homeassistant.update_entity
+              continue_on_error: true
+              target:
+                entity_id: "{{ entity }}"
+            - delay: "00:00:05"
+          until: "{{ (states(entity) | float(99) - want) | abs < 0.05 or repeat.index >= 3 }}"
+      - if: "{{ (states(entity) | float(99) - want) | abs >= 0.05 }}"
+        then:
+          - action: notify.mobile_app_eeros_iphone_17
+            data:
+              title: "TRV trim did not land: {{ room }}"
+              message: >
+                Wrote {{ write }} to {{ entity }} three times; it reads
+                {{ states(entity) }}. The helper says {{ trim }}. The TRV may be
+                out of reach - trim_check.yaml will compare again at 03:45.
+              data:
+                push:
+                  thread-id: heating
+        else:
+          - action: logbook.log
+            data:
+              name: "TRV trim"
+              message: "{{ room }}: {{ entity }} = {{ states(entity) }} (trim {{ trim }})"
+
+  - id: trv_trim_adjust
+    alias: "TRV - adjust trims to hold each room at its target"
+    description: "Every 30 min: steps a room's trim ±0.5 when its 2-h mean is >0.3 K off its own target and the valve is not flat out. Off unless input_boolean.trv_trim_adjust. Source: ha-kodu24/trv-climate/trim_adjust.yaml."
+    mode: single
+    max_exceeded: silent
+    triggers:
+      - trigger: time_pattern
+        minutes: "/30"
+    conditions:
+      - condition: state
+        entity_id: input_boolean.trv_trim_adjust
+        state: "on"
+      - "{{ state_attr('weather.forecast_kodu', 'temperature') | float(99) < 12 }}"
+    variables:
+      # room: [display name, climate entity, eTRV valve demand or none, cap low, cap high]
+      rooms:
+        kitchen: ["Köök", "climate.trv_danfoss_kitchen", "sensor.trv_danfoss_kitchen_pi_heating_demand", -2.5, 2.5]
+        master: ["Kätlyni tuba", "climate.trv_danfoss_master", "sensor.trv_danfoss_master_pi_heating_demand", -2.5, 2.5]
+        lola: ["Lola tuba", "climate.trv_danfoss_lola", "sensor.trv_danfoss_lola_pi_heating_demand", -2.5, 2.5]
+        stairwell: ["Trepihall", "climate.trv_danfoss_stairwell", "sensor.trv_danfoss_stairwell_pi_heating_demand", -2.5, 2.5]
+        ada: ["Ada tuba", "climate.trv_sonoff_ada", null, -2.0, 4.0]
+      deadband: 0.3
+      step: 0.5
+      min_gap_s: 7200
+      decisions: >
+        {% set ns = namespace(out=[]) %}
+        {% for key, r in rooms.items() %}
+          {% set helper = 'input_number.trv_trim_' ~ key %}
+          {% set mean = states('sensor.trim_adjust_' ~ key ~ '_room_2h') | float(none) %}
+          {% set sp = state_attr(r[1], 'temperature') | float(none) %}
+          {% set trim = states(helper) | float(none) %}
+          {% set age = (now() - states[helper].last_changed).total_seconds() if states[helper] is not none else 0 %}
+          {% if r[2] %}
+            {% set flat_out = states(r[2]) | float(0) >= 80 %}
+            {% set valve = states(r[2]) ~ ' %' %}
+          {% else %}
+            {% set calling = states('sensor.trim_adjust_' ~ key ~ '_calling_2h') | float(0) %}
+            {% set flat_out = calling >= 80 %}
+            {% set valve = 'calling ' ~ calling | round(0) | int ~ ' % of 2 h' %}
+          {% endif %}
+          {% if mean is not none and sp is not none and trim is not none
+                and not is_state(r[1], 'unavailable') and age >= min_gap_s %}
+            {% set err = (mean - sp) | round(2) %}
+            {% set new = none %}
+            {% if err < -deadband and not flat_out and trim < r[4] %}
+              {% set new = [trim + step, r[4]] | min %}
+            {% elif err > deadband and trim > r[3] %}
+              {% set new = [trim - step, r[3]] | max %}
+            {% endif %}
+            {% if new is not none %}
+              {% set ns.out = ns.out + [{'key': key, 'name': r[0], 'helper': helper,
+                  'old': trim, 'new': new | round(1), 'err': err, 'mean': mean, 'sp': sp,
+                  'valve': valve}] %}
+            {% endif %}
+          {% endif %}
+        {% endfor %}
+        {{ ns.out }}
+    actions:
+      - repeat:
+          for_each: "{{ decisions }}"
+          sequence:
+            - action: input_number.set_value
+              target:
+                entity_id: "{{ repeat.item.helper }}"
+              data:
+                value: "{{ repeat.item.new }}"
+            - variables:
+                line: >
+                  {{ now().strftime('%d.%m %H:%M') }} {{ repeat.item.name }}: trim
+                  {{ '%+.1f' | format(repeat.item.old) }} → {{ '%+.1f' | format(repeat.item.new) }}
+                  (2 h mean {{ '%.1f' | format(repeat.item.mean) }} vs target {{ repeat.item.sp }},
+                  {{ '%+.1f' | format(repeat.item.err) }} K; valve {{ repeat.item.valve }})
+            - action: input_text.set_value
+              target:
+                entity_id: input_text.trv_trim_adjust_last
+              data:
+                value: "{{ line[:255] }}"
+            - action: logbook.log
+              data:
+                name: "TRV trim adjust"
+                message: "{{ line }}"
+            - action: notify.mobile_app_eeros_iphone_17
+              data:
+                title: "Trim {{ repeat.item.name }}: {{ '%+.1f' | format(repeat.item.old) }} → {{ '%+.1f' | format(repeat.item.new) }}"
+                message: "{{ line }}"
+                data:
+                  push:
+                    thread-id: heating

@@ -13,13 +13,12 @@
 # reach) leaves the cached value in place, so a failed read looks like a match.
 # That is why it runs nightly as well as on the remount signals - several chances.
 #
-# Advise, don't rewrite: a mismatch is pushed with the value to write; a human
-# writes it. (Write gotcha: `number.set_value` truncates to tenths, so 1.4 can land
-# as 1.3 - write 1.41 and read back.)
+# Advise, don't rewrite: a mismatch is pushed; a human decides (a reset after a
+# remount is rewritten by setting the room's trim helper again).
 #
-# `intended` is the one place the trims in force are written down for a machine;
-# TRV_REGULATION.md "Trims in force" is the human record with the reasons.
-# **Change both when you change a trim.**
+# The intended trims are the `input_number.trv_trim_<room>` helpers (trim_adjust.yaml,
+# 2026-11-10), not a list in this file: set a trim there and the device is written
+# for you. TRV_REGULATION.md "Trims in force" stays the human record with the reasons.
 #
 # Remount signals: an eTRV whose head comes off loses its clock too, so the clock
 # error flag (also clock_sync.yaml's trigger) is the best one; a TRV coming back
@@ -55,14 +54,19 @@ automation:
         from: "unavailable"
         for: "00:05:00"
     variables:
-      # Trim entity -> intended value. eTRVs: regulation_setpoint_offset (+ = heats
-      # more). TRVZB: local_temperature_offset (opposite sign, - = heats more).
-      intended:
-        number.trv_danfoss_kitchen_regulation_setpoint_offset: 1.5
-        number.trv_danfoss_master_regulation_setpoint_offset: 0.5  # 0 since 11-06; +0.5 for the S-wind spell from 11-10, back to 0 after
-        number.trv_danfoss_lola_regulation_setpoint_offset: 2.5
-        number.trv_danfoss_stairwell_regulation_setpoint_offset: 0.0  # -0.5; 0 for the S-wind spell from 11-10
-        number.trv_sonoff_ada_local_temperature_offset: -2.3  # -1.8; -2.3 for the S-wind spell from 11-10
+      # Trim entity -> intended device value, from the input_number.trv_trim_<room>
+      # helpers (trim_adjust.yaml, since 2026-11-10) - the one place a trim is set.
+      # eTRVs: regulation_setpoint_offset = the helper. TRVZB: local_temperature_offset
+      # = minus the helper (a TRVZB heats more with a negative offset).
+      intended: >
+        {% set ns = namespace(d={}) %}
+        {% for room in ['kitchen', 'master', 'lola', 'stairwell'] %}
+          {% set ns.d = dict(ns.d, **{'number.trv_danfoss_' ~ room ~ '_regulation_setpoint_offset':
+                                      states('input_number.trv_trim_' ~ room) | float(none)}) %}
+        {% endfor %}
+        {% set a = states('input_number.trv_trim_ada') | float(none) %}
+        {% set ns.d = dict(ns.d, **{'number.trv_sonoff_ada_local_temperature_offset': (-a if a is not none else none)}) %}
+        {{ ns.d }}
     actions:
       # One entity at a time: a sleepy TRV that misses its read must not stop the rest.
       - repeat:
@@ -77,7 +81,9 @@ automation:
             {% set ns = namespace(l=[]) %}
             {% for e, want in intended.items() %}
               {% set have = states(e) | float(none) %}
-              {% if have is none or (have - want) | abs > 0.05 %}
+              {% if want is none %}
+                {% set ns.l = ns.l + [e ~ ': its trim helper has no value'] %}
+              {% elif have is none or (have - want) | abs > 0.05 %}
                 {% set ns.l = ns.l + [e ~ ': ' ~ states(e) ~ ', intended ' ~ want] %}
               {% endif %}
             {% endfor %}
@@ -88,9 +94,10 @@ automation:
             data:
               title: "TRV trim not as set"
               message: >
-                Read back from the device: {{ wrong | join('; ') }}. Rewrite it
-                (number.set_value, e.g. 1.41 for 1.4) and read back - or, if the
-                change was deliberate, update trim_check.yaml.
+                Read back from the device: {{ wrong | join('; ') }}. To rewrite it,
+                set its input_number.trv_trim_<room> helper again (trim_adjust.yaml
+                writes and reads back); if the device value was deliberate, set the
+                helper to it.
               data:
                 push:
                   thread-id: heating

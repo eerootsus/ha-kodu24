@@ -396,7 +396,13 @@ valves are sorted out.
 
 ## HA work (no visit needed)
 
-- **Wind compensation - after the valves respond as expected (§3, §8), not before.**
+- **Wind compensation.** *Update 2026-11-10 evening:* the room layer is built -
+  `trv-climate/trim_adjust.yaml` steps trims ±0.5 to hold each room at its target
+  (no wind model: the door sensor sees the wind's cooling), deployed **off** until
+  Eero turns `input_boolean.trv_trim_adjust` on. Still open: an automatic shift for
+  rooms whose valve is flat out (today by hand; the curve test does the raise half),
+  and a forecast step if the feedback proves too slow. Original note follows.
+  **Originally: after the valves respond as expected (§3, §8), not before.**
   Eero's working theory (2026-11-10): wind on the **south wall** - the longest outer
   wall (Master, stair room, Lola) - cools the whole flat, and more so now the leaves
   are down. Seen so far: 11-09 (SW, 3.8 m/s onto S) and 11-10 (S, 4.8 m/s onto S,

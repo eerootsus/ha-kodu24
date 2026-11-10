@@ -48,6 +48,13 @@ below:
 
 ### Trims in force (first set 2026-10-17; current value in bold)
 
+> **Since 2026-11-10 the trims live in HA helpers**, `input_number.trv_trim_<room>`
+> (`trv-climate/trim_adjust.yaml`), in "+ heats more" units for every room - Ada's
+> helper is minus her TRVZB offset. Set a trim there and it is written to the device
+> and read back; `trim_check.yaml` compares the devices against the helpers. With
+> `input_boolean.trv_trim_adjust` on, HA steps them ±0.5 itself to hold each room at
+> its target, and pushes every step. This table stays the record of why.
+
 > **Taking the head off resets the trim to 0 on the device** (found 2026-10-27):
 > after the 2026-10-26 preset visit kitchen and master read `0x404B = 0` while HA
 > still showed +2.0 / +1.5 - ZHA's number entity is a cache and only refreshes on a
