@@ -370,6 +370,30 @@ Zigbee. Avoid Tuya/Aqara TRVs.
   chimney (stack effect, little wind effect measured). Hallway extracts are an
   option; they would work by stack effect — high, into a warm flue — and one grille
   per flue.
+- **Layout and orientation** (from the 2019 renovation drawings in `~/Documents/Kodu
+  24/2019 Remont/Plaanid-joonised`, `Kodu - 20190404.pdf` p.6 = radiators, and the
+  1997 floor plans in `Maja/Kodu_tn_24_projekt`; confirmed by Eero 2026-11-10). Flat 1
+  is the **south half of the ground floor**; the building holds two mirrored flats per
+  floor with a common stairwell entered from the middle of the street facade. Kodu tn
+  is to the **east**; the building is turned only ~10-15° clockwise, so the faces are
+  close to the compass points:
+  - **West end (garden, terrace; workshop below):** kitchen + dining, open into the
+    living strip along the north side. One radiator, under the west window.
+  - **South long wall (outer):** Master (next to the kitchen; manifold at its inner
+    corner), the stair-room radiator, and **Lola's** room in the south-east corner (two
+    outer walls, south and east).
+  - **East end (street):** the two children's rooms, radiators under the east windows:
+    Lola's (corner) and **Ada's** in the north-east, which borders the common stairwell
+    and has only the one outer wall.
+  - **North long side:** no outer wall - the party wall with the other ground-floor
+    flat, and the common stairwell at its east end.
+  - **Middle:** bathroom + WC on one shared floor-heating loop (the en-suite), next to
+    the manifold.
+  - **Above:** heated flats over all of it. **Below:** the workshop under the kitchen.
+    Heated neighbours are therefore above and along the north (kitchen/hallway) side;
+    the outer walls are south, west and east only.
+  So a **SW wind** hits two of our faces (south and west) and a **NW wind** only the
+  west end; the kitchen borders Master but none of the other TRV rooms.
 - The workshop is directly under the kitchen; its split HVAC and the (not yet
   commissioned) Panasonic heat-pump outdoor unit sit together under a large,
   skirted-but-gappy wooden terrace, a couple of metres apart. Watch for one unit's

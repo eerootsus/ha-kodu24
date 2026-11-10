@@ -27,6 +27,7 @@ Usage:
 Same ssh transport as deploy.sh (HA_HOST / HA_PORT / HA_USER).
 """
 import argparse
+import math
 import os
 import subprocess
 from datetime import datetime
@@ -145,6 +146,40 @@ def weather(t0, t1):
     return mean, hdd
 
 
+# Which way the flat's outer walls face (2026-11-10, PLANS.md "House"): the street
+# is to the east and the building is turned ~13 deg clockwise. The north side is a
+# party wall, so it has no entry. Rooms on each face: S = Master, stair room, Lola;
+# W = kitchen; E = Lola, Ada.
+FACES = {"S": 193, "W": 283, "E": 103}
+
+
+def wind(t0, t1):
+    """Mean wind speed and mean wind pressing on each outer face, m/s.
+
+    'Onto a face' is the component of the wind blowing straight at that wall
+    (speed x cos of the angle between where the wind comes from and the wall's
+    outward direction), zero when it blows from behind. A leaky wall loses heat
+    with that component, not with the wind speed alone."""
+    expr = ("json_extract(sa.shared_attrs, '$.wind_speed') || ',' || "
+            "json_extract(sa.shared_attrs, '$.wind_bearing') || ',' || "
+            "coalesce(json_extract(sa.shared_attrs, '$.wind_speed_unit'), 'km/h')")
+    held = []
+    for v, dt in time_weighted(state_series("weather.forecast_kodu", t0, t1, expr), t1):
+        try:
+            speed, bearing, unit = v.split(",")
+            ms = float(speed) / (3.6 if "km" in unit else 1.0)
+            held.append((ms, float(bearing), dt))
+        except (AttributeError, ValueError):
+            continue
+    secs = sum(dt for *_, dt in held)
+    if not held or secs < 0.5 * (t1 - t0):
+        return None, {k: None for k in FACES}
+    mean = sum(ms * dt for ms, _, dt in held) / secs
+    onto = {k: sum(max(0.0, ms * math.cos(math.radians(b - face))) * dt for ms, b, dt in held) / secs
+            for k, face in FACES.items()}
+    return mean, onto
+
+
 def eras(slug, t0, t1):
     """(kind, start, end) for each TRV that was fitted during [t0, t1)."""
     spans = TRVS.get(slug, [("danfoss", None)])
@@ -248,6 +283,9 @@ def window(label, t0, t1):
             "trim": trim(slug, t1),
         }
     r["met_mean"], r["hdd"] = weather(t0, t1)
+    r["wind"], onto = wind(t0, t1)
+    for k, v in onto.items():
+        r[f"wind_{k}"] = v
     r["gas"] = stat_sum_delta("sensor.vicare_heating_gas_consumption_current_day", t0, t1)
     r["supply"] = stat_mean("sensor.vicare_supply_temperature", t0, t1)[0]
     r["workshop"] = stat_mean("sensor.ikea_of_sweden_vindstyrka_temperature", t0, t1)[0]
@@ -291,19 +329,23 @@ def main():
               f" {f(b['open50'], '{:.0%}'):>4s} {f(c['open50'], '{:.0%}'):>4s}   |"
               f" {f(b['offset'], '{:+.1f}'):>5s} {f(c['offset'], '{:+.1f}'):>5s}   | {f(c['trim'], '{:+.1f}')}")
 
-    print("\nContext                      base      now")
+    print("\nContext                          base      now")
     rows = [
         ("outside, met.no mean (C)", "met_mean", "{:.1f}"),
         (f"heating degree-days (base {HDD_BASE:.0f})", "hdd", "{:.1f}"),
+        ("wind, met.no mean (m/s)", "wind", "{:.1f}"),
+        ("  onto S wall: Master/stair/Lola", "wind_S", "{:.1f}"),
+        ("  onto W wall: kitchen", "wind_W", "{:.1f}"),
+        ("  onto E wall: Lola/Ada", "wind_E", "{:.1f}"),
         ("heating gas (m3)", "gas", "{:.1f}"),
         ("supply temp mean (C)", "supply", "{:.1f}"),
         ("workshop mean (C)", "workshop", "{:.1f}"),
         ("workshop HVAC heating (h/day)", "ws_heat_h_day", "{:.1f}"),
     ]
     for label, key, fmt in rows:
-        print(f"  {label:28s} {f(base[key], fmt):>6s}  {f(cur[key], fmt):>6s}")
+        print(f"  {label:32s} {f(base[key], fmt):>6s}  {f(cur[key], fmt):>6s}")
     per = lambda w: (w["gas"] / w["hdd"]) if w["gas"] is not None and w["hdd"] else None
-    print(f"  {'gas per degree-day (m3)':28s} {f(per(base), '{:.2f}'):>6s}  {f(per(cur), '{:.2f}'):>6s}")
+    print(f"  {'gas per degree-day (m3)':32s} {f(per(base), '{:.2f}'):>6s}  {f(per(cur), '{:.2f}'):>6s}")
     print("\nSetpoint 'a/b!' = changed during the window; 'vs setpoint' still compares each")
     print("hour against the setpoint in force then.")
     print("* = includes TRVZB hours: demand there is the share of time calling for heat,")
@@ -315,6 +357,8 @@ def main():
     print("so baseline settled offsets come from rare near-setpoint hours - indicative only.")
     print("Workshop heating is a separate split unit, not boiler gas; it adds heat")
     print("to the kitchen floor above, so the kitchen row is not a pure trim effect.")
+    print("Wind 'onto' a wall is the part blowing straight at it (0 from behind); the north")
+    print("side is a party wall. A SW wind loads S and W at once, a NW one mostly W.")
 
 
 if __name__ == "__main__":
