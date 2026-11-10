@@ -359,11 +359,11 @@ Zigbee. Avoid Tuya/Aqara TRVs.
      helpers need the restart).
   4. In `unraid`: add it to `CLAUDE.md`'s daily-cron list and to the catch-up
      schedule in `cron-catchup.sh` if the dailies are listed there by name.
-  - **Also explore HA's core Immich integration** (not set up). It was not used for
-    this check because, as far as known, it exposes server totals rather than
-    per-user counts, and it would put an admin key in HA. Worth a look for what
-    else it offers (storage use, per-user data, media source for dashboards) and
-    whether it could replace any of the VM script.
+  - **HA's core Immich integration: not wanted** (Eero, 2026-11-10). Its photo/video
+    counts are server totals (admin key, `server.statistics`), so it cannot see one
+    phone stop while another keeps uploading - the case this check exists for. Its
+    extras (disk sensors, update entity, media source, upload action) are unused here,
+    and the Immich version check is already a script.
 - **Bathroom fan on humidity** (after its relay is in): trigger on a fast rise
   (e.g. +8 points in 10 min = shower) or on being ~15 points above a reference room,
   off when back within a few points; minimum and maximum run time. Not a fixed %:
