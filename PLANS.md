@@ -276,6 +276,13 @@ once started after Lola's TRVZB.
   regulating on its room's door sensor via the external-temperature input - the same
   simple device everywhere and no hidden TRV logic; it also answers the wind question
   (`HA work`, "Wind compensation"). Lola's pass mark still gates the purchase.
+  **Superseded the same evening (21:53): HA room thermostat** (`room_thermostat.yaml`)
+  - HA opens/shuts every valve from the door sensor; no TRV feed needed, eTRV or
+  TRVZB alike. The TRVZBs are still wanted (plain valves, close fully in summer), but
+  the feed below is now only an option. Watch the first nights for overshoot (the
+  radiator keeps heating after it shuts): widen the band or add a minimum off time if
+  rooms run > 0.3 over. Its fallback is the TRV's own regulation; the corrected-Alt
+  step below can be added to it.
   **Feed design - never regulate on a frozen number** (Eero, 2026-11-10). The feed
   depends on a sensor battery and the mesh, so it picks its source by freshness, per
   room, in this order:

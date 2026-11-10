@@ -238,6 +238,13 @@ automation:
       - condition: state
         entity_id: input_boolean.trv_trim_adjust
         state: "on"
+      # The room thermostat (room_thermostat.yaml) drives the setpoints to 28 / 5;
+      # a trim means nothing then, and two loops must not adjust one room.
+      - condition: not
+        conditions:
+          - condition: state
+            entity_id: input_boolean.room_thermostat
+            state: "on"
       - "{{ state_attr('weather.forecast_kodu', 'temperature') | float(99) < 12 }}"
     variables:
       # room: [display name, climate entity, eTRV valve demand or none, cap low, cap high]

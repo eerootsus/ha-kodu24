@@ -67,6 +67,7 @@ homeassistant:
     climate_clock_sync: !include trv-climate/clock_sync.yaml
     climate_trim_check: !include trv-climate/trim_check.yaml
     climate_trim_adjust: !include trv-climate/trim_adjust.yaml
+    climate_room_thermostat: !include trv-climate/room_thermostat.yaml
     climate_condensation: !include trv-climate/condensation.yaml
     curve_test: !include curve-test/heating_curve_test.yaml
     backup_monitor: !include backup-monitor/backup_monitor.yaml

@@ -241,6 +241,8 @@ history and `DANFOSS.md` if that logic is ever needed again.)
 
 **trv-climate/trim_adjust.yaml** (2026-11-10) - The trims as helpers, `input_number.trv_trim_<room>`, in "+ heats more" units for every room (Ada's TRVZB offset is minus hers): **set a trim there, never on the device** - `trv_trim_apply` writes it, reads it back and retries. `trv_trim_adjust` (off unless `input_boolean.trv_trim_adjust`) steps a room's trim ±0.5 when its 2-h mean is > 0.3 K off its own target, at most once per 2 h, but never raises a room whose valve is already flat out (that is the boiler's). Every step is pushed. The first piece of the "logic lives in HA" principle below.
 
+**trv-climate/room_thermostat.yaml** (2026-11-10, **on**) - HA is the thermostat: every 5 min each TRV's setpoint goes to **28 (open)** when its room (door sensor) is under `input_number.room_target_<room>` − 0.2, to **5 (shut)** above target + 0.1, unchanged in between. The TRV's head, trim and firmware logic no longer decide anything. A room whose sensor is silent for 20 min falls back to its TRV (setpoint = target), with a push. **Room targets are the helpers now - a TRV's dial is overwritten within 5 min.** Switching `input_boolean.room_thermostat` off writes every TRV back to its room target. While on, the trim adjuster stands down and the heating alerts judge against the room targets; switch it off before the balancing test.
+
 **trv-climate/trim_check.yaml** - Reads every TRV trim back from the device (`homeassistant.update_entity` is a fresh ZHA read) at 03:45 and on remount signals, pushes if one differs from its `input_number.trv_trim_<room>` helper. Never writes. A failed read keeps the cached value, so it can miss a reset, never invent one.
 
 **curve-test/heating_curve_test.yaml** - Deployed but **off** (2026-11-05). Once `script.curve_test_start` runs it holds the boiler curve, raises it on a 90-min room shortfall against each room's own TRV target (shift in mild weather, slope in real cold, capped), and records how cold each curve survived. The one automation here that writes a heating setting; bounded, logged, one switch. Start after Lola's TRVZB and settled trims. `HEATING_CURVE_TEST.md`.
@@ -278,8 +280,10 @@ ends, because nobody can tell which layer is at fault. So all the logic lives in
 - Which sensor feeds a TRVZB (door → corrected Alt → its own, `PLANS.md` §3) must be
   visible on the dashboard, like every other decision HA takes.
 
-Until that logic is built, the older rule applies: automation advises, a human
-turns the knob (Project Overview, `heating_alerts.yaml`).
+**Built 2026-11-10:** `trv-climate/room_thermostat.yaml` - HA opens/shuts each
+valve from its room's door sensor; the TRV's own reading no longer matters (Eero:
+"the TRV temperature can be whatever, if controlling in HA solves the flakiness").
+The trims (`trim_adjust.yaml`) only matter again if it is switched off.
 
 ## Why nothing controls the TRVs right now
 

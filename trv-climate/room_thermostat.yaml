@@ -1,0 +1,224 @@
+# Room thermostat in HA - the TRVs are plain valves, HA decides open or closed from
+# the room's door sensor.
+#
+# Why (Eero, 2026-11-10, CLAUDE.md "Control principle"): every TRV judged its room
+# by its own head, next to the radiator. In Master, Ada, Lola and the stairwell the
+# heads read 2-4 K warm, so those valves shut with the rooms 1 K under target, while
+# the kitchen's head read close to its room and ran flat out. A trim is a fixed
+# correction to an error that moves with the wind, the supply temperature and the
+# valve itself, and the TRV firmware adds its own decisions on top: on 11-10 at 21:30
+# Ada's TRVZB sat 0.5 K under its own target for 17 min and would not heat. This
+# takes the head out of the loop.
+#
+# How, every 5 min (and when a target or the switch changes), per room:
+#   room (door sensor, room_climate.py) < target - 0.2  ->  TRV setpoint 28 = open
+#   room > target + 0.1                                 ->  TRV setpoint 5  = shut
+#   in between                                          ->  leave it as it is
+# The band keeps a 0.1 K sensor wobble from flipping a valve; the radiator's own
+# heat after it shuts will overshoot a little - widen the band if it is too much.
+# Writes only when the TRV's setpoint is not already the wanted one, so a write a
+# sleepy eTRV missed is simply retried on the next run.
+#
+# Fallback - never regulate on a frozen number: a room whose temperature has not
+# been reported for 20 min goes back to its own TRV, setpoint = the room target, so
+# it regulates on its head + trim as before. One push when a room falls back and
+# one when it returns. (The door -> corrected Alt step of PLANS.md §3 comes later.)
+#
+# The room targets are `input_number.room_target_<room>` - the dial now lives in HA.
+# Turning the TRV's dial by hand is overwritten within 5 min; change the helper.
+# Turning the thermostat off writes every TRV's setpoint back to its room target.
+#
+# While it is on: the trim adjuster (trim_adjust.yaml) stands down - with setpoints
+# of 28 / 5 the trim does nothing; the heating alerts judge rooms against the room
+# targets; `offset.yaml`'s settled offsets and the balancing test assume a normal
+# setpoint - switch this off before running the balancing test.
+#
+# Install: declared as `climate_room_thermostat:` in configuration.yaml. First
+# deploy: restart, seed the targets, then turn `input_boolean.room_thermostat` on.
+
+input_boolean:
+  room_thermostat:
+    name: Room thermostat (HA decides the valves)
+    icon: mdi:home-thermometer
+
+input_number:
+  room_target_kitchen:
+    name: Room target kitchen
+    min: 15
+    max: 25
+    step: 0.5
+    unit_of_measurement: °C
+    mode: slider
+  room_target_master:
+    name: Room target master
+    min: 15
+    max: 25
+    step: 0.5
+    unit_of_measurement: °C
+    mode: slider
+  room_target_lola:
+    name: Room target Lola
+    min: 15
+    max: 25
+    step: 0.5
+    unit_of_measurement: °C
+    mode: slider
+  room_target_stairwell:
+    name: Room target stairwell
+    min: 15
+    max: 25
+    step: 0.5
+    unit_of_measurement: °C
+    mode: slider
+  room_target_ada:
+    name: Room target Ada
+    min: 15
+    max: 25
+    step: 0.5
+    unit_of_measurement: °C
+    mode: slider
+
+input_text:
+  room_thermostat_status:
+    name: Room thermostat - valves now
+    max: 255
+
+automation:
+  - id: room_thermostat
+    alias: "Heating - room thermostat"
+    description: "Every 5 min: opens a TRV (setpoint 28) when its room is under target - 0.2, shuts it (5) above target + 0.1, falls back to the TRV's own regulation if the room sensor is silent. Off unless input_boolean.room_thermostat. Source: ha-kodu24/trv-climate/room_thermostat.yaml."
+    mode: single
+    max_exceeded: silent
+    triggers:
+      - trigger: time_pattern
+        minutes: "/5"
+      - trigger: state
+        entity_id:
+          - input_number.room_target_kitchen
+          - input_number.room_target_master
+          - input_number.room_target_lola
+          - input_number.room_target_stairwell
+          - input_number.room_target_ada
+      - trigger: state
+        entity_id: input_boolean.room_thermostat
+        to: "on"
+    conditions:
+      - condition: state
+        entity_id: input_boolean.room_thermostat
+        state: "on"
+    variables:
+      # key: [display name, TRV climate entity, room temperature sensor]
+      rooms:
+        kitchen: ["Köök", "climate.trv_danfoss_kitchen", "sensor.climate_kitchen_temperature"]
+        master: ["Kätlyni tuba", "climate.trv_danfoss_master", "sensor.climate_bedroom_temperature"]
+        lola: ["Lola tuba", "climate.trv_danfoss_lola", "sensor.climate_lola_s_room_temperature"]
+        stairwell: ["Trepihall", "climate.trv_danfoss_stairwell", "sensor.climate_trepihall_temperature"]
+        ada: ["Ada tuba", "climate.trv_sonoff_ada", "sensor.climate_ada_s_room_temperature"]
+      open_sp: 28
+      shut_sp: 5
+      below: 0.2
+      above: 0.1
+      stale_s: 1200
+      plan: >
+        {% set ns = namespace(out=[]) %}
+        {% for key, r in rooms.items() %}
+          {% set target = states('input_number.room_target_' ~ key) | float(none) %}
+          {% set room = states(r[2]) | float(none) %}
+          {% set st = states[r[2]] %}
+          {% set age = (now() - st.last_reported).total_seconds() if st is not none else 99999 %}
+          {% set sp = state_attr(r[1], 'temperature') | float(none) %}
+          {% if target is none or is_state(r[1], 'unavailable') %}
+            {% set mode, want = 'skip', none %}
+          {% elif room is none or age > stale_s %}
+            {% set mode, want = 'fallback', target %}
+          {% elif room < target - below %}
+            {% set mode, want = 'open', open_sp %}
+          {% elif room > target + above %}
+            {% set mode, want = 'shut', shut_sp %}
+          {% elif sp is not none and sp >= open_sp - 1 %}
+            {% set mode, want = 'open', open_sp %}
+          {% elif sp is not none and sp <= shut_sp + 1 %}
+            {% set mode, want = 'shut', shut_sp %}
+          {% else %}
+            {# in the band, coming from fallback or a hand-set dial: pick by the sign #}
+            {% set mode = 'open' if room < target else 'shut' %}
+            {% set want = open_sp if mode == 'open' else shut_sp %}
+          {% endif %}
+          {% set ns.out = ns.out + [{'key': key, 'name': r[0], 'climate': r[1], 'mode': mode,
+              'want': want, 'sp': sp, 'room': room, 'target': target,
+              'write': want is not none and (sp is none or (sp - want) | abs > 0.05)}] %}
+        {% endfor %}
+        {{ ns.out }}
+    actions:
+      - repeat:
+          for_each: "{{ plan | selectattr('write') | list }}"
+          sequence:
+            - action: climate.set_temperature
+              continue_on_error: true
+              target:
+                entity_id: "{{ repeat.item.climate }}"
+              data:
+                temperature: "{{ repeat.item.want }}"
+            - action: logbook.log
+              data:
+                name: "Room thermostat"
+                message: >
+                  {{ repeat.item.name }}: {{ repeat.item.mode }} (room {{ repeat.item.room }},
+                  target {{ repeat.item.target }}; TRV setpoint {{ repeat.item.sp }} → {{ repeat.item.want }})
+            # Push only on entering / leaving fallback: open/shut is routine.
+            # "Back" = it was shown as on its own TRV in the previous status line.
+            - if: >
+                {{ repeat.item.mode == 'fallback'
+                   or (repeat.item.mode in ['open', 'shut']
+                       and (repeat.item.name ~ ' TRV ise') in states('input_text.room_thermostat_status')) }}
+              then:
+                - action: notify.mobile_app_eeros_iphone_17
+                  data:
+                    title: "Room thermostat: {{ repeat.item.name }} {{ 'on its own TRV' if repeat.item.mode == 'fallback' else 'back under HA' }}"
+                    message: >
+                      {% if repeat.item.mode == 'fallback' %}No room temperature for 20 min, so its
+                      TRV regulates on its own head again (setpoint {{ repeat.item.want }}). Check
+                      the door sensor's battery / Zigbee.{% else %}Room temperature is back
+                      ({{ repeat.item.room }}); HA decides its valve again.{% endif %}
+                    data:
+                      push:
+                        thread-id: heating
+      - action: input_text.set_value
+        target:
+          entity_id: input_text.room_thermostat_status
+        data:
+          value: >
+            {% set word = {'open': 'avatud', 'shut': 'kinni', 'fallback': 'TRV ise', 'skip': '?'} %}
+            {% set ns = namespace(l=[]) %}
+            {% for p in plan %}{% set ns.l = ns.l + [p.name ~ ' ' ~ word[p.mode]] %}{% endfor %}
+            {{ ns.l | join(' · ') }}
+
+  - id: room_thermostat_off
+    alias: "Heating - room thermostat off: TRVs back to their targets"
+    description: "When the room thermostat is switched off, writes every TRV's setpoint back to its room target so the TRVs regulate themselves again. Source: ha-kodu24/trv-climate/room_thermostat.yaml."
+    mode: single
+    triggers:
+      - trigger: state
+        entity_id: input_boolean.room_thermostat
+        from: "on"
+        to: "off"
+    actions:
+      - repeat:
+          for_each:
+            - ["climate.trv_danfoss_kitchen", "input_number.room_target_kitchen"]
+            - ["climate.trv_danfoss_master", "input_number.room_target_master"]
+            - ["climate.trv_danfoss_lola", "input_number.room_target_lola"]
+            - ["climate.trv_danfoss_stairwell", "input_number.room_target_stairwell"]
+            - ["climate.trv_sonoff_ada", "input_number.room_target_ada"]
+          sequence:
+            - action: climate.set_temperature
+              continue_on_error: true
+              target:
+                entity_id: "{{ repeat.item[0] }}"
+              data:
+                temperature: "{{ states(repeat.item[1]) | float(21.5) }}"
+      - action: input_text.set_value
+        target:
+          entity_id: input_text.room_thermostat_status
+        data:
+          value: "off - TRVs regulate themselves"

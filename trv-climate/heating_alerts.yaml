@@ -19,8 +19,9 @@
 #                     trim, or it is at +2.5 and the TRV needs another approach.
 #   valve <= 1 %   -> not calling at all: stuck valve or a mesh fault.
 #
-# Each room's own TRV target is the line, not a fixed number, so a room set to 20
-# is judged against 20. Heating weather is met.no (not the sunlit Vitodens
+# Each room's own target is the line, not a fixed number, so a room set to 20
+# is judged against 20: the TRV's setpoint, or - while the room thermostat
+# (room_thermostat.yaml) drives the setpoints to 28 / 5 - input_number.room_target_<room>. Heating weather is met.no (not the sunlit Vitodens
 # sensor, see HEATING_CURVE_TEST.md). 3 hours is long enough to ride out the
 # warm-up after someone raises a target; one alert per episode (the trigger only
 # re-arms once the room is back within 0.5).
@@ -42,7 +43,7 @@ automation:
         id: kitchen
         value_template: >
           {% set room = states('sensor.climate_kitchen_temperature') | float(none) %}
-          {% set sp = state_attr('climate.trv_danfoss_kitchen', 'temperature') | float(none) %}
+          {% set sp = states('input_number.room_target_kitchen') | float(none) if is_state('input_boolean.room_thermostat', 'on') else state_attr('climate.trv_danfoss_kitchen', 'temperature') | float(none) %}
           {{ room is not none and sp is not none
              and state_attr('weather.forecast_kodu', 'temperature') | float(99) < 12
              and sp - room > 0.5 }}
@@ -51,7 +52,7 @@ automation:
         id: ada
         value_template: >
           {% set room = states('sensor.climate_ada_s_room_temperature') | float(none) %}
-          {% set sp = state_attr('climate.trv_sonoff_ada', 'temperature') | float(none) %}
+          {% set sp = states('input_number.room_target_ada') | float(none) if is_state('input_boolean.room_thermostat', 'on') else state_attr('climate.trv_sonoff_ada', 'temperature') | float(none) %}
           {{ room is not none and sp is not none
              and state_attr('weather.forecast_kodu', 'temperature') | float(99) < 12
              and sp - room > 0.5 }}
@@ -60,7 +61,7 @@ automation:
         id: lola
         value_template: >
           {% set room = states('sensor.climate_lola_s_room_temperature') | float(none) %}
-          {% set sp = state_attr('climate.trv_danfoss_lola', 'temperature') | float(none) %}
+          {% set sp = states('input_number.room_target_lola') | float(none) if is_state('input_boolean.room_thermostat', 'on') else state_attr('climate.trv_danfoss_lola', 'temperature') | float(none) %}
           {{ room is not none and sp is not none
              and state_attr('weather.forecast_kodu', 'temperature') | float(99) < 12
              and sp - room > 0.5 }}
@@ -69,7 +70,7 @@ automation:
         id: master
         value_template: >
           {% set room = states('sensor.climate_bedroom_temperature') | float(none) %}
-          {% set sp = state_attr('climate.trv_danfoss_master', 'temperature') | float(none) %}
+          {% set sp = states('input_number.room_target_master') | float(none) if is_state('input_boolean.room_thermostat', 'on') else state_attr('climate.trv_danfoss_master', 'temperature') | float(none) %}
           {{ room is not none and sp is not none
              and state_attr('weather.forecast_kodu', 'temperature') | float(99) < 12
              and sp - room > 0.5 }}
@@ -78,7 +79,7 @@ automation:
         id: stairwell
         value_template: >
           {% set room = states('sensor.climate_trepihall_temperature') | float(none) %}
-          {% set sp = state_attr('climate.trv_danfoss_stairwell', 'temperature') | float(none) %}
+          {% set sp = states('input_number.room_target_stairwell') | float(none) if is_state('input_boolean.room_thermostat', 'on') else state_attr('climate.trv_danfoss_stairwell', 'temperature') | float(none) %}
           {{ room is not none and sp is not none
              and state_attr('weather.forecast_kodu', 'temperature') | float(99) < 12
              and sp - room > 0.5 }}
@@ -110,7 +111,7 @@ automation:
       name: "{{ rooms[key][0] }}"
       room: "{{ states(rooms[key][1]) | float(0) }}"
       climate: "{{ 'climate.trv_sonoff_ada' if key == 'ada' else 'climate.trv_danfoss_' ~ key }}"
-      sp: "{{ state_attr(climate, 'temperature') | float(0) }}"
+      sp: "{{ states('input_number.room_target_' ~ key) | float(0) if is_state('input_boolean.room_thermostat', 'on') else state_attr(climate, 'temperature') | float(0) }}"
       trv: "{{ state_attr(climate, 'current_temperature') }}"
       trim: "{{ states('number.trv_danfoss_' ~ key ~ '_regulation_setpoint_offset') | float(0) }}"
       valve: "{{ states('sensor.trv_danfoss_' ~ key ~ '_pi_heating_demand') | float(-1) }}"

@@ -46,6 +46,15 @@ below:
 - **Trim it with a static per-room offset.** Needs no continuous feed and no code,
   just one number per room, which is why it is the one being prepared for.
 
+> **2026-11-10 21:53: HA room thermostat on** (`trv-climate/room_thermostat.yaml`):
+> each TRV is driven to setpoint 28 (open) or 5 (shut) from its room's door sensor
+> against `input_number.room_target_<room>` (all 21.5), so the trims below do not act
+> while it runs. Why: at 21:30 Ada's TRVZB sat 0.5 K under its own target for 17 min
+> and would not heat, and Master/Lola/stairwell valves were throttled with their rooms
+> 1 K short while the kitchen ran flat out - the heads, not the rooms, were deciding.
+> On switching it on, all five valves opened within 3 min (eTRV demand 39-100 %).
+> The trims stay in force for the fallback (a room whose sensor goes silent).
+
 ### Trims in force (first set 2026-10-17; current value in bold)
 
 > **Since 2026-11-10 the trims live in HA helpers**, `input_number.trv_trim_<room>`
