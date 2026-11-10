@@ -1,6 +1,6 @@
 # Backup monitor — alerts for the backup jobs protecting the server.
 #
-# Five jobs. Three run on the VM (alpine-docker) and are off-site: media, borg,
+# Seven jobs. Three run on the VM (alpine-docker) and are off-site: media, borg,
 # flash. Two run on the Unraid host, both defined in the `unraid` repo:
 #   `pool`  — ZFS pool -> parity array, nightly (added 2026-09-05). Host-side
 #             because the consistent snapshot needs zfs, and because the VM's own
@@ -10,7 +10,9 @@
 #   VM (added 2026-10-04).
 #             Not a backup; it rides this machinery because a dead-man switch is
 #             exactly what a health check wants.
-# All five report through the same webhook.
+#   `immich` — phone photo uploads per person, daily via immich-upload-check on
+#   the VM (2026-11-05): fail when someone's count has not grown in 14 days.
+# All seven report through the same webhook.
 #
 # Plus HA's own backups (2026-11-05), which are not a webhook job: automatic
 # backups go to the Yellow, Nabu Casa and the Hetzner Storage Box (sub-account
@@ -86,6 +88,14 @@ input_text:
   # 17 days (2026-09-17 reboot; DMS's tailnet IP fell outside its mynetworks).
   backup_mail_status:
     name: Backup mail status
+    max: 200
+
+  # Phone photo backups into Immich, per person (2026-11-05). Reported daily by
+  # /etc/periodic/daily/immich-upload-check on the VM: `fail` when a user's
+  # photo+video count has not grown in 14 days - a phone backup can stop
+  # silently (app logged out, background refresh off, storage full).
+  backup_immich_status:
+    name: Backup immich status
     max: 200
 
 input_number:
@@ -226,6 +236,15 @@ input_datetime:
     has_date: true
     has_time: true
 
+  backup_immich_last_seen:
+    name: Backup immich last seen
+    has_date: true
+    has_time: true
+  backup_immich_last_ok:
+    name: Backup immich last ok
+    has_date: true
+    has_time: true
+
 # ---------------------------------------------------------------------------
 # Template entities exist for the dashboard, and for one property input_* lack:
 # long-term statistics. HA keeps statistics for sensors carrying a state_class,
@@ -312,6 +331,14 @@ template:
                   and (now().timestamp()
                        - (state_attr('input_datetime.backup_mail_last_ok', 'timestamp') | float(0))) < 93600) }}
 
+      # Immich phone uploads per person; daily from the VM.
+      - name: Backup immich healthy
+        unique_id: backup_immich_healthy
+        state: >
+          {{ (states('input_text.backup_immich_status') == 'ok'
+                  and (now().timestamp()
+                       - (state_attr('input_datetime.backup_immich_last_ok', 'timestamp') | float(0))) < 93600) }}
+
       # HA's own backups (2026-11-05). Not a webhook job: ha_backup_copies.py asks
       # the backup manager whether the newest automatic backup is in all three
       # locations (Yellow, Nabu Casa, Hetzner), encrypted off-site. Healthy also
@@ -343,7 +370,7 @@ automation:
       # Ignore unexpected job names rather than failing on a templated
       # entity_id that doesn't resolve.
       - condition: template
-        value_template: "{{ trigger.json.job in ['media', 'borg', 'flash', 'pool', 'zpool', 'mail'] }}"
+        value_template: "{{ trigger.json.job in ['media', 'borg', 'flash', 'pool', 'zpool', 'mail', 'immich'] }}"
     action:
       - service: input_datetime.set_datetime
         target:
@@ -423,7 +450,7 @@ automation:
         hours: "/1"
     action:
       - repeat:
-          for_each: ["media", "borg", "flash", "pool", "zpool", "mail"]
+          for_each: ["media", "borg", "flash", "pool", "zpool", "mail", "immich"]
           sequence:
             - variables:
                 seen_entity: "input_datetime.backup_{{ repeat.item }}_last_seen"
@@ -682,7 +709,7 @@ automation:
       yesterday? Silent when everything is healthy, so it stays a signal rather
       than furniture.
 
-      Covers all six jobs. It listed only the three VM ones until 2026-09-13,
+      Covers all seven jobs (immich since 2026-11-05). It listed only the three VM ones until 2026-09-13,
       which left `pool` and `zpool` with no safety net at all: a job stuck in
       `fail` keeps refreshing last_seen, so the dead-man switch never sees it and
       the immediate push is the only other signal. HA's own backup copies
@@ -695,7 +722,7 @@ automation:
       - variables:
           problems: >
             {% set ns = namespace(p=[]) %}
-            {% for j in ['media', 'borg', 'flash', 'pool', 'zpool', 'mail'] %}
+            {% for j in ['media', 'borg', 'flash', 'pool', 'zpool', 'mail', 'immich'] %}
               {% set ok = state_attr('input_datetime.backup_' ~ j ~ '_last_ok', 'timestamp') | float(0) %}
               {% set age = (now().timestamp() - ok) / 3600 %}
               {% if age > 26 %}
