@@ -248,6 +248,26 @@ temperature to her TRV (Danfoss automatic offset mode) for two nights; the valve
 barely responded, so she is back on a fixed trim. Kept as the record and for reuse
 (covered mode would need a 10-min cadence). Every TRV now runs on its own sensor + trim.
 
+## Control principle: one controller per quantity
+
+Eero, 2026-11-10: when everything is "smart", logic competes and the tuning never
+ends, because nobody can tell which layer is at fault. So:
+
+- **One controller per quantity.** The boiler owns the supply temperature (its curve);
+  each TRV owns its valve, against one room temperature. Nothing else writes either.
+- **HA picks inputs and advises; it does not add control loops.** Choosing which
+  sensor a TRVZB is fed (door → corrected Alt → its own sensor, `PLANS.md` §3) counts
+  as picking an input, and must stay visible: the dashboard shows each room's current
+  source. If that chain ever needs "tuning", it has become too clever.
+- **Device-side "smart" features stay off**: eTRV window detection and load
+  balancing, TRVZB adaptive mode and open-window (all off as of 2026-11-10). The
+  eTRVs' anticipatory control loop cannot be switched off - one reason for the TRVZB
+  plan (`PLANS.md` §3 "Direction").
+- **Wind, floor loops, the workshop and the heated neighbours are disturbances, not
+  logic** - measure them (`heating-check.py`), don't build rules to fight them.
+
+See also "advise, don't automate" in the Project Overview and `heating_alerts.yaml`.
+
 ## Why nothing controls the TRVs right now
 
 The Danfoss eTRV's native external-sensor feature holds an anticipatory ~1% valve

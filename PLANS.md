@@ -267,6 +267,26 @@ once started after Lola's TRVZB.
   coupling, not the pin. **Pass:** after ~3 days to find her offset, nights within
   ±0.3 K of target, as Ada's have been (−0.1…−0.3, 11-05..09), against −1.0…−1.8
   on the eTRV. Kitchen first after her: it is the one now visibly failing.
+  **Direction (Eero, 2026-11-10):** the target is a TRVZB on every radiator, each
+  regulating on its room's door sensor via the external-temperature input - the same
+  simple device everywhere and no hidden TRV logic; it also answers the wind question
+  (`HA work`, "Wind compensation"). Lola's pass mark still gates the purchase.
+  **Feed design - never regulate on a frozen number** (Eero, 2026-11-10). The feed
+  depends on a sensor battery and the mesh, so it picks its source by freshness, per
+  room, in this order:
+  1. **Door sensor** (the room reference) - fresh = reported within ~30 min
+     (`last_reported`, not `last_changed`: a steady room does not change).
+  2. **The room's Alt sensor**, corrected by that room's typical door − Alt
+     difference (the outer-wall Alt reads ~0.4-0.8 K colder - `heating-check`'s
+     wall-door figures; learn it as a rolling median while both are fresh). Lola,
+     Ada, Master and the kitchen have one; the stairwell does not.
+  3. **The TRV's own sensor** - switch the external input off, so it regulates as
+     it does today, with its local offset as the trim.
+  Every switch of source pushes once (which room, from what to what, why), and
+  `battery-monitor/` should flag the room sensors early, since a dead one now
+  costs control, not just a chart. Switching back up the chain is automatic once
+  the better source is fresh again. Build and test it on Lola first (pull a door
+  sensor's battery on purpose), then copy it to each room as its TRVZB goes in.
 - **What was tried first:** furniture moved off the TRV 2026-10-25 (error 4.5 →
   3.0 K, not enough); automatic offset room feed 2026-10-18/19 (valve stuck ~30 %
   whatever the room did, parked); targets 22 → 23 (10-26) → 22.5 (10-27) → 23
@@ -365,6 +385,29 @@ valves are sorted out.
 
 ## HA work (no visit needed)
 
+- **Wind compensation - after the valves respond as expected (§3, §8), not before.**
+  Eero's working theory (2026-11-10): wind on the **south wall** - the longest outer
+  wall (Master, stair room, Lola) - cools the whole flat, and more so now the leaves
+  are down. Seen so far: 11-09 (SW, 3.8 m/s onto S) and 11-10 (S, 4.8 m/s onto S,
+  5.8 °C) every room ran 0.8-1.1 K short with the valves mostly shut, Master furthest;
+  11-05 (NW, 7.6 m/s but all of it onto W) the flat held. Not yet separable from the
+  kitchen valve fault (from 11-09 03:10) and the heads reading warm - Ada was short on
+  11-10 too with no wind on her wall. `./heating-check.py` reports wind onto each wall.
+  Options, to weigh once the TRVs behave:
+  - **Trims by wind** (Eero's idea): raise each south-wall room's trim with the wind
+    onto that wall. Limits: the eTRV trim caps at ±2.5 K, and every write costs a
+    sleepy device a wake-up - step it (e.g. 0 / +0.5 / +1.0), with hysteresis, at most
+    a few writes a day.
+  - **Let the room sensor see it - Eero's choice (2026-11-10), together with a
+    TRVZB on every radiator:** more control, every room the same, no opaque "smart"
+    logic in the TRV. A TRVZB on its external-temperature input
+    (`trv-climate/lola_feed.yaml` on branch `lola-trvzb`) regulates on the door sensor,
+    which feels the wind's cooling directly - no wind model needed. If Lola's TRVZB
+    passes and the eTRVs are replaced, this may make wind trims unnecessary.
+  - **House-wide:** a curve-shift bump on a strong S/SW forecast. Coarser; it heats
+    every room, including the ones the wind does not reach.
+  First, collect the evidence: a cold S/SW day against a cold NW or calm one, with
+  working valves.
 - **Bathroom fan on humidity** (after its relay is in): trigger on a fast rise
   (e.g. +8 points in 10 min = shower) or on being ~15 points above a reference room,
   off when back within a few points; minimum and maximum run time. Not a fixed %:
