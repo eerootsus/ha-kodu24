@@ -398,8 +398,10 @@ valves are sorted out.
 
 - **Wind compensation.** *Update 2026-11-10 evening:* the room layer is built -
   `trv-climate/trim_adjust.yaml` steps trims ±0.5 to hold each room at its target
-  (no wind model: the door sensor sees the wind's cooling), deployed **off** until
-  Eero turns `input_boolean.trv_trim_adjust` on. Still open: an automatic shift for
+  (no wind model: the door sensor sees the wind's cooling). **On since 2026-11-10
+  20:33** (`input_boolean.trv_trim_adjust`, Eero); first possible step ~22:30. Review
+  its pushes after the S-wind spell (to 11-12): steps that oscillate up and down
+  would mean the 0.3 K band or the 2 h gap is too tight. Still open: an automatic shift for
   rooms whose valve is flat out (today by hand; the curve test does the raise half),
   and a forecast step if the feedback proves too slow. Original note follows.
   **Originally: after the valves respond as expected (§3, §8), not before.**
