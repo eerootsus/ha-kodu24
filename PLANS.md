@@ -209,7 +209,8 @@ freed by the visit rather than a flow change - judge her on the next days, not t
 
 ### 2. Curve shift - decide on the kitchen in the cold
 
-**Done 2026-11-10 20:18: shift +3 → +4** (Eero; set from HA, `HEATING_CURVE_TEST.md`
+**2026-11-10 22:42: shift +4 → +5** (all valves open under the HA room thermostat,
+rooms flat 45 min, burner short-cycling at ~44 °C). **Done 2026-11-10 20:18: shift +3 → +4** (Eero; set from HA, `HEATING_CURVE_TEST.md`
 "Curve in force"). The kitchen ran 95-96 % open with the radiator hot all over and
 still slid to 20.1 (§8). Check it the evening of 11-11 against the wind (S wind
 forecast through 11-12). The rest of this section is the reasoning that led here.
