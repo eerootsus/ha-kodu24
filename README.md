@@ -44,7 +44,10 @@ housekeeping packages that have nowhere better to live:
   `alpine-docker` (the jobs themselves live in the `unraid` repo), and for HA's
   own backups: `ha_backup_copies.py` checks that the newest automatic backup is
   on the Yellow, in Nabu Casa and on the Hetzner Storage Box - two off-site
-  copies, not one.
+  copies, not one. Job `immich` (2026-11-10) watches phone photo uploads per
+  person: `fail` when someone's Immich count has not grown in 14 days. HA's own
+  Immich integration was not used: its counts are server totals, so it cannot
+  see one phone stop while another keeps uploading.
 - **`chores/`** — household chore rotation, notifications and dashboard cards
   (see `chores/README.md`). Merged in from the former `ha-chores` repo with
   its history intact.

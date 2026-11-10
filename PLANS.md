@@ -341,29 +341,6 @@ Zigbee. Avoid Tuya/Aqara TRVs.
 
 ## HA work (no visit needed)
 
-- **Immich backup-silence check - drafted 2026-11-05, waiting to be deployed.** Daily,
-  per person: `fail` when someone's photo+video count has not grown in 14 days (a
-  phone backup can stop silently). Runs on the VM, which already hosts Immich, so its
-  admin API key (1Password "Immich", field `API key`) never leaves it, and reports HA
-  job `immich` through the backup webhook (dead-man switch, healthy strip, recap).
-  Both halves are on branches named `immich-check`: the script
-  `scripts/vm/immich-upload-check` in `unraid`, and the HA side
-  (`backup-monitor/backup_monitor.yaml`) here. The script was tested against the live
-  API. Not deployed because the remote session's key (`oroma`) is not authorized on the
-  VM. **Deploy together**, or the dead-man switch pages after 26 h:
-  1. On the VM: `apk add jq` if missing; copy the script to
-     `/etc/periodic/daily/immich-upload-check` (mode 0755); write
-     `IMMICH_API_KEY=…` to `/root/.config/immich-upload-check.env` (mode 0600).
-  2. Run it once by hand: the first run sets the baseline and reports `ok`.
-  3. Merge `immich-check` in both repos; `./deploy.sh --restart` (new `input_*`
-     helpers need the restart).
-  4. In `unraid`: add it to `CLAUDE.md`'s daily-cron list and to the catch-up
-     schedule in `cron-catchup.sh` if the dailies are listed there by name.
-  - **HA's core Immich integration: not wanted** (Eero, 2026-11-10). Its photo/video
-    counts are server totals (admin key, `server.statistics`), so it cannot see one
-    phone stop while another keeps uploading - the case this check exists for. Its
-    extras (disk sensors, update entity, media source, upload action) are unused here,
-    and the Immich version check is already a script.
 - **Bathroom fan on humidity** (after its relay is in): trigger on a fast rise
   (e.g. +8 points in 10 min = shower) or on being ~15 points above a reference room,
   off when back within a few points; minimum and maximum run time. Not a fixed %:
