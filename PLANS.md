@@ -337,6 +337,30 @@ the Ada cases listed in §3. Gotchas: ZHA truncates the offset to tenths (write
 summer - the main reason for it. Alternative if it disappoints: Eurotronic Spirit
 Zigbee. Avoid Tuya/Aqara TRVs.
 
+### 8. Kitchen valve - work the pin (same visit as Lola's TRVZB is fine)
+
+The kitchen eTRV stopped steering its radiator on 2026-11-09 (§3 "Decision"): warm
+all over at a reported 1 %, then 94-97 % all night with the room stuck at 20.3. The
+device reports no fault. Lola and the kitchen share no wall, so both jobs can be done
+on one visit and still be read apart; only Master (next to the kitchen) is blurred.
+
+1. Head off. Press the pin in and out ~10 times: it should spring back freely and
+   evenly. Check the adapter collar for play.
+2. Head back on. Then in HA: the trim is reset to 0 by the remount - rewrite +1.5
+   (as 1.51, read back `0x404B = 15`); `trim_check.yaml` pushes if it is missed. The
+   clock is rewritten by `clock_sync.yaml` within a minute.
+3. **Fixed if,** within 24-48 h: the head reads ~1-2 K over the room again (not ~4),
+   the valve modulates rather than sitting at 1 % or 95 %, and the room holds ~21.5
+   (`./heating-check.py`).
+4. **Pin stiff or sticking again** = a worn valve insert: a plumber's job, and a sign
+   the other eTRV rooms' trouble may be the inserts, not the heads (§3 "Decision").
+
+Until then, ignore the shortfall alert's advice for the kitchen ("raise the curve"):
+the curve is not what is short. Leave every other setting alone meanwhile - Master on
+trim 0, Ada, the stairwell, the curve - so the two results stay readable. No new alert
+for this failure mode yet (Eero, 2026-11-10): the final alert set waits until the
+valves are sorted out.
+
 ---
 
 ## HA work (no visit needed)
