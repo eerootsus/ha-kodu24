@@ -28,7 +28,8 @@ holds the house.
 | years until 2026-08-13 | 1.2 | 0 | gas-boiler default |
 | 2026-08-13 | 0.9 | 0 | start-low-and-raise plan |
 | 2026-10-17 | 0.9 | +2 | kitchen and Ada fully open on ~33 °C supply at +12 °C outside |
-| 2026-10-19 | 0.9 | **+3** | second, colder night (7.8 → 2 °C): Ada fully open (98–100 %) on her door sensor and still slid 22.1 → 21.6; kitchen the same |
+| 2026-10-19 | 0.9 | +3 | second, colder night (7.8 → 2 °C): Ada fully open (98–100 %) on her door sensor and still slid 22.1 → 21.6; kitchen the same |
+| 2026-11-10 20:18 | 0.9 | **+4** | kitchen valve 95–96 % all day, radiator hot all over (Kätlyn), room still sliding 20.4 → 20.1 on a 21.5 target at 5.8 °C with S wind 4.8 m/s onto the south wall: the boiler, not the valve. Set from HA (`number.vitodens_100_heating_curve_shift`), read back from ViCare |
 
 Why the shift and not the slope: the Viessmann curve (`VT = RT + shift − slope ×
 DAR × (1.4347 + 0.021·DAR + 247.9e-6·DAR²)`, `DAR = outside − RT`, RT = the boiler's

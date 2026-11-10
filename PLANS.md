@@ -209,6 +209,11 @@ freed by the visit rather than a flow change - judge her on the next days, not t
 
 ### 2. Curve shift - decide on the kitchen in the cold
 
+**Done 2026-11-10 20:18: shift +3 → +4** (Eero; set from HA, `HEATING_CURVE_TEST.md`
+"Curve in force"). The kitchen ran 95-96 % open with the radiator hot all over and
+still slid to 20.1 (§8). Check it the evening of 11-11 against the wind (S wind
+forecast through 11-12). The rest of this section is the reasoning that led here.
+
 The kitchen trim is settled against its door sensor: +2.5 → +2.0 (2026-10-25) →
 +1.5 (2026-11-05, `TRV_REGULATION.md` "Trims in force"). What is left is flow,
 not trim: in the 11-04 cold it ran 0.1–0.4 short at 93–98 % valve. After §1's
@@ -361,7 +366,13 @@ Zigbee. Avoid Tuya/Aqara TRVs.
 
 The kitchen eTRV stopped steering its radiator on 2026-11-09 (§3 "Decision"): warm
 all over at a reported 1 %, then 94-97 % all night with the room stuck at 20.3. The
-device reports no fault. Lola and the kitchen share no wall, so both jobs can be done
+device reports no fault. **Revised 2026-11-10 20:00:** Kätlyn found the radiator hot
+all over at the reported 95-96 % - so on 11-10 the valve *was* following the head,
+and the room still slid 20.4 → 20.1 over the day (5.8 °C, S wind 4.8 m/s onto the
+south wall). The kitchen radiator flat out at ~41 °C supply cannot hold 21.5 in that
+weather: curve-limited, as on 11-04 (§2). The only evidence of a sticking pin left is
+11-09 (hot at 1 %), so the pin check below is still worth doing but is no longer
+the explanation for the kitchen being cold. Lola and the kitchen share no wall, so both jobs can be done
 on one visit and still be read apart; only Master (next to the kitchen) is blurred.
 
 1. Head off. Press the pin in and out ~10 times: it should spring back freely and
@@ -375,8 +386,8 @@ on one visit and still be read apart; only Master (next to the kitchen) is blurr
 4. **Pin stiff or sticking again** = a worn valve insert: a plumber's job, and a sign
    the other eTRV rooms' trouble may be the inserts, not the heads (§3 "Decision").
 
-Until then, ignore the shortfall alert's advice for the kitchen ("raise the curve"):
-the curve is not what is short. Leave every other setting alone meanwhile - Master on
+The shortfall alert's "raise the curve" for the kitchen is right after all (revised
+11-10, see above) - the decision is §2's. Leave every other setting alone meanwhile - Master on
 trim 0, Ada, the stairwell, the curve - so the two results stay readable. No new alert
 for this failure mode yet (Eero, 2026-11-10): the final alert set waits until the
 valves are sorted out.

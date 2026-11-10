@@ -248,25 +248,36 @@ temperature to her TRV (Danfoss automatic offset mode) for two nights; the valve
 barely responded, so she is back on a fixed trim. Kept as the record and for reuse
 (covered mode would need a 10-min cadence). Every TRV now runs on its own sensor + trim.
 
-## Control principle: one controller per quantity
+## Control principle: the logic lives in HA, devices are plain
 
-Eero, 2026-11-10: when everything is "smart", logic competes and the tuning never
-ends, because nobody can tell which layer is at fault. So:
+Eero, 2026-11-10: when every device is "smart", logic competes and the tuning never
+ends, because nobody can tell which layer is at fault. So all the logic lives in
+**one place we control - HA, in this repo** - and the devices are plain:
 
-- **One controller per quantity.** The boiler owns the supply temperature (its curve);
-  each TRV owns its valve, against one room temperature. Nothing else writes either.
-- **HA picks inputs and advises; it does not add control loops.** Choosing which
-  sensor a TRVZB is fed (door → corrected Alt → its own sensor, `PLANS.md` §3) counts
-  as picking an input, and must stay visible: the dashboard shows each room's current
-  source. If that chain ever needs "tuning", it has become too clever.
-- **Device-side "smart" features stay off**: eTRV window detection and load
+- **A TRV is just a valve that holds the temperature it is given**, against the room
+  value HA feeds it. Its own "smart" features stay off: eTRV window detection and load
   balancing, TRVZB adaptive mode and open-window (all off as of 2026-11-10). The
-  eTRVs' anticipatory control loop cannot be switched off - one reason for the TRVZB
-  plan (`PLANS.md` §3 "Direction").
-- **Wind, floor loops, the workshop and the heated neighbours are disturbances, not
-  logic** - measure them (`heating-check.py`), don't build rules to fight them.
+  eTRVs' anticipatory control loop cannot be switched off - the reason for replacing
+  them with TRVZBs (`PLANS.md` §3 "Direction").
+- **The boiler is plain too**: it follows its curve, and HA sets the curve
+  (`number.vitodens_100_heating_curve_shift` / `_slope`).
+- **HA's job is that whatever a room is set to is what the room gets** - including
+  on windy days, by adjusting the TRV feed/trims and the curve. Each piece of logic is
+  in this repo, slow, bounded, logged, pushes on every change, and has one switch.
+- **Order of knobs (Eero, 2026-11-10): TRV trims first, the boiler only when a trim
+  cannot help.** A room short with its valve throttled is a trim (or, on a TRVZB, its
+  feed/offset) matter. Only a room short with its valve fully open (≥ 80 %, TRVZB
+  calling) means the boiler is not delivering: then the shift, and the slope only for
+  shortfalls that grow with cold. Curve changes are logged in `HEATING_CURVE_TEST.md`
+  "Curve in force".
+- **One decision per quantity, in one file.** Two automations must never adjust the
+  same thing; split the work by condition (e.g. rooms with throttled valves → room
+  level; rooms with a fully open valve → the curve), so they cannot fight.
+- Which sensor feeds a TRVZB (door → corrected Alt → its own, `PLANS.md` §3) must be
+  visible on the dashboard, like every other decision HA takes.
 
-See also "advise, don't automate" in the Project Overview and `heating_alerts.yaml`.
+Until that logic is built, the older rule applies: automation advises, a human
+turns the knob (Project Overview, `heating_alerts.yaml`).
 
 ## Why nothing controls the TRVs right now
 
