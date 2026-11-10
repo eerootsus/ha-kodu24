@@ -403,6 +403,14 @@ valves are sorted out.
 
 ### 9. Boiler flow/return ΔT - why the burner short-cycles
 
+**Do it on the same visit as Lola's TRVZB (§3) and the kitchen valve (§8)** (Eero,
+2026-11-10). Eero thinks the mixer's thermostatic head is at **about 5 (38 °C)** -
+reasonable for a bathroom floor, so the head is probably not the culprit; the
+**return valve and the pump speed** are the unknowns to read and photograph. Order
+on the day: pipe sensors on first and a baseline reading (ideally a day or two
+ahead, so there is a "before"), then note the mixer settings, then change one thing
+at a time.
+
 On 2026-11-10 evening, with the HA room thermostat holding **every** valve open, the
 burner still cycled in 3-10 min bursts at ~44 °C supply (modulation 11-19 %), and it
 started 55-78 times a day the week before. Short cycling means the water comes back
