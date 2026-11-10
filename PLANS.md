@@ -418,6 +418,37 @@ Two causes look the same from HA, which only sees the supply temperature:
   Juhendid-manuaalid/`). Then the radiators are starved while the boiler sees a hot
   return. Or simply a pump running faster than needed.
 
+**The radiator loop has no bypass** (Eero, 2026-11-10), so the suspect is the
+**underfloor mixing unit** - an Uponor Fluvia T **PUSH-23-B-W** feeding only the
+bathroom + WC floor (rated Qmax 7 kW, far more than those few m² need). From its
+manuals (`~/Documents/Kodu 24/Juhendid-manuaalid/Uponor PUSH-23-B-W.pdf` and
+`uponor-push-23b-shunt-med-wilo-pumpe_MAN.pdf`), it has three knobs and its own
+Wilo pump:
+
+1. **Thermostatic head on the boiler-side inlet** - sets the floor's flow
+   temperature: scale 1-9 = 20, 25, 30, 34, 38, 42, 46, 50, 55 °C. It opens to let
+   boiler water in while the floor flow is below that. Set high (8-9) with the boiler
+   at ~44 °C, it never closes, so boiler water streams through the unit all the time.
+2. **Boiler-side return valve** - a presetting 1-5 / OPEN that limits how much boiler
+   water can pass through the unit at all. **This is the knob that matches the
+   symptom:** wide open, boiler water flows in, gives up little heat to a small floor
+   and goes back to the boiler hot - in parallel with the radiators, acting like a
+   bypass.
+3. **Floor-side bypass (balancing) valve** - 0.5-5 turns / OPEN, factory 100 % open:
+   how much floor return is mixed back into the floor supply. Closing it gives the
+   floor more boiler water ("for power increase"); it does not touch the boiler side.
+4. **Wilo pump** - the floor loop's own circulator; lowest speed that keeps the floor
+   warm.
+
+Likely tuning, to confirm on site with the ΔT sensors: head at **4-5 (34-38 °C)**,
+enough for a bathroom floor; return valve **down to 1-2**, so only the water the floor
+actually needs leaves the boiler circuit and it comes back cool; floor bypass left
+open; pump on its lowest step. Then check the floor is still warm (turning the
+en-suite floor *down* was ruled out 11-06 - this keeps it warm, it only stops the
+over-supply). **First, photograph the unit and note the current settings of all
+four**, so it can be put back. Which physical valve is which is read off the
+manual's drawings, not yet seen on site.
+
 **Measure it:** two Zigbee temperature sensors (SNZB-02P, like the door sensors)
 strapped to the **flow and return pipes at the boiler**, under a bit of pipe
 insulation so they read the pipe, not the room. Name them so they are not counted
