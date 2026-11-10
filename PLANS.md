@@ -400,6 +400,38 @@ trim 0, Ada, the stairwell, the curve - so the two results stay readable. No new
 for this failure mode yet (Eero, 2026-11-10): the final alert set waits until the
 valves are sorted out.
 
+
+### 9. Boiler flow/return ΔT - why the burner short-cycles
+
+On 2026-11-10 evening, with the HA room thermostat holding **every** valve open, the
+burner still cycled in 3-10 min bursts at ~44 °C supply (modulation 11-19 %), and it
+started 55-78 times a day the week before. Short cycling means the water comes back
+nearly as hot as it left: the boiler reaches its curve temperature, stops, restarts.
+Two causes look the same from HA, which only sees the supply temperature:
+
+- **The radiators cannot take more** at this water temperature (the boiler's minimum
+  output exceeds what they emit). Fix: hotter water (the curve - shift +5 since
+  11-10 22:42) or more emitter.
+- **Hot water bypasses the radiators** and goes straight back to the return - a
+  bypass valve in the boiler or the pipework, or the underfloor mixing station
+  (Uponor PUSH 23B with its own Wilo pump, manual in `~/Documents/Kodu 24/
+  Juhendid-manuaalid/`). Then the radiators are starved while the boiler sees a hot
+  return. Or simply a pump running faster than needed.
+
+**Measure it:** two Zigbee temperature sensors (SNZB-02P, like the door sensors)
+strapped to the **flow and return pipes at the boiler**, under a bit of pipe
+insulation so they read the pipe, not the room. Name them so they are not counted
+as room sensors (no `sensor_weight_` label). Log a normal day and a cold, all-valves-
+open evening:
+
+- ΔT **< ~5 K with all valves open** → bypass or a fast pump: look at the bypass, the
+  PUSH 23B's setting and piping, and the Vitodens pump speed.
+- ΔT **10-15 K** → the radiators take what they can; only hotter water helps.
+
+Worth doing either way: if the pump turns out faster than needed, turning it down in
+the boiler settings means fewer starts, a cooler return and better condensing. Once
+the sensors are in, add flow/return/ΔT to `./heating-check.py` and the Küte view.
+
 ---
 
 ## HA work (no visit needed)
