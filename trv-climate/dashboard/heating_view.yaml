@@ -107,6 +107,53 @@ sections:
       action: more-info
     grid_options:
       columns: 8
+  - type: heading
+    heading: Muud ruumid
+    icon: mdi:floor-plan
+  - type: custom:mushroom-template-card
+    primary: Elutuba
+    icon: mdi:sofa
+    secondary: '{{ states(''sensor.th_living_room_temperature'') }} °C · {{ states(''sensor.th_living_room_humidity'')
+      | round(0, default=''–'') }} % niiskus'
+    icon_color: grey
+    entity: sensor.th_living_room_temperature
+    tap_action:
+      action: more-info
+    grid_options:
+      columns: 6
+  - type: custom:mushroom-template-card
+    primary: Alumine vannituba
+    icon: mdi:shower
+    secondary: '{{ states(''sensor.tz2000_a476raq2_ts0201_temperature'') }} °C · {{ states(''sensor.tz2000_a476raq2_ts0201_humidity'')
+      | round(0, default=''–'') }} % niiskus'
+    icon_color: grey
+    entity: sensor.tz2000_a476raq2_ts0201_temperature
+    tap_action:
+      action: more-info
+    grid_options:
+      columns: 6
+  - type: custom:mushroom-template-card
+    primary: Ülemine vannituba
+    icon: mdi:bathtub
+    secondary: '{{ states(''sensor.th_upstairs_bathroom_temperature_2'') }} °C · {{ states(''sensor.th_upstairs_bathroom_humidity_2'')
+      | round(0, default=''–'') }} % niiskus'
+    icon_color: grey
+    entity: sensor.th_upstairs_bathroom_temperature_2
+    tap_action:
+      action: more-info
+    grid_options:
+      columns: 6
+  - type: custom:mushroom-template-card
+    primary: Töökoda
+    icon: mdi:hammer-wrench
+    entity: climate.workshop_hvac
+    secondary: '{{ states(''sensor.ikea_of_sweden_vindstyrka_temperature'') }} °C · {{ ''küte sees'' if
+      is_state(''climate.workshop_hvac'', ''heat'') else ''küte väljas'' }}'
+    icon_color: '{{ ''deep-orange'' if is_state(''climate.workshop_hvac'', ''heat'') else ''grey'' }}'
+    tap_action:
+      action: more-info
+    grid_options:
+      columns: 6
 - type: grid
   cards:
   - type: heading
