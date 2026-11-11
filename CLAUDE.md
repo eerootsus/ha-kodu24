@@ -274,6 +274,10 @@ ends, because nobody can tell which layer is at fault. So all the logic lives in
   calling) means the boiler is not delivering: then the shift, and the slope only for
   shortfalls that grow with cold. Curve changes are logged in `HEATING_CURVE_TEST.md`
   "Curve in force".
+- **The kitchen may fall short in high wind (Eero, 2026-11-11).** It is the SW corner,
+  two outer walls onto open gardens, on one radiator. Do not raise the curve so far for
+  it that the other rooms become hard to control (overshoot, valves cycling); a kitchen
+  under target on a stormy day is accepted.
 - **One decision per quantity, in one file.** Two automations must never adjust the
   same thing; split the work by condition (e.g. rooms with throttled valves → room
   level; rooms with a fully open valve → the curve), so they cannot fight.
