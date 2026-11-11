@@ -543,11 +543,14 @@ the sensors are in, add flow/return/ΔT to `./heating-check.py` and the Küte vi
   is to the **east**; the building is turned only ~10-15° clockwise, so the faces are
   close to the compass points:
   - **West end (garden, terrace; workshop below):** kitchen + dining, open into the
-    living strip along the north side. One radiator, under the west window.
+    living strip along the north side. One radiator, under the west window. The
+    kitchen is the **south-west corner**: two outer walls, south and west, and both
+    face open gardens (Eero, 2026-11-11), so it is the most wind-exposed room.
   - **South long wall (outer):** Master (next to the kitchen; manifold at its inner
     corner), the stair-room radiator, and **Lola's** room in the south-east corner (two
     outer walls, south and east).
-  - **East end (street):** the two children's rooms, radiators under the east windows:
+  - **East end (street):** sheltered - Kodu tn is lined with houses, so wind onto the
+    east face counts for less than the same wind onto the open south and west. The two children's rooms, radiators under the east windows:
     Lola's (corner) and **Ada's** in the north-east, which borders the common stairwell
     and has only the one outer wall.
   - **North long side:** no outer wall - the party wall with the other ground-floor
@@ -557,8 +560,9 @@ the sensors are in, add flow/return/ΔT to `./heating-check.py` and the Küte vi
   - **Above:** heated flats over all of it. **Below:** the workshop under the kitchen.
     Heated neighbours are therefore above and along the north (kitchen/hallway) side;
     the outer walls are south, west and east only.
-  So a **SW wind** hits two of our faces (south and west) and a **NW wind** only the
-  west end; the kitchen borders Master but none of the other TRV rooms.
+  So a **SW wind** hits both open faces (south and west) - the kitchen on both its
+  walls - and a **NW wind** only the west end; the kitchen borders Master but none of
+  the other TRV rooms.
 - The workshop is directly under the kitchen; its split HVAC and the (not yet
   commissioned) Panasonic heat-pump outdoor unit sit together under a large,
   skirted-but-gappy wooden terrace, a couple of metres apart. Watch for one unit's
