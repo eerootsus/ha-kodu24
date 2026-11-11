@@ -18,6 +18,10 @@
 # "> target + 0.1" until 2026-11-11: with the door sensors' 0.1 K steps that first
 # fired at target + 0.2, and the radiator's stored heat added 0.1 more (Master shut at
 # 21.7, peaked 21.8 on 21.5). Shutting at the target puts the peak ~0.1-0.2 over.
+# Rooms therefore average ~0.1-0.15 K UNDER target (21.35-21.4 on 21.5) - on purpose,
+# do not "centre" the band: Eero's rule (TRV_REGULATION.md, 2026-10-18) is err slightly
+# under, never over. A warm room makes people turn the heat down; a slightly cool one
+# is easier to live with than to notice and correct.
 # The outer-wall Alts were checked as an earlier shut signal: they track the door
 # sensor at a fixed offset with no lead (Master -0.8, Lola -0.2), so they add nothing.
 # Writes only when the TRV's setpoint is not already the wanted one, so a write a
