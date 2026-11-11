@@ -215,6 +215,16 @@ rooms flat 45 min, burner short-cycling at ~44 °C). **Done 2026-11-10 20:18: sh
 still slid to 20.1 (§8). Check it the evening of 11-11 against the wind (S wind
 forecast through 11-12). The rest of this section is the reasoning that led here.
 
+**Checked 2026-11-11 21:00 (`heating-check --duty`):** the other four rooms hold
+21.3-21.4 against 21.5 with valves cycling (Master 12-19 % open, the rest 33-57 %).
+The kitchen ran 100 % open from 21:00 to 18:00 in only 3-3.5 m/s onto the S wall
+(out 1.6-2.7 °C), crept 20.5 → 21.2, was 21.0 at 21:00 (66 % open after 18:00) -
+short in mild wind, so not the accepted storm case. Gas 0.42 m³/degree-day for the
+day (0.37 over 3 days; baseline 0.38, rooms ~0.8 K warmer now). **Decision (Eero):
+hold +5 overnight; if the kitchen is still short on 11-12 morning at moderate wind,
+shift +5 → +6**, and watch Master's night overshoot (21.66 with its valve shut,
+03:00-06:00 on 11-11).
+
 The kitchen trim is settled against its door sensor: +2.5 → +2.0 (2026-10-25) →
 +1.5 (2026-11-05, `TRV_REGULATION.md` "Trims in force"). What is left is flow,
 not trim: in the 11-04 cold it ran 0.1–0.4 short at 93–98 % valve. After §1's
