@@ -483,14 +483,18 @@ the sensors are in, add flow/return/ΔT to `./heating-check.py` and the Küte vi
 
 ## HA work (no visit needed)
 
-- **Wind compensation.** *Update 2026-11-10 evening:* the room layer is built -
-  `trv-climate/trim_adjust.yaml` steps trims ±0.5 to hold each room at its target
-  (no wind model: the door sensor sees the wind's cooling). **On since 2026-11-10
-  20:33** (`input_boolean.trv_trim_adjust`, Eero); first possible step ~22:30. Review
-  its pushes after the S-wind spell (to 11-12): steps that oscillate up and down
-  would mean the 0.3 K band or the 2 h gap is too tight. Still open: an automatic shift for
-  rooms whose valve is flat out (today by hand; the curve test does the raise half),
-  and a forecast step if the feedback proves too slow. Original note follows.
+- **Wind compensation.** *Update 2026-11-11:* the room layer is now HA's room
+  thermostat (`room_thermostat.yaml`, on since 2026-11-10 21:53), which supersedes the
+  trim adjuster (`trim_adjust.yaml`, switched off): it opens a valve whenever its
+  room is short, so the wind on the room side is handled by feedback, no wind model.
+  What wind now costs shows as **valve duty**, `./heating-check.py --duty`. The test
+  is the S/SSE spell 11-11 → 11-12 (2-5 °C, overcast, wind ~3 → 6-7 m/s): expected
+  duty rising most in Lola (SE corner onto the open end of the street) and least in
+  Master/Ada; the kitchen, open throughout, shows the boiler's limit. First morning
+  (11-11 07-11, ~3 m/s onto S): Master 0-25 %, Ada/Lola/stair 40-60 %, kitchen 100 %
+  rising to 21.0 after slope 0.9 → 1.0. Still open: an automatic curve step for rooms
+  whose valve is flat out (by hand today; Eero accepts the kitchen short in high wind,
+  CLAUDE.md), and a forecast step if the feedback proves too slow. Original note follows.
   **Originally: after the valves respond as expected (§3, §8), not before.**
   Eero's working theory (2026-11-10): wind on the **south wall** - the longest outer
   wall (Master, stair room, Lola) - cools the whole flat, and more so now the leaves
