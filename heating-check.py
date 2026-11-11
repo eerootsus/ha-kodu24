@@ -19,8 +19,15 @@ sensor, which sits in the sun (see HEATING_CURVE_TEST.md). met.no history comes
 from the recorder, not statistics, so it only reaches back recorder retention
 (180 days): degree-days are blank for windows older than that.
 
+Since 2026-11-10 HA is the thermostat (trv-climate/room_thermostat.yaml): every room
+is held at its target, so room temperature no longer shows how hard a room is to
+heat. The valve DUTY does - the share of time HA had the valve open (setpoint 28).
+`--duty` prints it per room in time steps, next to outside temperature and the wind
+on each wall, to see which rooms the wind costs most (PLANS.md "House").
+
 Usage:
   ./heating-check.py                         baseline vs the last 7 days
+  ./heating-check.py --duty --from "2026-11-11 08:00" --step 3   duty per 3 h
   ./heating-check.py --from 2026-10-24 --to 2026-10-31
   ./heating-check.py --days 14               baseline vs the last 14 days
 
@@ -296,6 +303,65 @@ def window(label, t0, t1):
     return r
 
 
+THERMOSTAT = "input_boolean.room_thermostat"
+OPEN_SP = 27  # setpoint >= this = HA opened the valve (it writes 28 open / 5 shut)
+
+
+def on_spans(t0, t1):
+    """[(a, b)] where the HA room thermostat was on."""
+    series = state_series(THERMOSTAT, t0, t1)
+    ends = [t for t, _ in series[1:]] + [t1]
+    return [(t, e) for (t, v), e in zip(series, ends) if v == "on" and e > t]
+
+
+def duty(slug, spans):
+    """Share of thermostat-on time the valve was open, or None if never on."""
+    opened = total = 0.0
+    for a, b in spans:
+        for v, dt in time_weighted(setpoints(slug, a, b), b):
+            total += dt
+            opened += dt if v >= OPEN_SP else 0
+    return opened / total if total else None
+
+
+def short_mean(entity, t0, t1):
+    """Mean of the 5-min statistics, so steps shorter than a few hours are exact."""
+    rows = sql(f"""SELECT avg(st.mean) FROM statistics_short_term st JOIN statistics_meta m
+        ON st.metadata_id = m.id WHERE m.statistic_id = '{entity}'
+        AND st.start_ts >= {t0} AND st.start_ts < {t1};""")
+    return float(rows[0][0]) if rows and rows[0][0] else None
+
+
+def duty_table(t0, t1, step_h):
+    """Per step: outside, wind onto each wall, then per room valve duty and room mean.
+    5-min statistics are kept ~10 days, so the room/supply columns blank out for
+    older windows; duty and weather come from the recorder (180 days)."""
+    names = [n for n, *_ in ROOMS]
+    print(f"{'step':17s} {'out':>4s} {'S':>4s} {'E':>4s} {'W':>4s} {'flow':>4s} | "
+          + " | ".join(f"{n[:9]:>13s}" for n in names))
+    print(f"{'':17s} {'C':>4s} {'m/s onto wall':>14s} {'C':>4s} | "
+          + " | ".join(f"{'open  room':>13s}" for _ in names))
+    t, step = t0, step_h * 3600
+    while t < t1:
+        b = min(t + step, t1)
+        spans = on_spans(t, b)
+        out, _ = weather(t, b)
+        _, onto = wind(t, b)
+        cells = []
+        for name, slug, room in ROOMS:
+            d = duty(slug, spans)
+            cells.append(f"{f(d, '{:.0%}'):>5s} {f(short_mean(room, t, b), '{:.2f}'):>6s}")
+        print(f"{datetime.fromtimestamp(t, TZ):%m-%d %H:%M}-{datetime.fromtimestamp(b, TZ):%H:%M}"
+              f" {f(out):>4s} {f(onto['S']):>4s} {f(onto['E']):>4s} {f(onto['W']):>4s}"
+              f" {f(short_mean('sensor.vicare_boiler_supply_temperature', t, b), '{:.0f}'):>4s} | "
+              + " | ".join(cells))
+        t = b
+    print("\nopen = share of the time HA had the valve open (blank: thermostat off). A room")
+    print("whose valve is open ~100% and still under target is short of heat (the kitchen);")
+    print("the others show what holding target costs. Walls: S = kitchen, Master, stair room,")
+    print("Lola; E = Lola (open end of the street), Ada (sheltered); W = kitchen.")
+
+
 def f(v, fmt="{:.1f}", none="-"):
     if v is None:
         return none
@@ -309,10 +375,16 @@ def main():
     ap.add_argument("--from", dest="frm", help="window start, 'YYYY-MM-DD[ HH:MM]' local")
     ap.add_argument("--to", help="window end (default now)")
     ap.add_argument("--days", type=int, default=7, help="window length if --from is omitted")
+    ap.add_argument("--duty", action="store_true",
+                    help="valve duty per room in time steps (room thermostat era) instead")
+    ap.add_argument("--step", type=float, default=3, help="--duty step in hours (default 3)")
     a = ap.parse_args()
     norm = lambda s: s if " " in s else s + " 00:00"
     t1 = ts(norm(a.to)) if a.to else datetime.now(TZ).timestamp()
     t0 = ts(norm(a.frm)) if a.frm else t1 - a.days * 86400
+    if a.duty:
+        duty_table(t0, t1, a.step)
+        return
 
     base = window("baseline", ts(BASELINE[0]), ts(BASELINE[1]))
     cur = window("window", t0, t1)
@@ -336,9 +408,9 @@ def main():
         ("outside, met.no mean (C)", "met_mean", "{:.1f}"),
         (f"heating degree-days (base {HDD_BASE:.0f})", "hdd", "{:.1f}"),
         ("wind, met.no mean (m/s)", "wind", "{:.1f}"),
-        ("  onto S wall: Master/stair/Lola", "wind_S", "{:.1f}"),
+        ("  onto S wall: kitchen/Master/stair/Lola", "wind_S", "{:.1f}"),
         ("  onto W wall: kitchen", "wind_W", "{:.1f}"),
-        ("  onto E wall: Lola/Ada", "wind_E", "{:.1f}"),
+        ("  onto E wall: Lola (exposed)/Ada", "wind_E", "{:.1f}"),
         ("heating gas (m3)", "gas", "{:.1f}"),
         ("supply temp mean (C)", "supply", "{:.1f}"),
         ("workshop mean (C)", "workshop", "{:.1f}"),

@@ -127,6 +127,11 @@ Reload all), so a package can deploy cleanly and still show nothing until then.
 gas-per-degree-day for context. Same ssh transport; see `TRV_REGULATION.md`
 "Trims in force".
 
+`./heating-check.py --duty --from "YYYY-MM-DD HH:MM" [--step 3]` (2026-11-11) is for the
+room-thermostat era, when every room sits at target: per time step, the share of time
+HA had each valve open, room mean, outside, flow and the wind onto each wall. Rising
+duty with wind at a steady temperature is the wind's cost per room.
+
 ## Zigbee mesh topology
 
 `./zigbee-topology.sh` prints who parents whom and at what **first-hop LQI**,
