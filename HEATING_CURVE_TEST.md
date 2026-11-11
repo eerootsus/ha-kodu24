@@ -31,6 +31,7 @@ holds the house.
 | 2026-10-19 | 0.9 | +3 | second, colder night (7.8 → 2 °C): Ada fully open (98–100 %) on her door sensor and still slid 22.1 → 21.6; kitchen the same |
 | 2026-11-10 20:18 | 0.9 | +4 | kitchen valve 95–96 % all day, radiator hot all over (Kätlyn), room still sliding 20.4 → 20.1 on a 21.5 target at 5.8 °C with S wind 4.8 m/s onto the south wall: the boiler, not the valve. Set from HA (`number.vitodens_100_heating_curve_shift`), read back from ViCare |
 | 2026-11-10 22:42 | 0.9 | **+5** | HA room thermostat on since 21:53 with every valve open (eTRVs 92-100 %, stairwell 44 %), boiler modulation 11 → 19 % and radiator heads warming, but every room flat at 20.3-20.7 on 21.5 for 45 min with 3-4 °C and S wind; the burner short-cycled (3-10 min) at ~44 °C supply: the water temperature, not the valves, limits. Eero's call (raise now) |
+| 2026-11-11 07:59 | **1.0** | +5 | first night under the HA room thermostat: Master, Lola, Ada, stair room reached 21.4-21.8 (Master and Lola valves shut by HA), but the kitchen stayed 20.5-20.6 on 21.5 with its valve at 100 % all night, flow ~45 °C, 1.7-3 °C outside, S wind 3-5 m/s. Shift at its +5 cap, so the slope: ~+2.2 °C flow at +2 °C outside. Eero's call |
 
 Why the shift and not the slope: the Viessmann curve (`VT = RT + shift − slope ×
 DAR × (1.4347 + 0.021·DAR + 247.9e-6·DAR²)`, `DAR = outside − RT`, RT = the boiler's
