@@ -8,7 +8,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 **This repo is the source of truth for the Kodu 24 smart home.** Open work and plans live in `PLANS.md`; the Obsidian vault's `Projects/Smart home.md` only holds TODO-feeding next-action lines that point here. Record new findings and plans in the repo, not the vault, and move a `PLANS.md` item's outcome into the relevant doc once it is built.
 
-The climate half is a PyScript helper for the Zigbee thermostatic radiator valves (TRVs): four Danfoss eTRV0103s and, on Ada's radiator since 2026-10-26, a Sonoff TRVZB (Lola's is next, `PLANS.md` §3). It publishes per-room virtual temperature/humidity sensors from external room sensors (since 2026-10-17 the door sensor; the outer-wall Alts are weight 0). It does **not** control heating: each TRV regulates on its own internal sensor, corrected by a per-room trim set by hand (`TRV_REGULATION.md` "Trims in force"; Better Thermostat was trialled and dropped as an obscuring layer). Automation here advises — `trv-climate/heating_alerts.yaml` names the knob, a human turns it.
+The climate half is a PyScript helper for the Zigbee thermostatic radiator valves (TRVs): four Danfoss eTRV0103s and, on Ada's radiator since 2026-10-26, a Sonoff TRVZB (Lola's is next, `PLANS.md` §3). It publishes per-room virtual temperature/humidity sensors from external room sensors (since 2026-10-17 the door sensor; the outer-wall Alts are weight 0). Since 2026-11-10 **HA is the room thermostat** (`trv-climate/room_thermostat.yaml`): it opens or shuts each TRV from its room's door sensor, and the TRVs are plain valves (see "Control principle" below). Before that each TRV regulated on its own internal sensor plus a hand-set trim (`TRV_REGULATION.md` "Trims in force"), which is still the fallback when a room sensor goes silent or the thermostat is switched off. Better Thermostat was trialled and dropped as an obscuring layer. The boiler curve is set from HA by hand (`HEATING_CURVE_TEST.md` "Curve in force").
 
 ## Setup & Deployment
 
@@ -209,17 +209,16 @@ No build step required. Dependencies in `requirements.txt` are Home Assistant's 
 room_climate.py is **sensor-aggregation only** — it performs **no writes to the TRVs**
 and does not control heating. It was trimmed that way to make room for Better
 Thermostat; **BT was then trialled and removed** (2026-09-13, it offered nothing
-meaningful — see `TRV_REGULATION.md`), so nothing applies room-based control
-now. Each TRV regulates on its own internal sensor (the eTRVs' external feed is
-still disabled, the TRVZB's external input is off), and these sensors are
-observability plus the heating-curve test's input.
+meaningful — see `TRV_REGULATION.md`). Its sensors are the **input of the room
+thermostat** (`room_thermostat.yaml`, since 2026-11-10), plus the dashboard and the
+heating-curve test. The TRVs' own external feed stays disabled (eTRVs) / off (TRVZB).
 
 - **Weighted Calculation**: `calculate_weighted_climate()` computes a per-area
   weighted average from external sensors labelled `sensor_weight_X` (TRV
   temperatures are excluded so heating doesn't skew it).
 - **`update_room_climate_sensors()`** (PyScript, at startup + every 5 min):
   publishes `sensor.climate_{area_id}_temperature` / `_humidity`. These are the
-  single per-room sensors. Nothing consumes them for control since BT was dropped;
+  single per-room sensors. Since 2026-11-10 the room thermostat controls on them;
   they feed the dashboard and `HEATING_CURVE_TEST.md`.
 
 That's the whole module. The previous Zigbee control logic — time sync,
@@ -289,7 +288,11 @@ valve from its room's door sensor; the TRV's own reading no longer matters (Eero
 "the TRV temperature can be whatever, if controlling in HA solves the flakiness").
 The trims (`trim_adjust.yaml`) only matter again if it is switched off.
 
-## Why nothing controls the TRVs right now
+## Why the TRVs' own external-sensor features are not used
+
+> Since 2026-11-10 HA controls the valves (`room_thermostat.yaml`) by setpoint
+> 28 / 5, so this is the background to that choice and to the fallback, not the
+> current state.
 
 The Danfoss eTRV's native external-sensor feature holds an anticipatory ~1% valve
 opening and never fully closes when fed an external sensor (confirmed across all

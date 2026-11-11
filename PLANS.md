@@ -282,8 +282,11 @@ once started after Lola's TRVZB.
   TRVZB alike. The TRVZBs are still wanted (plain valves, close fully in summer), but
   the feed below is now only an option. Watch the first nights for overshoot (the
   radiator keeps heating after it shuts): widen the band or add a minimum off time if
-  rooms run > 0.3 over. Its fallback is the TRV's own regulation; the corrected-Alt
-  step below can be added to it.
+  rooms run > 0.3 over. **First night (11-10/11):** Master peaked 21.8 (shut at 21.7,
+  +0.1 after), Lola 21.65; 1-2 switches per room. Most of it was the threshold, so
+  shut moved from "> target + 0.1" to ">= target" on 11-11. Its fallback is the TRV's
+  own regulation (the corrected-Alt step below is now unlikely: the Alts track the door
+  sensor at a fixed offset, so they could serve, but they add no lead).
   **Feed design - never regulate on a frozen number** (Eero, 2026-11-10). The feed
   depends on a sensor battery and the mesh, so it picks its source by freshness, per
   room, in this order:

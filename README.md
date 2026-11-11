@@ -89,9 +89,9 @@ a Sonoff TRVZB on Ada's radiator since 2026-10-26 (Lola's is next).
 
 `room_climate.py` is **sensor aggregation only** — it performs no writes to the TRVs.
 It was trimmed that way for Better Thermostat, which was then trialled and removed
-(`TRV_REGULATION.md`). So nothing applies room-based control today: each TRV
-runs its own PID on its own internal sensor, and these sensors feed the dashboard
-and the heating-curve test.
+(`TRV_REGULATION.md`). Since 2026-11-10 these sensors drive HA's room thermostat
+(`trv-climate/room_thermostat.yaml`), which opens or shuts each TRV from its room's
+door sensor; each TRV's own PID on its internal sensor plus trim is the fallback.
 
 ### Features
 
