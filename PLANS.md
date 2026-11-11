@@ -549,8 +549,10 @@ the sensors are in, add flow/return/ΔT to `./heating-check.py` and the Küte vi
   - **South long wall (outer):** Master (next to the kitchen; manifold at its inner
     corner), the stair-room radiator, and **Lola's** room in the south-east corner (two
     outer walls, south and east).
-  - **East end (street):** sheltered - Kodu tn is lined with houses, so wind onto the
-    east face counts for less than the same wind onto the open south and west. The two children's rooms, radiators under the east windows:
+  - **East end (street):** mostly sheltered - Kodu tn is lined with houses, so wind
+    onto the east face counts for less than the same wind onto the open south and west.
+    **Except Lola's south-east corner**, which looks down the open end of the street
+    (Eero, 2026-11-11) and may catch wind from the south-east through that gap. The two children's rooms, radiators under the east windows:
     Lola's (corner) and **Ada's** in the north-east, which borders the common stairwell
     and has only the one outer wall.
   - **North long side:** no outer wall - the party wall with the other ground-floor

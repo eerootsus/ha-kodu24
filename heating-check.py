@@ -150,7 +150,8 @@ def weather(t0, t1):
 # is to the east and the building is turned ~13 deg clockwise. The north side is a
 # party wall, so it has no entry. Rooms on each face: S = kitchen (SW corner), Master,
 # stair room, Lola; W = kitchen; E = Lola, Ada. South and west face open gardens and
-# take the wind; the east is the street, lined with houses, so "E" is sheltered.
+# take the wind; the east is the street, lined with houses, so "E" is mostly sheltered -
+# except Lola's SE corner, which faces the open end of the street.
 FACES = {"S": 193, "W": 283, "E": 103}
 
 
