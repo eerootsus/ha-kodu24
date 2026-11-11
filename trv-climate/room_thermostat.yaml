@@ -12,10 +12,14 @@
 #
 # How, every 5 min (and when a target or the switch changes), per room:
 #   room (door sensor, room_climate.py) < target - 0.2  ->  TRV setpoint 28 = open
-#   room > target + 0.1                                 ->  TRV setpoint 5  = shut
+#   room >= target                                      ->  TRV setpoint 5  = shut
 #   in between                                          ->  leave it as it is
-# The band keeps a 0.1 K sensor wobble from flipping a valve; the radiator's own
-# heat after it shuts will overshoot a little - widen the band if it is too much.
+# The 0.2 K band keeps a 0.1 K sensor wobble from flipping a valve. Shut was at
+# "> target + 0.1" until 2026-11-11: with the door sensors' 0.1 K steps that first
+# fired at target + 0.2, and the radiator's stored heat added 0.1 more (Master shut at
+# 21.7, peaked 21.8 on 21.5). Shutting at the target puts the peak ~0.1-0.2 over.
+# The outer-wall Alts were checked as an earlier shut signal: they track the door
+# sensor at a fixed offset with no lead (Master -0.8, Lola -0.2), so they add nothing.
 # Writes only when the TRV's setpoint is not already the wanted one, so a write a
 # sleepy eTRV missed is simply retried on the next run.
 #
@@ -86,7 +90,7 @@ input_text:
 automation:
   - id: room_thermostat
     alias: "Heating - room thermostat"
-    description: "Every 5 min: opens a TRV (setpoint 28) when its room is under target - 0.2, shuts it (5) above target + 0.1, falls back to the TRV's own regulation if the room sensor is silent. Off unless input_boolean.room_thermostat. Source: ha-kodu24/trv-climate/room_thermostat.yaml."
+    description: "Every 5 min: opens a TRV (setpoint 28) when its room is under target - 0.2, shuts it (5) at or above target, falls back to the TRV's own regulation if the room sensor is silent. Off unless input_boolean.room_thermostat. Source: ha-kodu24/trv-climate/room_thermostat.yaml."
     mode: single
     max_exceeded: silent
     triggers:
@@ -117,7 +121,7 @@ automation:
       open_sp: 28
       shut_sp: 5
       below: 0.2
-      above: 0.1
+      above: 0.0
       stale_s: 1200
       plan: >
         {% set ns = namespace(out=[]) %}
@@ -133,7 +137,7 @@ automation:
             {% set mode, want = 'fallback', target %}
           {% elif room < target - below %}
             {% set mode, want = 'open', open_sp %}
-          {% elif room > target + above %}
+          {% elif room >= target + above %}
             {% set mode, want = 'shut', shut_sp %}
           {% elif sp is not none and sp >= open_sp - 1 %}
             {% set mode, want = 'open', open_sp %}
