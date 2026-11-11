@@ -463,16 +463,10 @@ insulation so they read the pipe, not the room. Name them so they are not counte
 as room sensors (no `sensor_weight_` label). Log a normal day and a cold, all-valves-
 open evening:
 
-**Source: two of the outer-wall Alts (Eero, 2026-11-11).** They give the room thermostat
-nothing: checked on the first night, they follow the door sensor at a fixed offset
-(Master −0.8, Lola −0.2 K) with no lead when a valve shuts or opens. What they still
-feed is `condensation.yaml` (wall RH, dew margin) and the dashboard's Alt column. The
-condensation season here is summer into October, so borrowing two over the winter
-costs little; put them back (or buy two) by May. When one moves: rename the device
-(it is then a pipe sensor, not `... Alt`), and stop its room's condensation sensors
-reading a 45 °C pipe as a wall - otherwise the dew margin goes huge and that room's
-mould alert goes silently dead. The fallback design (door → corrected Alt → own,
-§3) loses that room's middle step; the TRV's own head is then the fallback.
+**Source: two new SNZB-02P (Eero, 2026-11-11)** - to buy. Borrowing two outer-wall Alts
+was considered and dropped: they give the room thermostat nothing (they follow the door
+sensor at a fixed offset, Master −0.8, Lola −0.2 K, with no lead when a valve shuts),
+but they stay for the condensation alerts and as statistics on the outer walls.
 
 - ΔT **< ~5 K with all valves open** → bypass or a fast pump: look at the bypass, the
   PUSH 23B's setting and piping, and the Vitodens pump speed.
