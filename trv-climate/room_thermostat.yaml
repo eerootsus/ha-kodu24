@@ -230,3 +230,116 @@ automation:
           entity_id: input_text.room_thermostat_status
         data:
           value: "off - TRVs regulate themselves"
+
+# --- Readouts (2026-11-12): what holding the target costs, per room -------------
+# `sensor.valve_open_<room>` is 100 while HA holds the valve open (setpoint 28) and
+# 0 while shut (5); unavailable when the thermostat is off or the room is on its own
+# TRV, so those hours drop out instead of counting as shut. With state_class
+# measurement HA's long-term statistics keep its time-weighted hourly mean, which IS
+# the share of the hour the valve was open - the same number as
+# `heating-check.py --duty`, but graphable on the Küte view. A room near 100 % and
+# still under target is short of heat (the boiler's matter); the rest show the wind.
+# `sensor.room_error_<room>` = room - target (K); rooms are meant to sit ~0.1-0.15 K
+# under (see the header). Read-only: nothing here writes anything.
+template:
+  - sensor:
+      - name: "Valve open kitchen"
+        unique_id: valve_open_kitchen
+        unit_of_measurement: "%"
+        state_class: measurement
+        icon: mdi:valve
+        availability: >
+          {% set sp = state_attr('climate.trv_danfoss_kitchen', 'temperature') | float(none) %}
+          {{ is_state('input_boolean.room_thermostat', 'on')
+             and sp is not none and (sp >= 27 or sp <= 6) }}
+        state: "{{ 100 if state_attr('climate.trv_danfoss_kitchen', 'temperature') | float(0) >= 27 else 0 }}"
+      - name: "Room error kitchen"
+        unique_id: room_error_kitchen
+        unit_of_measurement: "K"
+        state_class: measurement
+        icon: mdi:thermometer-minus
+        availability: >
+          {{ is_number(states('sensor.climate_kitchen_temperature'))
+             and is_number(states('input_number.room_target_kitchen')) }}
+        state: >
+          {{ (states('sensor.climate_kitchen_temperature') | float - states('input_number.room_target_kitchen') | float) | round(2) }}
+      - name: "Valve open master"
+        unique_id: valve_open_master
+        unit_of_measurement: "%"
+        state_class: measurement
+        icon: mdi:valve
+        availability: >
+          {% set sp = state_attr('climate.trv_danfoss_master', 'temperature') | float(none) %}
+          {{ is_state('input_boolean.room_thermostat', 'on')
+             and sp is not none and (sp >= 27 or sp <= 6) }}
+        state: "{{ 100 if state_attr('climate.trv_danfoss_master', 'temperature') | float(0) >= 27 else 0 }}"
+      - name: "Room error master"
+        unique_id: room_error_master
+        unit_of_measurement: "K"
+        state_class: measurement
+        icon: mdi:thermometer-minus
+        availability: >
+          {{ is_number(states('sensor.climate_bedroom_temperature'))
+             and is_number(states('input_number.room_target_master')) }}
+        state: >
+          {{ (states('sensor.climate_bedroom_temperature') | float - states('input_number.room_target_master') | float) | round(2) }}
+      - name: "Valve open lola"
+        unique_id: valve_open_lola
+        unit_of_measurement: "%"
+        state_class: measurement
+        icon: mdi:valve
+        availability: >
+          {% set sp = state_attr('climate.trv_danfoss_lola', 'temperature') | float(none) %}
+          {{ is_state('input_boolean.room_thermostat', 'on')
+             and sp is not none and (sp >= 27 or sp <= 6) }}
+        state: "{{ 100 if state_attr('climate.trv_danfoss_lola', 'temperature') | float(0) >= 27 else 0 }}"
+      - name: "Room error lola"
+        unique_id: room_error_lola
+        unit_of_measurement: "K"
+        state_class: measurement
+        icon: mdi:thermometer-minus
+        availability: >
+          {{ is_number(states('sensor.climate_lola_s_room_temperature'))
+             and is_number(states('input_number.room_target_lola')) }}
+        state: >
+          {{ (states('sensor.climate_lola_s_room_temperature') | float - states('input_number.room_target_lola') | float) | round(2) }}
+      - name: "Valve open stairwell"
+        unique_id: valve_open_stairwell
+        unit_of_measurement: "%"
+        state_class: measurement
+        icon: mdi:valve
+        availability: >
+          {% set sp = state_attr('climate.trv_danfoss_stairwell', 'temperature') | float(none) %}
+          {{ is_state('input_boolean.room_thermostat', 'on')
+             and sp is not none and (sp >= 27 or sp <= 6) }}
+        state: "{{ 100 if state_attr('climate.trv_danfoss_stairwell', 'temperature') | float(0) >= 27 else 0 }}"
+      - name: "Room error stairwell"
+        unique_id: room_error_stairwell
+        unit_of_measurement: "K"
+        state_class: measurement
+        icon: mdi:thermometer-minus
+        availability: >
+          {{ is_number(states('sensor.climate_trepihall_temperature'))
+             and is_number(states('input_number.room_target_stairwell')) }}
+        state: >
+          {{ (states('sensor.climate_trepihall_temperature') | float - states('input_number.room_target_stairwell') | float) | round(2) }}
+      - name: "Valve open ada"
+        unique_id: valve_open_ada
+        unit_of_measurement: "%"
+        state_class: measurement
+        icon: mdi:valve
+        availability: >
+          {% set sp = state_attr('climate.trv_sonoff_ada', 'temperature') | float(none) %}
+          {{ is_state('input_boolean.room_thermostat', 'on')
+             and sp is not none and (sp >= 27 or sp <= 6) }}
+        state: "{{ 100 if state_attr('climate.trv_sonoff_ada', 'temperature') | float(0) >= 27 else 0 }}"
+      - name: "Room error ada"
+        unique_id: room_error_ada
+        unit_of_measurement: "K"
+        state_class: measurement
+        icon: mdi:thermometer-minus
+        availability: >
+          {{ is_number(states('sensor.climate_ada_s_room_temperature'))
+             and is_number(states('input_number.room_target_ada')) }}
+        state: >
+          {{ (states('sensor.climate_ada_s_room_temperature') | float - states('input_number.room_target_ada') | float) | round(2) }}

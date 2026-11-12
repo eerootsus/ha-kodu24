@@ -39,6 +39,12 @@
 # a few genuinely cold weeks and read the mean. Expect nothing until then - with
 # summer setpoints at 5 C the settled condition is never true, which is correct.
 #
+# Dormant while the room thermostat is on (2026-11-10): TRV setpoints are 28 / 5, so
+# the TRV's reading is almost never within 1 K of its setpoint and `_settled` stays
+# unavailable, apart from switching moments that mean nothing. Its dashboard graph
+# was replaced 2026-11-12 by valve duty and room - target (room_thermostat.yaml).
+# Kept for the fallback / thermostat-off case and heating-check.py's trim column.
+#
 # Stairwell joined 2026-11-05, once it had a room sensor (door sensor since
 # 2026-10-25). Its head sits in a draught and reads COLD, so its offset is negative.
 #
