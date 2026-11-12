@@ -26,9 +26,11 @@ TRV internal sensor    ──►  TRV's own PID   ──►  valve
 ```
 
 **Nothing applies room-based control.** Each TRV regulates on its own internal
-sensor: the four eTRVs because their external feed is disabled (`0x4015 = -8000`,
-left over from the BT preparation and **not** reverted), and Ada's Sonoff TRVZB
-(since 2026-10-26) because its external-sensor input is switched off.
+sensor: the eTRVs because their external feed is disabled (`0x4015 = -8000`,
+left over from the BT preparation and **not** reverted), and the Sonoff TRVZBs
+(Ada since 2026-10-26, Lola since 2026-11-12) because their external-sensor input is
+switched off. (Since 2026-11-10 the room thermostat overrides all of this; it is the
+fallback.)
 `room_climate.py` (named `danfoss.py` until 2026-11-05) still publishes the weighted room
 sensors, but nothing consumes them for control — they are for the dashboard and for
 `HEATING_CURVE_TEST.md`.
@@ -406,7 +408,7 @@ was settled on. Ids are what matter for templating, so this was left alone.
 
 Four radiator TRVs (ada, master, kitchen, lola) held `pi_heating_demand = 1 %` and
 the radiators stayed warm in summer 2026 (Ada's eTRV has since been replaced by a
-TRVZB, and Lola's is next; a TRVZB drives its valve directly and should close fully); only **stairwell** idles at 0 %. Because the
+TRVZB, Lola's on 2026-11-12; a TRVZB drives its valve directly and should close fully); only **stairwell** idles at 0 %. Because the
 boiler must keep circulating (~25 °C) to feed the **bathroom underfloor loops**,
 the loop stays hot and a 1 % valve still passes heat — so turning heating off at
 the boiler isn't an option; the radiator valves themselves must close.

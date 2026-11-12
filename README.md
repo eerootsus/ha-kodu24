@@ -84,8 +84,8 @@ from the shell and keep the record in step.
 
 ## Climate
 
-Pyscript room-climate sensors for the radiator TRVs: four Danfoss eTRV0103s, and
-Sonoff TRVZBs on Ada's radiator since 2026-10-26 and Lola's since 2026-11-12.
+Pyscript room-climate sensors for the radiator TRVs: three Danfoss eTRV0103s (kitchen,
+Master, stairwell) and Sonoff TRVZBs on Ada's radiator since 2026-10-26 and Lola's since 2026-11-12.
 
 `room_climate.py` is **sensor aggregation only** — it performs no writes to the TRVs.
 It was trimmed that way for Better Thermostat, which was then trialled and removed
@@ -166,8 +166,8 @@ went with the rest of the control logic. The label is inert now.
 
 **Already done** — this block is in the tracked `configuration.yaml`. Kept here as
 the reason it is there: the eTRV load estimate sensors carry no `state_class`, so HA
-records no history for them without it. (Ada's line went with her eTRV; the TRVZB
-has no load estimate.)
+records no history for them without it. (Ada's and Lola's lines went with their eTRVs;
+the TRVZB has no load estimate.)
 
 ```yaml
 homeassistant:

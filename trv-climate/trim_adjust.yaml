@@ -39,8 +39,8 @@
 #    It does not reset trims when the weather changes: a room over target after the
 #    wind drops gets stepped back down by the same rule.
 #
-# Known limits: Lola's eTRV is at +2.5, the cap, so the adjuster cannot raise her
-# (the TRVZB is her fix, PLANS.md §3). A remount resets an eTRV trim to 0 on the
+# Known limits: an eTRV trim caps at +2.5 (Lola's eTRV sat there until her TRVZB,
+# 2026-11-12; a TRVZB's cap here is +4.0). A remount resets an eTRV trim to 0 on the
 # device; trim_check.yaml catches that (03:45 and on remount signals) - the helper
 # keeps the intended value, so rewriting it is one set_value of the same number
 # (or toggle it ±0.1 and back).

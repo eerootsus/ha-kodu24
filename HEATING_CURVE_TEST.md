@@ -110,7 +110,7 @@ pump is ever finished. If 1.2 was never justified, that has been leaking money f
   temperature (`DANFOSS.md` §2.6), so demand cannot distinguish "needs heat" from
   "idle".
 - The mesh is unreliable; TRV reads may be stale.
-- The TRVs are being replaced by Sonoff TRVZBs (Ada 2026-10-26, Lola next). Room
+- The TRVs are being replaced by Sonoff TRVZBs (Ada 2026-10-26, Lola 2026-11-12; kitchen, Master and stairwell still eTRVs). Room
   sensors are brand-agnostic, so the test survives a valve swap; the diagnosis map
   reads a TRVZB's `hvac_action` instead of demand.
 

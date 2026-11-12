@@ -240,7 +240,7 @@ not trim: in the 11-04 cold it ran 0.1–0.4 short at 93–98 % valve. After §1
 kitchen step, decide whether the curve (0.9 / +3 since 2026-10-19) needs shift +4 -
 the shift, not the slope (`HEATING_CURVE_TEST.md`). Or let the curve test decide:
 it is deployed off and does exactly this (shift +1 on a mild-weather shortfall),
-once started after Lola's TRVZB.
+now startable: Lola's TRVZB is in (2026-11-12).
 
 ### 3. Lola's room
 
@@ -383,7 +383,7 @@ Add the kitchen Zigbee switch **wired so the TRÅDFRI bulbs stay always powered*
 (decoupled smart-bulb mode — the switch sends Zigbee commands, never cuts power),
 or dumb bulbs + an always-live ZBMINIR2. Switched-off bulbs are dead routers.
 
-### 7. Sonoff TRVZB - on Ada since 2026-10-26, Lola next (§3)
+### 7. Sonoff TRVZB - on Ada since 2026-10-26, Lola since 2026-11-12 (§3)
 
 **Fitted on Ada's radiator 2026-10-26** (`climate.trv_sonoff_ada`): her eTRV's
 adapter collar gave trouble at the preset visit and its adaptation run never
