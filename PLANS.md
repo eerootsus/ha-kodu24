@@ -470,6 +470,19 @@ Wilo pump:
 4. **Wilo pump** - the floor loop's own circulator; lowest speed that keeps the floor
    warm.
 
+**Read on site 2026-11-12:** thermostatic head **5 (38 °C)**, Wilo pump **constant
+pressure (flat-line symbol), step 2**, the unit's thermometer **~33 °C** (16:50, boiler
+flow ~47 °C), and the valve beside the head at its **"standard" mark** past 1-2-3
+(fully open, the factory setting; the manual's "OPEN = Standard" label is the floor
+bypass valve, its return valve has a 1-5 dial - which of the two this was is not
+certain). Under its 38 °C setpoint the head is open and the unit takes what boiler
+water it can, but it can only send back floor-return water, cooler than the ~33 °C
+floor flow, to a boiler running 44-47 °C - it **lowers** the boiler return, it is not a
+hot bypass. **So the unit is not the cause of the short cycling; nothing changed on
+it.** That leaves §9's other two causes: the radiators cannot take the boiler's
+minimum output at this water temperature, or the boiler's own pump is too fast - the
+flow/return pipe sensors decide between them.
+
 Likely tuning, to confirm on site with the ΔT sensors: head at **4-5 (34-38 °C)**,
 enough for a bathroom floor; return valve **down to 1-2**, so only the water the floor
 actually needs leaves the boiler circuit and it comes back cool; floor bypass left
