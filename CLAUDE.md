@@ -336,6 +336,8 @@ Done for Ada (2026-10-26) and Lola (2026-11-12); kitchen, Master and stairwell m
    (`config/device_registry/update`, `config/entity_registry/update`).
 2. Check the head is plain (adaptive mode, open window, external sensor off) and set
    control accuracy −0.2 and `local_temperature_offset` = minus `input_number.trv_trim_<room>`.
+   ZHA truncates the offset to tenths (write −1.21 to get −1.2, then read back). Don't set
+   "closing degree" (it breaks `hvac_action`).
 3. In the repo, every place that lists the TRVZB rooms (`['ada', 'lola']`) or names the
    room's climate entity: `room_thermostat.yaml`, `trim_adjust.yaml` (rooms map + the
    `_calling` binary sensor / history_stats pair), `trim_check.yaml`, `clock_sync.yaml`
