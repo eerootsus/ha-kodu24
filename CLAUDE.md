@@ -327,6 +327,27 @@ Configure in Home Assistant UI on devices:
   went to weight 0), so every TRV room now has a room reference. Lola's two are named right
   (checked 2026-10-26: the door one warmed by hand jumped as `TH01 Sonoff Lola`).
 
+## Swapping an eTRV for a TRVZB
+
+Done for Ada (2026-10-26) and Lola (2026-11-12); kitchen, Master and stairwell may follow.
+1. Pair it in the room's area. ZHA names it "SONOFF TRVZB": rename the device to
+   `TRV Sonoff <Room>` and its entities `sonoff_trvzb_*` → `trv_sonoff_<room>_*`, with
+   `climate.sonoff_trvzb_thermostat` → `climate.trv_sonoff_<room>`, over the websocket
+   (`config/device_registry/update`, `config/entity_registry/update`).
+2. Check the head is plain (adaptive mode, open window, external sensor off) and set
+   control accuracy −0.2 and `local_temperature_offset` = minus `input_number.trv_trim_<room>`.
+3. In the repo, every place that lists the TRVZB rooms (`['ada', 'lola']`) or names the
+   room's climate entity: `room_thermostat.yaml`, `trim_adjust.yaml` (rooms map + the
+   `_calling` binary sensor / history_stats pair), `trim_check.yaml`, `clock_sync.yaml`
+   (drop its software_error), `heating_alerts.yaml`, `offset.yaml` (copy Ada's block),
+   `balancing_test.yaml`, `curve-test/heating_curve_test.yaml`, `heating-check.py`
+   `TRVS` (swap time), the Küte view record, and the `customize` load_estimate line in
+   `configuration.yaml`. `grep -rn trv_danfoss_<room>` should then find nothing.
+4. Deploy, reload automations, templates and history_stats, `./dashboard.py apply
+   heating`, and refresh the browser (the open page keeps the old view).
+5. Remove the old eTRV with **`zha.remove`** (`ieee` from the device's identifiers):
+   the device registry's `remove_config_entry` is refused by ZHA.
+
 ## Adding New Areas
 
 Areas are auto-detected from HA device assignments: an area gets a sensor when it holds a TRV whose model is in `room_climate.py`'s `TRV_MODELS`. Add corresponding template sensors to `trv-climate/climate.yaml` following existing pattern.
