@@ -39,7 +39,6 @@ automation:
         entity_id:
           - sensor.trv_danfoss_kitchen_software_error
           - sensor.trv_danfoss_stairwell_software_error
-          - sensor.trv_danfoss_lola_software_error
           - sensor.trv_danfoss_master_software_error
         attribute: Invalid_clock_information
         to: true
@@ -48,9 +47,9 @@ automation:
         entity_id:
           - climate.trv_danfoss_kitchen
           - climate.trv_danfoss_stairwell
-          - climate.trv_danfoss_lola
           - climate.trv_danfoss_master
           - climate.trv_sonoff_ada
+          - climate.trv_sonoff_lola
         from: "unavailable"
         for: "00:05:00"
     variables:
@@ -60,12 +59,14 @@ automation:
       # = minus the helper (a TRVZB heats more with a negative offset).
       intended: >
         {% set ns = namespace(d={}) %}
-        {% for room in ['kitchen', 'master', 'lola', 'stairwell'] %}
+        {% for room in ['kitchen', 'master', 'stairwell'] %}
           {% set ns.d = dict(ns.d, **{'number.trv_danfoss_' ~ room ~ '_regulation_setpoint_offset':
                                       states('input_number.trv_trim_' ~ room) | float(none)}) %}
         {% endfor %}
-        {% set a = states('input_number.trv_trim_ada') | float(none) %}
-        {% set ns.d = dict(ns.d, **{'number.trv_sonoff_ada_local_temperature_offset': (-a if a is not none else none)}) %}
+        {% for room in ['ada', 'lola'] %}
+          {% set a = states('input_number.trv_trim_' ~ room) | float(none) %}
+          {% set ns.d = dict(ns.d, **{'number.trv_sonoff_' ~ room ~ '_local_temperature_offset': (-a if a is not none else none)}) %}
+        {% endfor %}
         {{ ns.d }}
     actions:
       # One entity at a time: a sleepy TRV that misses its read must not stop the rest.

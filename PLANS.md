@@ -252,7 +252,15 @@ once started after Lola's TRVZB.
   target 22.5 on trim +2.5 (the cap), aiming the room at ~21.5 like the rest;
   21.3–21.8 on a ~6 °C night (11-05/06)
   (`TRV_REGULATION.md` "Trims in force").
-- **Fitting day - the repo is ready on branch `lola-trvzb`** (pushed 2026-11-05;
+- **Fitted 2026-11-12 ~16:00.** Paired as "SONOFF TRVZB", renamed to `TRV Sonoff Lola`
+  and its ids to `trv_sonoff_lola_*` over the websocket; adaptive mode, open-window and
+  external sensor were already off. Wired into main by hand (room thermostat, trims,
+  trim check, clock sync, alerts, offset, balancing test, curve test, Küte view,
+  heating-check) rather than merging `lola-trvzb`, which predates the room thermostat;
+  its `lola_feed.yaml` is superseded by it. Room thermostat took her over at once
+  (21.3 on 21.5 → open, calling). **Still to do: remove her eTRV from ZHA**, then judge
+  the pass mark below on the next nights (`heating-check --duty`).
+- *Fitting-day plan as written 2026-11-05 (done as above):* the repo was ready on branch `lola-trvzb` (pushed 2026-11-05;
   alerts, offset sensors, balancing test, clock sync, Küte view, heating-check,
   curve test, and the external-input feed `trv-climate/lola_feed.yaml`). Steps:
   1. Fit it - Ada's threaded straight onto the Oventrop M30 insert, and the

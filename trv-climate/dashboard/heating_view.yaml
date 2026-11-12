@@ -69,11 +69,11 @@ sections:
     entity: input_number.room_target_lola
     primary: Lola tuba
     secondary: |-
-      {% set on = is_state('input_boolean.room_thermostat', 'on') %}{% set sp = states('input_number.room_target_lola') | float(none) if on else state_attr('climate.trv_danfoss_lola', 'temperature') | float(none) %}{% set v = state_attr('climate.trv_danfoss_lola', 'temperature') | float(none) %}{{ states('sensor.climate_lola_s_room_temperature') }} °C → {{ sp if sp is not none else '–' }} · {{ states('sensor.climate_lola_s_room_humidity') | round(0, default='–') }} %
+      {% set on = is_state('input_boolean.room_thermostat', 'on') %}{% set sp = states('input_number.room_target_lola') | float(none) if on else state_attr('climate.trv_sonoff_lola', 'temperature') | float(none) %}{% set v = state_attr('climate.trv_sonoff_lola', 'temperature') | float(none) %}{{ states('sensor.climate_lola_s_room_temperature') }} °C → {{ sp if sp is not none else '–' }} · {{ states('sensor.climate_lola_s_room_humidity') | round(0, default='–') }} %
       {{ ('avatud' if v is not none and v >= 27 else 'kinni' if v is not none and v <= 6 else 'TRV ise') if on else ('TRV siht ' ~ v) }}
     icon: mdi:radiator
     icon_color: |-
-      {% set on = is_state('input_boolean.room_thermostat', 'on') %}{% set sp = states('input_number.room_target_lola') | float(none) if on else state_attr('climate.trv_danfoss_lola', 'temperature') | float(none) %}{% set room = states('sensor.climate_lola_s_room_temperature') | float(none) %}{% if room is none or sp is none %}grey{% else %}{% set d = room - sp %}{% if d < -1.5 %}blue{% elif d < -0.5 %}light-blue{% elif d > 1.0 %}deep-orange{% elif d > 0.5 %}amber{% else %}green{% endif %}{% endif %}
+      {% set on = is_state('input_boolean.room_thermostat', 'on') %}{% set sp = states('input_number.room_target_lola') | float(none) if on else state_attr('climate.trv_sonoff_lola', 'temperature') | float(none) %}{% set room = states('sensor.climate_lola_s_room_temperature') | float(none) %}{% if room is none or sp is none %}grey{% else %}{% set d = room - sp %}{% if d < -1.5 %}blue{% elif d < -0.5 %}light-blue{% elif d > 1.0 %}deep-orange{% elif d > 0.5 %}amber{% else %}green{% endif %}{% endif %}
     multiline_secondary: true
     tap_action:
       action: more-info
@@ -234,13 +234,13 @@ sections:
       {{ 'dodgerblue' if d < -0.5 else ('darkorange' if d > 0.5 else 'mediumseagreen') }}\"><b>{{ ('%+.1f'\
       \ | format(d)) | replace('-', '−') }}</b></font>{% endif %}{% endmacro %}\n| Ruum | Tuba | Andur\
       \ | Alt | TRV | Siht | Tuba−siht | TRV−tuba | Trimm | Klapp |\n|:--|--:|--:|--:|--:|--:|--:|--:|--:|--:|\n\
-      {%- for name, s, r, area in rooms %}\n{#- Ada is a Sonoff TRVZB (2026-10-26): no valve %, its trim\
-      \ is minus its local offset. #}\n{%- set c = 'climate.trv_sonoff_ada' if s == 'ada' else 'climate.trv_danfoss_'\
+      {%- for name, s, r, area in rooms %}\n{#- Ada and Lola are Sonoff TRVZBs: no valve %, its trim\
+      \ is minus its local offset. #}\n{%- set c = 'climate.trv_sonoff_' ~ s if s in ['ada', 'lola'] else 'climate.trv_danfoss_'\
       \ ~ s %}\n{%- set room = (states(r) | float(none)) if r else none %}\n{%- set trv = state_attr(c,\
       \ 'current_temperature') | float(none) %}\n{%- set v = state_attr(c, 'temperature') | float(none) %}\n{%- set sp = states('input_number.room_target_' ~ s) | float(none) if is_state('input_boolean.room_thermostat', 'on') else v\
       \ %}\n{%- set settled = states('sensor.trv_offset_' ~ s ~ '_settled') | float(none) %}\n{%- set\
-      \ raw = (trv - (states('number.trv_sonoff_ada_local_temperature_offset')\
-      \ | float(0) if s == 'ada' else 0) - room) if (trv is not none and room is not none) else none %}\n{#- The room's weighted\
+      \ raw = (trv - (states('number.trv_sonoff_' ~ s ~ '_local_temperature_offset')\
+      \ | float(0) if s in ['ada', 'lola'] else 0) - room) if (trv is not none and room is not none) else none %}\n{#- The room's weighted\
       \ sensors: a name containing \"Alt\" goes to the Alt column. #}\n{%- set ns = namespace(main=none,\
       \ alt=none) %}\n{%- for l in wlabels %}{% for d in label_devices(l) if area_id(d) == area %}\n{%-\
       \ set t = namespace(v=none) %}\n{%- for e in device_entities(d) if is_state_attr(e, 'device_class',\
@@ -251,10 +251,10 @@ sections:
       \ '' }} | **{{ n(room) }}** | {{ grey(n(ns.main)) if ns.main is not none else '' }} | {{ grey(n(ns.alt))\
       \ if ns.alt is not none else '' }} | {{ n(trv) }} | {{ n(sp) }} | {{ gap((room - sp) if (room is\
       \ not none and sp is not none) else none) }} | {{ n(settled, '%+.1f') if settled is not none else\
-      \ ('~' ~ n(raw, '%+.1f') if raw is not none else '–') }} | {{ n(-(states('number.trv_sonoff_ada_local_temperature_offset')\
-      \ | float(0)) if s == 'ada' else states('number.trv_danfoss_' ~ s ~ '_regulation_setpoint_offset')\
+      \ ('~' ~ n(raw, '%+.1f') if raw is not none else '–') }} | {{ n(-(states('number.trv_sonoff_' ~ s ~ '_local_temperature_offset')\
+      \ | float(0)) if s in ['ada', 'lola'] else states('number.trv_danfoss_' ~ s ~ '_regulation_setpoint_offset')\
       \ | float(none), '%+.1f') }} | {{ ('küte' if is_state_attr(c, 'hvac_action', 'heating') else 'kinni')\
-      \ if s == 'ada' else states('sensor.trv_danfoss_' ~ s ~ '_pi_heating_demand') ~ ' %' }}{{ (' · HA ' ~ ('avatud' if v >= 27 else 'kinni' if v <= 6 else 'TRV ise')) if is_state('input_boolean.room_thermostat', 'on') and v is not none else '' }} |\n{%- endfor\
+      \ if s in ['ada', 'lola'] else states('sensor.trv_danfoss_' ~ s ~ '_pi_heating_demand') ~ ' %' }}{{ (' · HA ' ~ ('avatud' if v >= 27 else 'kinni' if v <= 6 else 'TRV ise')) if is_state('input_boolean.room_thermostat', 'on') and v is not none else '' }} |\n{%- endfor\
       \ %}\n\n**Tuba** = ukse juures olev andur (Andur); Alt on välisseina ääres ja ei lähe arvesse.\n\
       **TRV−tuba** = TRV-anduri viga (~ = hetkeväärtus, muidu settled). Trimm peaks sellega\nühtima, et\
       \ tuba jõuaks sihini. **⇄** = TRV-le saadetakse toa temperatuuri (automaatne nihe, trimm 0). Võrdlus\

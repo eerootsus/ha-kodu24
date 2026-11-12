@@ -120,7 +120,7 @@ script:
             kitchen: climate.trv_danfoss_kitchen
             stairwell: climate.trv_danfoss_stairwell
             ada: climate.trv_sonoff_ada
-            lola: climate.trv_danfoss_lola
+            lola: climate.trv_sonoff_lola
             master: climate.trv_danfoss_master
           trvs: >
             {% set ns = namespace(l=[]) %}
@@ -248,7 +248,7 @@ script:
                     sequence:
                       - action: climate.set_temperature
                         target:
-                          entity_id: "{{ 'climate.trv_sonoff_ada' if repeat.item[0] == 'ada' else 'climate.trv_danfoss_' ~ repeat.item[0] }}"
+                          entity_id: "{{ 'climate.trv_sonoff_' ~ repeat.item[0] if repeat.item[0] in ['ada', 'lola'] else 'climate.trv_danfoss_' ~ repeat.item[0] }}"
                         data:
                           temperature: "{{ repeat.item[1] }}"
                 - delay: 30

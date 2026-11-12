@@ -78,6 +78,7 @@ ROOMS = [  # (label, trv slug, room sensor or None)
 # negated so the trim column means the same thing for both.
 TRVS = {
     "ada": [("danfoss", None), ("sonoff", "2026-10-26 18:34")],
+    "lola": [("danfoss", None), ("sonoff", "2026-11-12 16:03")],
 }
 
 HOST = os.environ.get("HA_HOST", "homeassistant.tail7c95c3.ts.net")

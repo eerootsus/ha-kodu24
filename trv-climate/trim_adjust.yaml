@@ -159,11 +159,23 @@ sensor:
     start: "{{ now() - timedelta(hours=2) }}"
     end: "{{ now() }}"
 
+  - platform: history_stats
+    name: trim_adjust_lola_calling_2h
+    unique_id: trim_adjust_lola_calling_2h
+    entity_id: binary_sensor.trim_adjust_lola_calling
+    state: "on"
+    type: ratio
+    start: "{{ now() - timedelta(hours=2) }}"
+    end: "{{ now() }}"
+
 template:
   - binary_sensor:
       - name: trim_adjust_ada_calling
         unique_id: trim_adjust_ada_calling
         state: "{{ is_state_attr('climate.trv_sonoff_ada', 'hvac_action', 'heating') }}"
+      - name: trim_adjust_lola_calling
+        unique_id: trim_adjust_lola_calling
+        state: "{{ is_state_attr('climate.trv_sonoff_lola', 'hvac_action', 'heating') }}"
 
 automation:
   - id: trv_trim_apply
@@ -185,9 +197,10 @@ automation:
     variables:
       room: "{{ trigger.entity_id.split('trv_trim_')[1] }}"
       trim: "{{ trigger.to_state.state | float }}"
-      sonoff: "{{ room == 'ada' }}"
+      # Sonoff TRVZBs: Ada since 2026-10-26, Lola since 2026-11-12.
+      sonoff: "{{ room in ['ada', 'lola'] }}"
       entity: >
-        {{ 'number.trv_sonoff_ada_local_temperature_offset' if sonoff
+        {{ 'number.trv_sonoff_' ~ room ~ '_local_temperature_offset' if sonoff
            else 'number.trv_danfoss_' ~ room ~ '_regulation_setpoint_offset' }}
       want: "{{ (-trim if sonoff else trim) | round(1) }}"
       # number.set_value truncates to tenths (1.4 lands as 1.3): nudge away from zero.
@@ -251,7 +264,7 @@ automation:
       rooms:
         kitchen: ["Köök", "climate.trv_danfoss_kitchen", "sensor.trv_danfoss_kitchen_pi_heating_demand", -2.5, 2.5]
         master: ["Kätlyni tuba", "climate.trv_danfoss_master", "sensor.trv_danfoss_master_pi_heating_demand", -2.5, 2.5]
-        lola: ["Lola tuba", "climate.trv_danfoss_lola", "sensor.trv_danfoss_lola_pi_heating_demand", -2.5, 2.5]
+        lola: ["Lola tuba", "climate.trv_sonoff_lola", null, -2.0, 4.0]
         stairwell: ["Trepihall", "climate.trv_danfoss_stairwell", "sensor.trv_danfoss_stairwell_pi_heating_demand", -2.5, 2.5]
         ada: ["Ada tuba", "climate.trv_sonoff_ada", null, -2.0, 4.0]
       deadband: 0.3

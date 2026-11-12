@@ -119,7 +119,7 @@ automation:
       rooms:
         kitchen: ["Köök", "climate.trv_danfoss_kitchen", "sensor.climate_kitchen_temperature"]
         master: ["Kätlyni tuba", "climate.trv_danfoss_master", "sensor.climate_bedroom_temperature"]
-        lola: ["Lola tuba", "climate.trv_danfoss_lola", "sensor.climate_lola_s_room_temperature"]
+        lola: ["Lola tuba", "climate.trv_sonoff_lola", "sensor.climate_lola_s_room_temperature"]
         stairwell: ["Trepihall", "climate.trv_danfoss_stairwell", "sensor.climate_trepihall_temperature"]
         ada: ["Ada tuba", "climate.trv_sonoff_ada", "sensor.climate_ada_s_room_temperature"]
       open_sp: 28
@@ -215,7 +215,7 @@ automation:
           for_each:
             - ["climate.trv_danfoss_kitchen", "input_number.room_target_kitchen"]
             - ["climate.trv_danfoss_master", "input_number.room_target_master"]
-            - ["climate.trv_danfoss_lola", "input_number.room_target_lola"]
+            - ["climate.trv_sonoff_lola", "input_number.room_target_lola"]
             - ["climate.trv_danfoss_stairwell", "input_number.room_target_stairwell"]
             - ["climate.trv_sonoff_ada", "input_number.room_target_ada"]
           sequence:
@@ -289,10 +289,10 @@ template:
         state_class: measurement
         icon: mdi:valve
         availability: >
-          {% set sp = state_attr('climate.trv_danfoss_lola', 'temperature') | float(none) %}
+          {% set sp = state_attr('climate.trv_sonoff_lola', 'temperature') | float(none) %}
           {{ is_state('input_boolean.room_thermostat', 'on')
              and sp is not none and (sp >= 27 or sp <= 6) }}
-        state: "{{ 100 if state_attr('climate.trv_danfoss_lola', 'temperature') | float(0) >= 27 else 0 }}"
+        state: "{{ 100 if state_attr('climate.trv_sonoff_lola', 'temperature') | float(0) >= 27 else 0 }}"
       - name: "Room error lola"
         unique_id: room_error_lola
         unit_of_measurement: "K"

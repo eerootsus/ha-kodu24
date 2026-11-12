@@ -163,14 +163,14 @@ template:
   - sensor:
       # The radiator rooms, in ONE place. Each: room temperature against its own TRV
       # target. `sonoff` lists the rooms on a Sonoff TRVZB (no valve %, demand is
-      # hvac_action) - Ada since 2026-10-26; add Lola when hers is fitted.
+      # hvac_action) - Ada since 2026-10-26, Lola since 2026-11-12.
       - name: Curve test rooms
         unique_id: curve_test_rooms
         state: >
           {{ (this.attributes.rooms | default([])) | selectattr('deficit', 'number') | list | count }}
         attributes:
           rooms: >
-            {% set sonoff = ['ada'] %}
+            {% set sonoff = ['ada', 'lola'] %}
             {% set rooms = [
                  ('Köök', 'kitchen', 'sensor.climate_kitchen_temperature'),
                  ('Ada', 'ada', 'sensor.climate_ada_s_room_temperature'),

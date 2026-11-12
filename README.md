@@ -85,7 +85,7 @@ from the shell and keep the record in step.
 ## Climate
 
 Pyscript room-climate sensors for the radiator TRVs: four Danfoss eTRV0103s, and
-a Sonoff TRVZB on Ada's radiator since 2026-10-26 (Lola's is next).
+Sonoff TRVZBs on Ada's radiator since 2026-10-26 and Lola's since 2026-11-12.
 
 `room_climate.py` is **sensor aggregation only** — it performs no writes to the TRVs.
 It was trimmed that way for Better Thermostat, which was then trialled and removed
