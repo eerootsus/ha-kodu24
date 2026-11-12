@@ -258,7 +258,7 @@ once started after Lola's TRVZB.
   trim check, clock sync, alerts, offset, balancing test, curve test, Küte view,
   heating-check) rather than merging `lola-trvzb`, which predates the room thermostat;
   its `lola_feed.yaml` is superseded by it. Room thermostat took her over at once
-  (21.3 on 21.5 → open, calling). **Still to do: remove her eTRV from ZHA**, then judge
+  (21.3 on 21.5 → open, calling). Her eTRV removed from ZHA (`zha.remove`) and the branch deleted the same evening. Next: judge
   the pass mark below on the next nights (`heating-check --duty`).
 - *Fitting-day plan as written 2026-11-05 (done as above):* the repo was ready on branch `lola-trvzb` (pushed 2026-11-05;
   alerts, offset sensors, balancing test, clock sync, Küte view, heating-check,
