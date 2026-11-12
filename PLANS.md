@@ -355,7 +355,7 @@ Then add flow/return/ΔT to `./heating-check.py` and the Küte view.
 
 - **Wind compensation.** *Update 2026-11-11:* the room layer is now HA's room
   thermostat (`room_thermostat.yaml`, on since 2026-11-10 21:53), which supersedes the
-  trim adjuster (`trim_adjust.yaml`, switched off): it opens a valve whenever its
+  trim adjuster (removed 2026-11-12): it opens a valve whenever its
   room is short, so the wind on the room side is handled by feedback, no wind model.
   What wind now costs shows as **valve duty**, `./heating-check.py --duty`. The test
   is the S/SSE spell 11-11 → 11-12 (2-5 °C, overcast, wind ~3 → 6-7 m/s): expected

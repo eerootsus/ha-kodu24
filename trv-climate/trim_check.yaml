@@ -16,7 +16,7 @@
 # Advise, don't rewrite: a mismatch is pushed; a human decides (a reset after a
 # remount is rewritten by setting the room's trim helper again).
 #
-# The intended trims are the `input_number.trv_trim_<room>` helpers (trim_adjust.yaml,
+# The intended trims are the `input_number.trv_trim_<room>` helpers (trims.yaml,
 # 2026-11-10), not a list in this file: set a trim there and the device is written
 # for you. TRV_REGULATION.md "Trims in force" stays the human record with the reasons.
 #
@@ -54,7 +54,7 @@ automation:
         for: "00:05:00"
     variables:
       # Trim entity -> intended device value, from the input_number.trv_trim_<room>
-      # helpers (trim_adjust.yaml, since 2026-11-10) - the one place a trim is set.
+      # helpers (trims.yaml, since 2026-11-10) - the one place a trim is set.
       # eTRVs: regulation_setpoint_offset = the helper. TRVZB: local_temperature_offset
       # = minus the helper (a TRVZB heats more with a negative offset).
       intended: >
@@ -96,7 +96,7 @@ automation:
               title: "TRV trim not as set"
               message: >
                 Read back from the device: {{ wrong | join('; ') }}. To rewrite it,
-                set its input_number.trv_trim_<room> helper again (trim_adjust.yaml
+                set its input_number.trv_trim_<room> helper again (trims.yaml
                 writes and reads back); if the device value was deliberate, set the
                 helper to it.
               data:

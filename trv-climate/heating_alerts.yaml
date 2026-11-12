@@ -1,34 +1,35 @@
-# Heating shortfall alert - tells Eero when a TRV room stays below its target,
-# and which knob it points at. Alert only: nothing here writes to the boiler or
-# the TRVs. The curve and the trims are adjusted by hand.
+# Heating shortfall alert - tells Eero when a radiator room stays below its target,
+# and what that points at. Alert only: nothing here writes to the boiler or the TRVs.
 #
-# Why alert-only instead of curve-test/ (which raises the slope by itself): the
-# trims went in on 2026-10-17 and every room is now meant to land on its own
-# target (22 on the dial = ~22 in the room). A shortfall can then have three
-# different causes, and only one of them is the curve - see the Diagnostika table
-# on the Küte dashboard, which this mirrors:
+# Rewritten 2026-11-12 for the room thermostat (room_thermostat.yaml): HA opens a
+# valve (TRV setpoint 28) whenever its room is under target, so a room that stays
+# short has one of four causes, read from the TRV setpoint HA left it on:
 #
-#   valve >= 80 %  -> the TRV is calling flat out and the room is still short:
-#                     the radiator cannot deliver at this supply temperature.
-#                     Raise the heating curve - the SHIFT (+1) for mild-weather
-#                     shortfalls, the slope only for real-cold ones (a slope step
-#                     adds ~1 C at +12 outside but ~4 C at -20; a shift step adds
-#                     the same everywhere). Goal: stay below previous years' 1.2.
-#   valve 2-79 %   -> the TRV believes it has reached target + trim: its own
-#                     (radiator-warmed) sensor error outgrew the trim. Raise the
-#                     trim, or it is at +2.5 and the TRV needs another approach.
-#   valve <= 1 %   -> not calling at all: stuck valve or a mesh fault.
+#   28 (open)      -> the radiator is flat out and still short: the boiler is not
+#                     delivering. Raise the curve SHIFT by hand (HEATING_CURVE_TEST.md
+#                     "Curve in force"); the slope only for shortfalls that grow with
+#                     cold. Valve duty on the Küte view shows the same.
+#   5 (shut)       -> HA has shut the valve of a cold room: the room thermostat is
+#                     not running, or the room sensor reads wrong.
+#   anything else  -> the room is on its own TRV (fallback: its sensor was silent for
+#                     20 min) - check the door sensor's battery / Zigbee.
+#   thermostat off -> the TRVs regulate themselves on head + trim; raise the trim
+#                     (input_number.trv_trim_<room>) or turn the thermostat back on.
 #
-# Each room's own target is the line, not a fixed number, so a room set to 20
-# is judged against 20: the TRV's setpoint, or - while the room thermostat
-# (room_thermostat.yaml) drives the setpoints to 28 / 5 - input_number.room_target_<room>. Heating weather is met.no (not the sunlit Vitodens
-# sensor, see HEATING_CURVE_TEST.md). 3 hours is long enough to ride out the
-# warm-up after someone raises a target; one alert per episode (the trigger only
-# re-arms once the room is back within 0.5).
+# The kitchen is NOT alerted while the wind onto its walls is strong (Eero,
+# 2026-11-11, CLAUDE.md "Control principle": the SW corner may fall short in high
+# wind and the curve is not raised for it). "Onto a wall" is met.no's wind speed x
+# cos(angle between where it blows from and the wall's outward direction) - the same
+# as heating-check.py; walls S 193 deg and W 283 deg; strong = 6 m/s or more onto
+# either. Muted episodes go to the logbook.
 #
-# A second set of triggers (<room>_nodata) alerts when a room has had no reading
-# for 3 h. Without it a dead sensor would read as a room that is fine: the
-# shortfall template cannot evaluate, so it simply never fires. If ALL rooms go
+# The line is each room's own target: input_number.room_target_<room> while the
+# thermostat is on, else the TRV's setpoint. Heating weather is met.no < 12 C (not
+# the sunlit Vitodens sensor). 3 hours rides out a warm-up after a target is raised;
+# one alert per episode (the trigger re-arms once the room is back within 0.5).
+#
+# A second set of triggers (<room>_nodata) alerts when a room has had no reading for
+# 3 h. Without it a dead sensor would read as a room that is fine. If ALL rooms go
 # silent at once, suspect room_climate.py (see CLAUDE.md, the 2026-09-13 fix).
 #
 # Install: declared as `climate_alerts:` in configuration.yaml.
@@ -36,7 +37,7 @@
 automation:
   - id: heating_shortfall_alert
     alias: "Heating - room below target"
-    description: "Alerts when a TRV room stays >0.5 C under its own target for 3 h in heating weather. Alert only. Source: ha-kodu24/trv-climate/heating_alerts.yaml."
+    description: "Alerts when a radiator room stays >0.5 C under its own target for 3 h in heating weather, with the cause read from what the room thermostat is doing. Kitchen muted in strong wind onto its walls. Alert only. Source: ha-kodu24/trv-climate/heating_alerts.yaml."
     mode: queued
     triggers:
       - trigger: template
@@ -113,20 +114,23 @@ automation:
       # Sonoff TRVZBs: Ada since 2026-10-26, Lola since 2026-11-12.
       sonoff: "{{ key in ['ada', 'lola'] }}"
       climate: "{{ ('climate.trv_sonoff_' if sonoff else 'climate.trv_danfoss_') ~ key }}"
-      sp: "{{ states('input_number.room_target_' ~ key) | float(0) if is_state('input_boolean.room_thermostat', 'on') else state_attr(climate, 'temperature') | float(0) }}"
-      trv: "{{ state_attr(climate, 'current_temperature') }}"
-      trim: "{{ states('number.trv_danfoss_' ~ key ~ '_regulation_setpoint_offset') | float(0) }}"
-      valve: "{{ states('sensor.trv_danfoss_' ~ key ~ '_pi_heating_demand') | float(-1) }}"
-      # Room fed to the TRV (room_feed.yaml, automatic offset mode): the trim is 0 on
-      # purpose there, so "raise the trim" would be wrong advice.
-      fed: "{{ states('number.trv_danfoss_' ~ key ~ '_external_temperature_sensor') | float(-80) > -80 }}"
+      thermostat_on: "{{ is_state('input_boolean.room_thermostat', 'on') }}"
+      sp: "{{ states('input_number.room_target_' ~ key) | float(0) if thermostat_on else state_attr(climate, 'temperature') | float(0) }}"
+      trv_sp: "{{ state_attr(climate, 'temperature') | float(none) }}"
+      trim: "{{ states('input_number.trv_trim_' ~ key) }}"
+      # Wind onto the kitchen's outer walls (S 193, W 283 deg), m/s.
+      wind_onto: >
+        {% set w = state_attr('weather.forecast_kodu', 'wind_speed') | float(0) %}
+        {% set u = state_attr('weather.forecast_kodu', 'wind_speed_unit') or 'km/h' %}
+        {% set ms = w / 3.6 if 'km' in u else w %}
+        {% set b = state_attr('weather.forecast_kodu', 'wind_bearing') | float(0) %}
+        {{ [0, ms * cos((b - 193) * pi / 180), ms * cos((b - 283) * pi / 180)] | max | round(1) }}
+      muted: "{{ key == 'kitchen' and wind_onto | float(0) >= 6 }}"
       cause: >
-        {% if sonoff %}Sonoff TRVZB, which reports no valve %: it is {{ 'calling for heat' if is_state_attr(climate, 'hvac_action', 'heating') else 'not calling' }}, reading {{ trv }} °C against target {{ sp }}. Not calling = it reads warm: lower its local temperature offset (now {{ states('number.trv_sonoff_' ~ key ~ '_local_temperature_offset') }}). Calling and still short = the radiator cannot deliver: raise the heating curve shift.
-        {% elif valve >= 80 %}Valve {{ valve | int }} % open and still short: the radiator cannot deliver at {{ states('sensor.vicare_supply_temperature') }} °C supply. Raise the heating curve: shift +1 (now {{ states('number.vitodens_100_heating_curve_shift') }}, slope {{ states('number.vitodens_100_heating_curve_slope') }}). Use the shift for mild-weather shortfalls; the slope only if rooms fall short in real cold.
-        {% elif valve > 1 and fed %}Valve only {{ valve | int }} % open although the TRV is fed the room temperature (automatic offset): check that room_feed.yaml is still writing (last value {{ states('number.trv_danfoss_' ~ key ~ '_external_temperature_sensor') }} °C), then give the TRV's self-correction time - or go back to a fixed trim.
-        {% elif valve > 1 %}Valve only {{ valve | int }} % open: the TRV is throttling, reading {{ trv }} °C against target + trim {{ sp + trim }}. Its sensor error outgrew the trim{{ ' - and the trim is already at the +2.5 maximum' if trim >= 2.5 else '; raise the trim' }}.
-        {% elif valve >= 0 %}Valve not calling ({{ valve | int }} %) while the room is cold: stuck valve or mesh fault.
-        {% else %}Valve demand unavailable: check the TRV.{% endif %}
+        {% if not thermostat_on %}The room thermostat is off, so the TRV regulates itself on its head + trim (trim {{ trim }}): raise input_number.trv_trim_{{ key }}, or turn input_boolean.room_thermostat back on.
+        {% elif trv_sp is not none and trv_sp >= 27 %}HA has its valve open and it is still short: the radiator is flat out, so the boiler is not delivering ({{ states('sensor.vicare_supply_temperature') }} °C supply). Raise the curve shift by hand (now {{ states('number.vitodens_100_heating_curve_shift') }}, slope {{ states('number.vitodens_100_heating_curve_slope') }}); the slope only if rooms fall short in real cold.{{ ' Wind onto the kitchen walls ' ~ wind_onto ~ ' m/s.' if key == 'kitchen' else '' }}
+        {% elif trv_sp is not none and trv_sp <= 6 %}HA has its valve SHUT although the room is cold: check that the room thermostat automation is running and that the room sensor reads right.
+        {% else %}The room is on its own TRV (setpoint {{ trv_sp }}): the room thermostat fell back because its room sensor went silent. Check the door sensor's battery / Zigbee.{% endif %}
     actions:
       - choose:
           - conditions: "{{ trigger.id.endswith('_nodata') }}"
@@ -141,6 +145,14 @@ automation:
                   data:
                     push:
                       thread-id: heating
+          - conditions: "{{ muted }}"
+            sequence:
+              - action: logbook.log
+                data:
+                  name: "Heating alert"
+                  message: >
+                    {{ name }} {{ '%.1f' | format(room) }} °C on {{ sp }} for 3 h, not pushed:
+                    wind onto its walls {{ wind_onto }} m/s (accepted in strong wind).
         default:
           - action: notify.mobile_app_eeros_iphone_17
             data:

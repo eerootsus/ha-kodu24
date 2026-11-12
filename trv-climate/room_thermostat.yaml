@@ -36,8 +36,7 @@
 # Turning the TRV's dial by hand is overwritten within 5 min; change the helper.
 # Turning the thermostat off writes every TRV's setpoint back to its room target.
 #
-# While it is on: the trim adjuster (trim_adjust.yaml) stands down - with setpoints
-# of 28 / 5 the trim does nothing; the heating alerts judge rooms against the room
+# While it is on: with setpoints of 28 / 5 the trims (trims.yaml) do nothing; the heating alerts judge rooms against the room
 # targets; `offset.yaml`'s settled offsets and the balancing test assume a normal
 # setpoint - switch this off before running the balancing test.
 #

@@ -1,0 +1,126 @@
+# TRV trims as HA helpers, written to the devices.
+#
+# A trim corrects a TRV's own head reading so that, regulating by itself, it lands
+# the room near its target. Since 2026-11-10 HA's room thermostat drives every valve
+# 28 / 5 from the room sensor, so a trim only matters when a room falls back to its
+# own TRV (its sensor silent for 20 min) or the thermostat is switched off. The
+# automatic trim adjuster that used to live here (`trv_trim_adjust`, 2026-11-10) was
+# removed 2026-11-12: the thermostat superseded it, and a fixed trim is enough for a
+# fallback of a few hours. It is in git history (trim_adjust.yaml) if wanted again.
+#
+# 1. `input_number.trv_trim_<room>` - THE trim in force, one per room, in "+ heats
+#    more" units for every room. For an eTRV that is its regulation_setpoint_offset;
+#    for a TRVZB (Ada, Lola) it is minus its local_temperature_offset (a TRVZB heats
+#    more with a NEGATIVE offset). Change a trim here (dashboard or set_value), never
+#    on the device: part 2 writes it, trim_check.yaml compares the device against it.
+#    TRV_REGULATION.md "Trims in force" stays the human record with the reasons.
+#
+# 2. `trv_trim_apply` - writes a helper change to its TRV, reads it back, retries
+#    (sleepy devices), pushes if it does not land. It ignores the helper appearing
+#    (from_state none), so a restart or the first deploy writes nothing.
+#
+# Known limits: an eTRV trim caps at +2.5; a TRVZB's range here is -2.0..+4.0. A
+# remount resets an eTRV trim to 0 on the device; trim_check.yaml catches that (03:45
+# and on remount signals) - the helper keeps the intended value, so rewriting it is
+# one number.set_value on the device (or toggle the helper ±0.1 and back).
+#
+# Install: declared as `climate_trims:` in configuration.yaml.
+
+input_number:
+  trv_trim_kitchen:
+    name: TRV trim kitchen
+    min: -2.5
+    max: 2.5
+    step: 0.1
+    unit_of_measurement: K
+    mode: box
+  trv_trim_master:
+    name: TRV trim master
+    min: -2.5
+    max: 2.5
+    step: 0.1
+    unit_of_measurement: K
+    mode: box
+  trv_trim_lola:
+    name: TRV trim Lola (TRVZB, = minus its offset)
+    min: -2.0
+    max: 4.0
+    step: 0.1
+    unit_of_measurement: K
+    mode: box
+  trv_trim_stairwell:
+    name: TRV trim stairwell
+    min: -2.5
+    max: 2.5
+    step: 0.1
+    unit_of_measurement: K
+    mode: box
+  trv_trim_ada:
+    name: TRV trim Ada (TRVZB, = minus its offset)
+    min: -2.0
+    max: 4.0
+    step: 0.1
+    unit_of_measurement: K
+    mode: box
+
+automation:
+  - id: trv_trim_apply
+    alias: "TRV - write trim to device"
+    description: "Writes an input_number.trv_trim_<room> change to its TRV, reads it back, retries, pushes if it does not land. Source: ha-kodu24/trv-climate/trims.yaml."
+    mode: queued
+    triggers:
+      - trigger: state
+        entity_id:
+          - input_number.trv_trim_kitchen
+          - input_number.trv_trim_master
+          - input_number.trv_trim_lola
+          - input_number.trv_trim_stairwell
+          - input_number.trv_trim_ada
+    conditions:
+      # The helper appearing (restart, first deploy) is not a change to write.
+      - "{{ trigger.from_state is not none and trigger.from_state.state not in ['unknown', 'unavailable'] }}"
+      - "{{ trigger.to_state.state not in ['unknown', 'unavailable'] }}"
+    variables:
+      room: "{{ trigger.entity_id.split('trv_trim_')[1] }}"
+      trim: "{{ trigger.to_state.state | float }}"
+      # Sonoff TRVZBs: Ada since 2026-10-26, Lola since 2026-11-12.
+      sonoff: "{{ room in ['ada', 'lola'] }}"
+      entity: >
+        {{ 'number.trv_sonoff_' ~ room ~ '_local_temperature_offset' if sonoff
+           else 'number.trv_danfoss_' ~ room ~ '_regulation_setpoint_offset' }}
+      want: "{{ (-trim if sonoff else trim) | round(1) }}"
+      # number.set_value truncates to tenths (1.4 lands as 1.3): nudge away from zero.
+      write: "{{ want + (0.01 if want > 0 else -0.01 if want < 0 else 0) }}"
+    actions:
+      - repeat:
+          sequence:
+            - action: number.set_value
+              continue_on_error: true
+              target:
+                entity_id: "{{ entity }}"
+              data:
+                value: "{{ write }}"
+            - delay: "00:00:20"
+            - action: homeassistant.update_entity
+              continue_on_error: true
+              target:
+                entity_id: "{{ entity }}"
+            - delay: "00:00:05"
+          until: "{{ (states(entity) | float(99) - want) | abs < 0.05 or repeat.index >= 3 }}"
+      - if: "{{ (states(entity) | float(99) - want) | abs >= 0.05 }}"
+        then:
+          - action: notify.mobile_app_eeros_iphone_17
+            data:
+              title: "TRV trim did not land: {{ room }}"
+              message: >
+                Wrote {{ write }} to {{ entity }} three times; it reads
+                {{ states(entity) }}. The helper says {{ trim }}. The TRV may be
+                out of reach - trim_check.yaml will compare again at 03:45.
+              data:
+                push:
+                  thread-id: heating
+        else:
+          - action: logbook.log
+            data:
+              name: "TRV trim"
+              message: "{{ room }}: {{ entity }} = {{ states(entity) }} (trim {{ trim }})"

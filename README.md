@@ -11,9 +11,11 @@ housekeeping packages that have nowhere better to live:
 - **`trv-climate/offset.yaml`** — measures how far each TRV's own sensor sits
   from the real room, so the per-room trim is a number rather than a guess.
   Read the `_settled` sensors; see `TRV_REGULATION.md`.
-- **`trv-climate/heating_alerts.yaml`** — push alert when a TRV room stays under
-  its own target, naming the likely knob (curve shift / trim / valve fault), plus
-  an alert when a room's sensors go silent. Alert only; nothing is adjusted.
+- **`trv-climate/heating_alerts.yaml`** — push alert when a radiator room stays
+  under its target, with the cause read from what the room thermostat is doing
+  (valve open = curve, shut = thermostat or sensor, fallback = sensor); the kitchen
+  is muted in strong wind onto its walls. Plus an alert when a room's sensors go
+  silent. Alert only; nothing is adjusted.
 - **`trv-climate/condensation.yaml`** — mould and condensation risk at the outer
   walls, from each room's outer-wall "Alt" sensor and its door reference: wall
   humidity, dew-point margin, and a push when the wall stays damp (72 h mean

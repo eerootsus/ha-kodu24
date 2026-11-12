@@ -102,6 +102,12 @@ sqlite3 /config/home-assistant_v2.db "SELECT sm.entity_id, s.state
   GROUP BY sm.entity_id HAVING MAX(s.last_updated_ts);"
 ```
 
+`ha core check` also passes automations that HA then refuses to load: an automation
+that fails validation shows as `unavailable`, with the reason only in `ha core logs`
+("could not be validated and has been disabled"). Check the state of every automation
+you touched. Seen 2026-11-12: a variable named `on:` - YAML reads bare `on`/`off`/`yes`/
+`no` as booleans, so the variable was called `True`.
+
 New `input_*` helpers only appear after a restart (or Developer Tools → YAML →
 Reload all), so a package can deploy cleanly and still show nothing until then.
 
@@ -234,7 +240,7 @@ history and `DANFOSS.md` if that logic is ever needed again.)
 
 **trv-climate/offset.yaml** - Per-room TRV sensor error (TRV reading − room), raw and `_settled`; the settled value is what a trim should match. Ada's TRVZB reports its reading with its offset already applied, so hers adds it back. The stairwell's (added 2026-11-05) reads negative: its head sits in a draught.
 
-**trv-climate/heating_alerts.yaml** - Push alert when a TRV room stays under its own target, with the likely cause (curve / trim / valve). Alert only.
+**trv-climate/heating_alerts.yaml** - Push alert when a radiator room stays 0.5 K under its target for 3 h, with the cause read from what the room thermostat is doing (valve open = curve, shut = thermostat/sensor, fallback = sensor). The kitchen is muted while the wind onto its walls is ≥ 6 m/s (2026-11-12). Alert only.
 
 **trv-climate/condensation.yaml** - Mould/condensation risk at the outer walls (2026-11-05), from each room's Alt sensor and its door reference: `wall_rh_<room>` (worse of the Alt's own RH and the room's vapour at the wall temperature; a stuck Alt RH is ignored), `wall_dew_margin_<room>`, and a 72 h mean. Pushes at a 72 h mean >= 75 % or a dew margin < 2 K for an hour; thresholds and this year's history are in its header. Advise only. The risk season here is summer into October, not winter.
 
@@ -242,15 +248,15 @@ history and `DANFOSS.md` if that logic is ever needed again.)
 
 **trv-climate/clock_sync.yaml** - Writes the time to any eTRV reporting `Invalid_clock_information` (on the flag, and nightly at 03:30), pushes only if that does not clear it. The stairwell went 2026-10-01..25 without a clock unnoticed after `set_time()` was dropped. Clock only, never a heating setting.
 
-**trv-climate/trim_adjust.yaml** (2026-11-10) - The trims as helpers, `input_number.trv_trim_<room>`, in "+ heats more" units for every room (Ada's TRVZB offset is minus hers): **set a trim there, never on the device** - `trv_trim_apply` writes it, reads it back and retries. `trv_trim_adjust` (off unless `input_boolean.trv_trim_adjust`) steps a room's trim ±0.5 when its 2-h mean is > 0.3 K off its own target, at most once per 2 h, but never raises a room whose valve is already flat out (that is the boiler's). Every step is pushed. The first piece of the "logic lives in HA" principle below.
+**trv-climate/trims.yaml** (2026-11-10; was `trim_adjust.yaml`) - The trims as helpers, `input_number.trv_trim_<room>`, in "+ heats more" units for every room (a TRVZB's offset is minus its trim): **set a trim there, never on the device** - `trv_trim_apply` writes it, reads it back and retries. Trims only matter in fallback or with the room thermostat off. The automatic trim adjuster that stepped them ±0.5 was removed 2026-11-12 (superseded by the room thermostat; in git history).
 
-**trv-climate/room_thermostat.yaml** (2026-11-10, **on**) - HA is the thermostat: every 5 min each TRV's setpoint goes to **28 (open)** when its room (door sensor) is under `input_number.room_target_<room>` − 0.2, to **5 (shut)** at or above target (was target + 0.1 until 2026-11-11), unchanged in between. The TRV's head, trim and firmware logic no longer decide anything. A room whose sensor is silent for 20 min falls back to its TRV (setpoint = target), with a push. **Room targets are the helpers now - a TRV's dial is overwritten within 5 min.** Switching `input_boolean.room_thermostat` off writes every TRV back to its room target. While on, the trim adjuster stands down and the heating alerts judge against the room targets; switch it off before the balancing test. Its readouts (2026-11-12): `sensor.valve_open_<room>` (100 open / 0 shut; the hourly mean in long-term statistics is the valve's duty) and `sensor.room_error_<room>` (room − target), graphed on the Küte view in place of the old settled-offset graph.
+**trv-climate/room_thermostat.yaml** (2026-11-10, **on**) - HA is the thermostat: every 5 min each TRV's setpoint goes to **28 (open)** when its room (door sensor) is under `input_number.room_target_<room>` − 0.2, to **5 (shut)** at or above target (was target + 0.1 until 2026-11-11), unchanged in between. The TRV's head, trim and firmware logic no longer decide anything. A room whose sensor is silent for 20 min falls back to its TRV (setpoint = target), with a push. **Room targets are the helpers now - a TRV's dial is overwritten within 5 min.** Switching `input_boolean.room_thermostat` off writes every TRV back to its room target. While on, the trims do nothing and the heating alerts judge against the room targets and read the cause from the valve HA set; switch it off before the balancing test. Its readouts (2026-11-12): `sensor.valve_open_<room>` (100 open / 0 shut; the hourly mean in long-term statistics is the valve's duty) and `sensor.room_error_<room>` (room − target), graphed on the Küte view in place of the old settled-offset graph.
 
 **trv-climate/trim_check.yaml** - Reads every TRV trim back from the device (`homeassistant.update_entity` is a fresh ZHA read) at 03:45 and on remount signals, pushes if one differs from its `input_number.trv_trim_<room>` helper. Never writes. A failed read keeps the cached value, so it can miss a reset, never invent one.
 
 **Heating curve test - removed 2026-11-12, never run.** It judged rooms against the TRV setpoint, which the room thermostat now sets to 28 / 5, so it would have raised the curve to its caps; the curve is set by hand from valve duty instead (`HEATING_CURVE_TEST.md` "Curve in force"). Restore: `git checkout ce12cda -- curve-test/`, re-add `curve_test:` to `configuration.yaml` and the `deploy.sh` manifest, then fix its targets to `input_number.room_target_<room>`.
 
-**trv-climate/room_feed.yaml** - **Parked, not loaded** (2026-10-19). Fed Lola's room
+**trv-climate/room_feed.yaml** - **Deleted 2026-11-12** (in git history). Was parked, not loaded (2026-10-19). Fed Lola's room
 temperature to her TRV (Danfoss automatic offset mode) for two nights; the valve
 barely responded, so she is back on a fixed trim. Kept as the record and for reuse
 (covered mode would need a 10-min cadence). Every TRV now runs on its own sensor + trim.
@@ -290,7 +296,7 @@ ends, because nobody can tell which layer is at fault. So all the logic lives in
 **Built 2026-11-10:** `trv-climate/room_thermostat.yaml` - HA opens/shuts each
 valve from its room's door sensor; the TRV's own reading no longer matters (Eero:
 "the TRV temperature can be whatever, if controlling in HA solves the flakiness").
-The trims (`trim_adjust.yaml`) only matter again if it is switched off.
+The trims (`trims.yaml`) only matter again if it is switched off.
 
 ## Why the TRVs' own external-sensor features are not used
 
@@ -338,8 +344,8 @@ Done for Ada (2026-10-26) and Lola (2026-11-12); kitchen, Master and stairwell m
    ZHA truncates the offset to tenths (write −1.21 to get −1.2, then read back). Don't set
    "closing degree" (it breaks `hvac_action`).
 3. In the repo, every place that lists the TRVZB rooms (`['ada', 'lola']`) or names the
-   room's climate entity: `room_thermostat.yaml`, `trim_adjust.yaml` (rooms map + the
-   `_calling` binary sensor / history_stats pair), `trim_check.yaml`, `clock_sync.yaml`
+   room's climate entity: `room_thermostat.yaml`, `trims.yaml` (the trim helper's range
+   and `trv_trim_apply`'s TRVZB list), `trim_check.yaml`, `clock_sync.yaml`
    (drop its software_error), `heating_alerts.yaml`, `offset.yaml` (copy Ada's block),
    `balancing_test.yaml`, `heating-check.py`
    `TRVS` (swap time), the Küte view record, and the `customize` load_estimate line in
