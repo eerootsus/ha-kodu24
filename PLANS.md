@@ -475,7 +475,8 @@ pressure (flat-line symbol), step 2**, the unit's thermometer **~33 °C** (16:50
 flow ~47 °C), and the valve beside the head at its **"standard" mark** past 1-2-3
 (fully open, the factory setting; the manual's "OPEN = Standard" label is the floor
 bypass valve, its return valve has a 1-5 dial - which of the two this was is not
-certain). Under its 38 °C setpoint the head is open and the unit takes what boiler
+certain; set **fully left (open) at ~17:00** - turning right closes it, and the 1-5
+scale only covers the last ~75° before closed, of a knob that turns more than 360°). Under its 38 °C setpoint the head is open and the unit takes what boiler
 water it can, but it can only send back floor-return water, cooler than the ~33 °C
 floor flow, to a boiler running 44-47 °C - it **lowers** the boiler return, it is not a
 hot bypass. **So the unit is not the cause of the short cycling; nothing changed on
