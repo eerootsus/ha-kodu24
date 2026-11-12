@@ -61,14 +61,10 @@ MANIFEST=(
   "battery-monitor/   battery-monitor/      yes"
   "workshop-heating/  workshop-heating/     yes"
   "heating-pressure/  heating-pressure/     yes"
-  "curve-test/        curve-test/           yes"
   "chores/            chores/               yes"
   "themes/            themes/               no"
 )
 
-# curve-test/ is deployed (since 2026-11-05) but acts only while
-# input_boolean.curve_test_enabled is on; `script.curve_test_start` is the
-# deliberate decision that turns it on, not a deploy.
 
 cd "$(dirname "$0")"
 

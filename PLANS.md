@@ -238,9 +238,8 @@ The kitchen trim is settled against its door sensor: +2.5 → +2.0 (2026-10-25) 
 +1.5 (2026-11-05, `TRV_REGULATION.md` "Trims in force"). What is left is flow,
 not trim: in the 11-04 cold it ran 0.1–0.4 short at 93–98 % valve. After §1's
 kitchen step, decide whether the curve (0.9 / +3 since 2026-10-19) needs shift +4 -
-the shift, not the slope (`HEATING_CURVE_TEST.md`). Or let the curve test decide:
-it is deployed off and does exactly this (shift +1 on a mild-weather shortfall),
-now startable: Lola's TRVZB is in (2026-11-12).
+the shift, not the slope (`HEATING_CURVE_TEST.md`). (The automatic curve test was removed
+2026-11-12; the curve is set by hand from valve duty.)
 
 ### 3. Lola's room
 

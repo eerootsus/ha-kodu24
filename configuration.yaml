@@ -67,7 +67,6 @@ homeassistant:
     climate_trim_adjust: !include trv-climate/trim_adjust.yaml
     climate_room_thermostat: !include trv-climate/room_thermostat.yaml
     climate_condensation: !include trv-climate/condensation.yaml
-    curve_test: !include curve-test/heating_curve_test.yaml
     backup_monitor: !include backup-monitor/backup_monitor.yaml
     battery_monitor: !include battery-monitor/battery_monitor.yaml
     workshop_heating: !include workshop-heating/workshop_heating.yaml

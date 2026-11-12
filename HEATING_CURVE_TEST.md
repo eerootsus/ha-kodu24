@@ -5,13 +5,15 @@ low, and records how cold each curve survived - so we know whether the top-floor
 radiators can run at heat-pump flow temperatures, and the curve stays as low as
 holds the house.
 
-`curve-test/heating_curve_test.yaml` is a self-contained HA package.
-
-> **Deployed switched off (2026-11-05).** `curve_test:` is in `configuration.yaml`
-> and `deploy.sh`, but nothing acts until `script.curve_test_start` turns
-> `input_boolean.curve_test_enabled` on. **Start it once Lola's TRVZB is on and the
-> trims have settled** (`PLANS.md` §2–3): until then her stopgap target (22.5 on a
-> maxed eTRV trim) and the 2026-11-05 trim changes would read as curve shortfalls.
+> **The test package was removed 2026-11-12, never having run.** It judged each room
+> against its TRV setpoint, which HA's room thermostat (since 2026-11-10) sets to 28 /
+> 5, so started it would have raised the curve to its caps. The curve is set by hand
+> instead, from the valve duty on the Küte view; **"Curve in force" below is the live
+> log** and stays. Everything after it describes the removed package, kept as the
+> design record. To restore: `git checkout ce12cda -- curve-test/`, re-add
+> `curve_test: !include curve-test/heating_curve_test.yaml` to `configuration.yaml` and
+> the `curve-test/` line to `deploy.sh`'s manifest, then compare rooms with
+> `input_number.room_target_<room>` and raise `curve_test_max_shift` past +6.
 >
 > History: written 2026-08 to *descend* the slope from 1.2; not deployed on
 > 2026-10-17, when alert-only (`trv-climate/heating_alerts.yaml`) was chosen while

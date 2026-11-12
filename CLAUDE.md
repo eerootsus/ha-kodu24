@@ -215,8 +215,7 @@ room_climate.py is **sensor-aggregation only** — it performs **no writes to th
 and does not control heating. It was trimmed that way to make room for Better
 Thermostat; **BT was then trialled and removed** (2026-09-13, it offered nothing
 meaningful — see `TRV_REGULATION.md`). Its sensors are the **input of the room
-thermostat** (`room_thermostat.yaml`, since 2026-11-10), plus the dashboard and the
-heating-curve test. The TRVs' own external feed stays disabled (eTRVs) / off (TRVZB).
+thermostat** (`room_thermostat.yaml`, since 2026-11-10) and the dashboard. The TRVs' own external feed stays disabled (eTRVs) / off (TRVZB).
 
 - **Weighted Calculation**: `calculate_weighted_climate()` computes a per-area
   weighted average from external sensors labelled `sensor_weight_X` (TRV
@@ -249,7 +248,7 @@ history and `DANFOSS.md` if that logic is ever needed again.)
 
 **trv-climate/trim_check.yaml** - Reads every TRV trim back from the device (`homeassistant.update_entity` is a fresh ZHA read) at 03:45 and on remount signals, pushes if one differs from its `input_number.trv_trim_<room>` helper. Never writes. A failed read keeps the cached value, so it can miss a reset, never invent one.
 
-**curve-test/heating_curve_test.yaml** - Deployed but **off** (2026-11-05). Once `script.curve_test_start` runs it holds the boiler curve, raises it on a 90-min room shortfall against each room's own TRV target (shift in mild weather, slope in real cold, capped), and records how cold each curve survived. The one automation here that writes a heating setting; bounded, logged, one switch. Start after Lola's TRVZB and settled trims. `HEATING_CURVE_TEST.md`.
+**Heating curve test - removed 2026-11-12, never run.** It judged rooms against the TRV setpoint, which the room thermostat now sets to 28 / 5, so it would have raised the curve to its caps; the curve is set by hand from valve duty instead (`HEATING_CURVE_TEST.md` "Curve in force"). Restore: `git checkout ce12cda -- curve-test/`, re-add `curve_test:` to `configuration.yaml` and the `deploy.sh` manifest, then fix its targets to `input_number.room_target_<room>`.
 
 **trv-climate/room_feed.yaml** - **Parked, not loaded** (2026-10-19). Fed Lola's room
 temperature to her TRV (Danfoss automatic offset mode) for two nights; the valve
@@ -342,7 +341,7 @@ Done for Ada (2026-10-26) and Lola (2026-11-12); kitchen, Master and stairwell m
    room's climate entity: `room_thermostat.yaml`, `trim_adjust.yaml` (rooms map + the
    `_calling` binary sensor / history_stats pair), `trim_check.yaml`, `clock_sync.yaml`
    (drop its software_error), `heating_alerts.yaml`, `offset.yaml` (copy Ada's block),
-   `balancing_test.yaml`, `curve-test/heating_curve_test.yaml`, `heating-check.py`
+   `balancing_test.yaml`, `heating-check.py`
    `TRVS` (swap time), the Küte view record, and the `customize` load_estimate line in
    `configuration.yaml`. `grep -rn trv_danfoss_<room>` should then find nothing.
 4. Deploy, reload automations, templates and history_stats, `./dashboard.py apply
