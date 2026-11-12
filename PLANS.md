@@ -225,6 +225,15 @@ hold +5 overnight; if the kitchen is still short on 11-12 morning at moderate wi
 shift +5 → +6**, and watch Master's night overshoot (21.66 with its valve shut,
 03:00-06:00 on 11-11).
 
+**Checked 2026-11-12 16:36 → shift +6 at 16:43:** the kitchen ran 100 % open from
+22:00 on and sat 21.05-21.20, flat from 2.4 to 6.3 °C outside in S wind 3.8-6 m/s, so
+the condition above held. Slope 1.1 (Viessmann's figure) was considered and rejected:
+that figure assumes shift 0, and the shortfall does not grow with cold
+(`HEATING_CURVE_TEST.md` "Curve in force"). Master again reached 21.69-21.72 at
+04:00-08:00 with its valve shut - **check it and the kitchen on the morning of 11-13.**
+Lola's 22:21-22:45 dip on 11-11 (21.76 → 20.45) was an airing: RH fell ~10 points on
+both her sensors at once and recovered after the window closed.
+
 The kitchen trim is settled against its door sensor: +2.5 → +2.0 (2026-10-25) →
 +1.5 (2026-11-05, `TRV_REGULATION.md` "Trims in force"). What is left is flow,
 not trim: in the 11-04 cold it ran 0.1–0.4 short at 93–98 % valve. After §1's
