@@ -431,6 +431,13 @@ for this failure mode yet (Eero, 2026-11-10): the final alert set waits until th
 valves are sorted out.
 
 
+**Done 2026-11-12 evening:** pin worked by hand, moved freely and sprang back - the
+valve is fine, so a short kitchen is the curve and the wind, not the insert. The
+remount reset the trim to 0 and lost the clock: trim rewritten +1.5 (read back),
+clock restored via `trv_clock_sync`; HA had it back at 28 within minutes, demand
+recovering from 0 while it re-learns the stroke.
+
+
 ### 9. Boiler flow/return ΔT - why the burner short-cycles
 
 **Do it on the same visit as Lola's TRVZB (§3) and the kitchen valve (§8)** (Eero,
