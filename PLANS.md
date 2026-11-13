@@ -222,8 +222,9 @@ curve"; the setback is `trv-climate/boiler_setback.yaml`. Still open:
   night setback.
 - The gas/radiator heat gap is the living-room floor (runs all winter) plus pipe heat
   (`HEATING_CURVE_TEST.md` "Unexplained") - the floor side is the next project ("Floor
-  heating" under HA work). Where the radiator runs go after the manifold is still
-  unknown: through the basement = lost heat, lag them; inside the flat = fine.
+  heating" under HA work). The radiator runs go from the manifold through the floor
+  void, in the downstairs ceiling (Eero, 2026-11-13), so their heat stays inside the
+  house - nothing to lag; it is part of the "pipe heat" in the gap.
   Last winter's 82 °C plateau goes with §8's flow/return sensors.
 
 The rest of this section is the history that led there.
@@ -432,8 +433,6 @@ radiators (CLAUDE.md "Control principle"): measure first, then put the logic in 
   (rings 1-2; "lounge" in the flow sheet is the same room), downstairs bathroom
   `sensor.tz2000_a476raq2_ts0201_temperature` ("TH downstairs bathroom", ring 3),
   upstairs bathroom `sensor.th_upstairs_bathroom_temperature_2` (ring 4).
-- **Which rings the mixer serves** - all four, or the bathrooms only (see "Floor
-  heating" in Background).
 - Then a heating-check-style view: living-room temperature against outside and the
   floor flow, to see whether it is overheated (= gas to save) or held.
 
@@ -544,8 +543,9 @@ shared boiler stretch). Together the floors give roughly as much heat in winter 
 five radiators (`HEATING_CURVE_TEST.md` "Unexplained").
 
 **Underfloor mixing unit** (read on site 2026-11-12): an Uponor Fluvia T
-**PUSH-23-B-W** with its own Wilo pump, noted then as feeding the bathroom + WC floor -
-**confirm which of the four rings it serves** (manuals in
+**PUSH-23-B-W** with its own Wilo pump. It serves **all the floor heating, rings 1-4**
+(Eero, 2026-11-13; the 11-12 note "bathroom + WC only" was wrong): one mixed supply
+temperature for every floor, so per-room floor control can only be the ring valves (manuals in
 `~/Documents/Kodu 24/Juhendid-manuaalid/`, the operation pages are 18-20 of
 `uponor-push-23b-shunt-med-wilo-pumpe_MAN.pdf`). Thermostatic head **5 = 38 °C** (scale
 1-9 = 20-55 °C); floor flow read ~33 °C at 47 °C boiler flow. The valve beside the head
