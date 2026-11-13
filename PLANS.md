@@ -223,8 +223,11 @@ curve"; the setback is `trv-climate/boiler_setback.yaml`. Still open:
 - **Weekday away-mode, parked:** lower room targets while everyone is out (presence,
   not a fixed schedule) - maybe 2-4 % more gas; revisit after a couple of weeks of the
   night setback.
-- The gas/radiator heat gap and last winter's 82 °C plateau ("Unexplained" there) go
-  with §8's flow/return sensors.
+- The gas/radiator heat gap is the lounge floor (runs all winter) plus pipe heat
+  (`HEATING_CURVE_TEST.md` "Unexplained") - the floor side is the next project ("Floor
+  heating" under HA work). Where the radiator runs go after the manifold is still
+  unknown: through the basement = lost heat, lag them; inside the flat = fine.
+  Last winter's 82 °C plateau goes with §8's flow/return sensors.
 
 The rest of this section is the history that led there.
 
@@ -413,7 +416,31 @@ Then add flow/return/ΔT to `./heating-check.py` and the Küte view.
   the downstairs bathroom averages ~58 % in October and peaks at 92 %. **Before
   sizing a mechanical extract:** check no open-flue appliance shares the old
   chimney (backdraught). The Vitodens is room-sealed.
-- **Underfloor zone control** — not eTRVs: solenoid valves on an **ESP32 relay
+- **Better light automations.**
+- **Matter lights + extra downstairs lighting, Matter smoke detectors** — on a
+  separate Thread mesh (see below).
+
+## Floor heating - the next project (Eero, 2026-11-13)
+
+The floors are the other half of the heating and nothing in HA sees them: the lounge
+rings alone give roughly as much winter heat as the five radiators, on a fixed mixer
+setting (head 5 = 38 °C), with no control and no measurement. Same principle as the
+radiators (CLAUDE.md "Control principle"): measure first, then put the logic in HA.
+
+**Measure first:**
+- **Floor circuit flow/return** after the Uponor PUSH-23: two SNZB-02P strapped to the
+  pipes under insulation, like §8's at the boiler (buy four at once). Gives the floor
+  ΔT and, with §8, the floor's share of the boiler's heat.
+- **The lounge room temperature** - `sensor.th_living_room_temperature` exists; check
+  it is the downstairs lounge, not the upstairs living strip. Downstairs bathroom:
+  `sensor.tz2000_a476raq2_ts0201_temperature` ("TH downstairs bathroom").
+- **Which rings the mixer serves**, ring ↔ room ↔ manifold port, written down while
+  on site.
+- Then a heating-check-style view: lounge temperature against outside and the floor
+  flow, to see whether the lounge is overheated (= gas to save) or held.
+
+**Then control** (the existing plan):
+- **Zone valves**, not eTRVs: solenoid valves on an **ESP32 relay
   board** (WiFi, likely ESPHome), **normally open** (no power = heat, so every
   failure fails warm). Relay ON = zone CLOSED: expose a "zone open" switch with the
   relay inverted so the UI never shows on for closed; boot with all relays off;
@@ -422,9 +449,7 @@ Then add flow/return/ΔT to `./heating-check.py` and the Küte view.
   on/off times (30–60 min). Bathroom loops must stay on year-round. Logic in HA,
   in this repo. **Physical install first, then the logic** — record which relay
   drives which zone and room while wiring.
-- **Better light automations.**
-- **Matter lights + extra downstairs lighting, Matter smoke detectors** — on a
-  separate Thread mesh (see below).
+
 
 ---
 
@@ -476,6 +501,8 @@ Then add flow/return/ΔT to `./heating-check.py` and the Küte view.
     flat, and the common stairwell at its east end.
   - **Middle:** bathroom + WC on one shared floor-heating loop (the en-suite), next to
     the manifold.
+  - **Downstairs:** a lounge and a bathroom, floor-heated - see "Floor heating" below.
+    The boiler is in the basement under Master, ~3 m from the manifold.
   - **Above:** heated flats over all of it. **Below:** the workshop under the kitchen.
     Heated neighbours are therefore above and along the north (kitchen/hallway) side;
     the outer walls are south, west and east only.
@@ -503,8 +530,20 @@ Then add flow/return/ΔT to `./heating-check.py` and the Küte view.
   makes magnetite sludge - so the leak feeds the debris problem too (§1 "Debris"),
   and finding it is part of keeping the system clean.
 
+**Floor heating** (Eero's "Floor flow Kodu 24" sheet, 2026-11-13): four rings - two
+over the **downstairs lounge** (2 × 13.7 m², ~91 m of 20 mm pipe each, 150 mm spacing;
+they **run all winter**), the downstairs bathroom (6.9 m², ~46 m) and the upstairs
+bathroom (2.9 m², ~19 m by geometry; the flush measurement says ~35). The downstairs
+pipes are **old plastic** - most likely without an oxygen barrier, so oxygen diffuses
+into the system water all the time and rusts the steel radiators: another source of the
+magnetite in the valve inserts (§1 "Debris"), and one more reason for the magnetic
+dirt separator. The sheet's flushed volumes are rough (the radiator rows include the
+shared boiler stretch). Together the floors give roughly as much heat in winter as all
+five radiators (`HEATING_CURVE_TEST.md` "Unexplained").
+
 **Underfloor mixing unit** (read on site 2026-11-12): an Uponor Fluvia T
-**PUSH-23-B-W** with its own Wilo pump, feeding only the bathroom + WC floor (manuals in
+**PUSH-23-B-W** with its own Wilo pump, noted then as feeding the bathroom + WC floor -
+**confirm which of the four rings it serves** (manuals in
 `~/Documents/Kodu 24/Juhendid-manuaalid/`, the operation pages are 18-20 of
 `uponor-push-23b-shunt-med-wilo-pumpe_MAN.pdf`). Thermostatic head **5 = 38 °C** (scale
 1-9 = 20-55 °C); floor flow read ~33 °C at 47 °C boiler flow. The valve beside the head

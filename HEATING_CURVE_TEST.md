@@ -139,13 +139,25 @@ cannot pin down: 2.5 K (heating from 19 °C, as the gas says) is the central gue
   −10 °C and pinned at ~82 below that, where 1.2/0 at the then room setting 25 gives
   ~67. Fits a different slope or a max-temperature limit; the recorder only holds the
   curve settings from 2026-05-31 on.
-- **The gas shows ~2× the heat the radiators should give:** ~1.7 kW into the radiator
-  circuit on 11-12/13 against ~0.7-0.9 kW from valve duty × catalogue output.
-  Candidates: the ~70 m of distribution pipes (under the hallway and gallery - so partly
-  heating exactly the space in question), ViCare over-reading more than 10 % at ~8 %
-  modulation, or a smaller radiator ΔT than assumed (`PLANS.md` §8's flow/return
-  sensors answer that). It does not move the curve: the model is calibrated on the
-  kitchen's own balance, not on watts.
+- **The gas shows more heat than the radiators should give - explained: the lounge
+  floor, plus pipe heat.** 16:00-04:00 on 11-12/13: mean burner modulation 9.2 %, ViCare
+  gas 2.4 m³ heating + 0.7 DHW = 2.8 kW → modulation × ~30 kW, i.e. ViCare's gas is
+  computed from modulation × rated input (32 kW Vitodens 111-W, B1LF), so beyond its
+  ~10 % annual over-read it is not inventing heat. After that and boiler efficiency
+  ~1.85 kW went into the house; the radiators account for ~0.8 kW (valve duty ×
+  catalogue output). The rest is the **floor heating**, which is more than the bathroom:
+  two **lounge rings (~27 m², downstairs) run all winter** (Eero, 2026-11-13), plus the
+  downstairs and upstairs bathrooms - ~1 kW at a plausible ~25-30 W/m² - and the
+  uninsulated aluplex distribution pipes (16 mm bare pipe at ~27 K over room air: ~13-14
+  W/m). The summer floor baseline (~0.45 kW) is the bathrooms only. The boiler sits in
+  the basement under Master, ~3 m from the manifold, so little pipe runs through cold
+  space before the manifold; where the runs go after it is not known. Eero's flush
+  measurements ("Floor flow Kodu 24" sheet) give loop volumes, but each radiator figure
+  includes the shared boiler stretch and cannot be split; they do not contain the
+  radiators' own water (an Atol C3 H500 holds 0.83 l per section - the kitchen's alone
+  ~19 l), so they are best read as first-flush pipe volumes. Floor-loop measurement is
+  `PLANS.md` "Floor heating". None of this moves the curve: the model is calibrated on
+  the kitchen's own balance, not on watts.
 
 ## Why this matters
 
