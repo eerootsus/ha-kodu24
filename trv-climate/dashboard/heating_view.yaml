@@ -264,54 +264,21 @@ sections:
 - type: grid
   cards:
   - type: heading
-    heading: Mida siht maksab
-    icon: mdi:valve
+    heading: Küttegaas
+    icon: mdi:fire
   - type: statistics-graph
-    title: Klapp avatud, % tunnist (7 p)
-    chart_type: line
-    period: hour
-    days_to_show: 7
+    title: Küttegaas päevas
+    chart_type: bar
+    period: day
+    days_to_show: 30
     stat_types:
-    - mean
+    - change
     entities:
-    - entity: sensor.valve_open_kitchen
-      name: Köök
-    - entity: sensor.valve_open_ada
-      name: Ada tuba
-    - entity: sensor.valve_open_lola
-      name: Lola tuba
-    - entity: sensor.valve_open_master
-      name: Kätlyni tuba
-    - entity: sensor.valve_open_stairwell
-      name: Trepihall
+    - entity: sensor.vicare_heating_gas_consumption_current_day
+      name: Gaas
     grid_options:
       columns: full
       rows: 6
-  - type: statistics-graph
-    title: Tuba − siht, K (7 p)
-    chart_type: line
-    period: hour
-    days_to_show: 7
-    stat_types:
-    - mean
-    entities:
-    - entity: sensor.room_error_kitchen
-      name: Köök
-    - entity: sensor.room_error_ada
-      name: Ada tuba
-    - entity: sensor.room_error_lola
-      name: Lola tuba
-    - entity: sensor.room_error_master
-      name: Kätlyni tuba
-    - entity: sensor.room_error_stairwell
-      name: Trepihall
-    grid_options:
-      columns: full
-      rows: 6
-  - type: markdown
-    content: 'Klapp ~100 % ja tuba sihist all = katlast ei tule piisavalt (kõver). Muidu näitab
-      klapi osakaal, kui palju sihi hoidmine maksab (tuul). Toad on meelega ~0,1 K sihist all.
-      Sama tabelina: `./heating-check.py --duty`.'
 - type: grid
   column_span: 3
   cards:
@@ -333,18 +300,59 @@ sections:
     - entity: sensor.ikea_of_sweden_vindstyrka_temperature
       name: Töökoda
     grid_options:
-      columns: 24
+      columns: full
+      rows: 6
+- type: grid
+  column_span: 3
+  cards:
+  - type: heading
+    heading: Mida siht maksab
+    icon: mdi:valve
+  - type: statistics-graph
+    title: Klapp avatud, % tunnist (7 p)
+    chart_type: line
+    period: hour
+    days_to_show: 7
+    stat_types:
+    - mean
+    entities:
+    - entity: sensor.valve_open_kitchen
+      name: Köök
+    - entity: sensor.valve_open_ada
+      name: Ada tuba
+    - entity: sensor.valve_open_lola
+      name: Lola tuba
+    - entity: sensor.valve_open_master
+      name: Kätlyni tuba
+    - entity: sensor.valve_open_stairwell
+      name: Trepihall
+    grid_options:
+      columns: 18
       rows: 6
   - type: statistics-graph
-    title: Küttegaas päevas
-    chart_type: bar
-    period: day
-    days_to_show: 30
+    title: Tuba − siht, K (7 p)
+    chart_type: line
+    period: hour
+    days_to_show: 7
     stat_types:
-    - change
+    - mean
     entities:
-    - entity: sensor.vicare_heating_gas_consumption_current_day
-      name: Gaas
+    - entity: sensor.room_error_kitchen
+      name: Köök
+    - entity: sensor.room_error_ada
+      name: Ada tuba
+    - entity: sensor.room_error_lola
+      name: Lola tuba
+    - entity: sensor.room_error_master
+      name: Kätlyni tuba
+    - entity: sensor.room_error_stairwell
+      name: Trepihall
     grid_options:
-      columns: 12
+      columns: 18
       rows: 6
+  - type: markdown
+    content: 'Klapp ~100 % ja tuba sihist all = katlast ei tule piisavalt (kõver). Muidu näitab
+      klapi osakaal, kui palju sihi hoidmine maksab (tuul). Toad on meelega ~0,1 K sihist all.
+      Sama tabelina: `./heating-check.py --duty`.'
+    grid_options:
+      columns: full
