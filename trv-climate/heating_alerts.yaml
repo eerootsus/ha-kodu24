@@ -23,6 +23,10 @@
 # as heating-check.py; walls S 193 deg and W 283 deg; strong = 6 m/s or more onto
 # either. Muted episodes go to the logbook.
 #
+# The kitchen is also muted while the boiler night setback runs and for 4 h after it
+# (boiler_setback.yaml, 2026-11-13): the setback lets the kitchen sag on purpose and
+# its radiator recovers slowly. The bedrooms are not muted - they must hold.
+#
 # The line is each room's own target: input_number.room_target_<room> while the
 # thermostat is on, else the TRV's setpoint. Heating weather is met.no < 12 C (not
 # the sunlit Vitodens sensor). 3 hours rides out a warm-up after a target is raised;
@@ -37,7 +41,7 @@
 automation:
   - id: heating_shortfall_alert
     alias: "Heating - room below target"
-    description: "Alerts when a radiator room stays >0.5 C under its own target for 3 h in heating weather, with the cause read from what the room thermostat is doing. Kitchen muted in strong wind onto its walls. Alert only. Source: ha-kodu24/trv-climate/heating_alerts.yaml."
+    description: "Alerts when a radiator room stays >0.5 C under its own target for 3 h in heating weather, with the cause read from what the room thermostat is doing. Kitchen muted in strong wind onto its walls and during the boiler night setback (+4 h). Alert only. Source: ha-kodu24/trv-climate/heating_alerts.yaml."
     mode: queued
     triggers:
       - trigger: template
@@ -125,7 +129,10 @@ automation:
         {% set ms = w / 3.6 if 'km' in u else w %}
         {% set b = state_attr('weather.forecast_kodu', 'wind_bearing') | float(0) %}
         {{ [0, ms * cos((b - 193) * pi / 180), ms * cos((b - 283) * pi / 180)] | max | round(1) }}
-      muted: "{{ key == 'kitchen' and wind_onto | float(0) >= 6 }}"
+      setback: >
+        {% set b = states.binary_sensor.boiler_setback_active %}
+        {{ b is not none and (b.state == 'on' or (now() - b.last_changed).total_seconds() < 4 * 3600) }}
+      muted: "{{ key == 'kitchen' and (wind_onto | float(0) >= 6 or setback) }}"
       cause: >
         {% if not thermostat_on %}The room thermostat is off, so the TRV regulates itself on its head + trim (trim {{ trim }}): raise input_number.trv_trim_{{ key }}, or turn input_boolean.room_thermostat back on.
         {% elif trv_sp is not none and trv_sp >= 27 %}HA has its valve open and it is still short: the radiator is flat out, so the boiler is not delivering ({{ states('sensor.vicare_supply_temperature') }} °C supply). Raise the curve shift by hand (now {{ states('number.vitodens_100_heating_curve_shift') }}, slope {{ states('number.vitodens_100_heating_curve_slope') }}); the slope only if rooms fall short in real cold.{{ ' Wind onto the kitchen walls ' ~ wind_onto ~ ' m/s.' if key == 'kitchen' else '' }}
@@ -152,7 +159,7 @@ automation:
                   name: "Heating alert"
                   message: >
                     {{ name }} {{ '%.1f' | format(room) }} °C on {{ sp }} for 3 h, not pushed:
-                    wind onto its walls {{ wind_onto }} m/s (accepted in strong wind).
+                    {{ 'boiler night setback (accepted, kitchen sags on purpose)' if setback else 'wind onto its walls ' ~ wind_onto ~ ' m/s (accepted in strong wind)' }}.
         default:
           - action: notify.mobile_app_eeros_iphone_17
             data:

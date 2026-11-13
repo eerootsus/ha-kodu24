@@ -35,6 +35,7 @@ holds the house.
 | 2026-11-10 22:42 | 0.9 | **+5** | HA room thermostat on since 21:53 with every valve open (eTRVs 92-100 %, stairwell 44 %), boiler modulation 11 → 19 % and radiator heads warming, but every room flat at 20.3-20.7 on 21.5 for 45 min with 3-4 °C and S wind; the burner short-cycled (3-10 min) at ~44 °C supply: the water temperature, not the valves, limits. Eero's call (raise now) |
 | 2026-11-11 07:59 | **1.0** | +5 | first night under the HA room thermostat: Master, Lola, Ada, stair room reached 21.4-21.8 (Master and Lola valves shut by HA), but the kitchen stayed 20.5-20.6 on 21.5 with its valve at 100 % all night, flow ~45 °C, 1.7-3 °C outside, S wind 3-5 m/s. Shift at its +5 cap, so the slope: ~+2.2 °C flow at +2 °C outside. Eero's call |
 | 2026-11-12 16:43 | 1.0 | **+6** | kitchen valve 100 % for 18 h (22:00 → 16:36) and still 21.05-21.20 on 21.5, the shortfall flat from 2.4 to 6.3 °C outside (the curve dropped flow 53 → 46 °C as it warmed) with S wind 3.8-6 m/s; the other four rooms held 21.3-21.5 cycling. A flat, wind-driven shortfall is a shift, not slope 1.1 (Viessmann's "1.1+" assumes shift 0; 1.0/+5 already matches 1.2/0 down to ~-5 °C, 1.1/+5 would exceed it everywhere). Shift past the curve test's +5 cap, set by hand. Watch Master's night overshoot. Eero's call |
+| 2026-11-13 09:58 | **1.4** | **-2** | Steeper, less shift - the curve the kitchen needs, from a model calibrated on the night 11-12/13 (kitchen valve 100 %, room 21.27, supply 49.3 °C, outside 2.6 °C), radiator exponent 1.26 (Atol C3 H500), heating from ~19 °C outside (four winters of gas). Eero's floor: kitchen >= 20 at -10, >= 19 at -22, bedrooms hold. 1.2/+2 just meets it on the central guess of free heat (cooking, people); 1.4/-2 meets it even if that guess is high, and a too-high curve costs little because HA caps every room at its target. Same supply as 1.0/+6 at 0..+5 °C (52 vs 52 at 0), +5 K at -10, +9 at -22. Viessmann's factory slope; its range for radiators is 0.8-1.6. Kitchen target 21.0 from 09:18. Watch Ada / Lola overshoot and Master on the first -10 days; step to 1.3/0 if they run warm. Night setback (room setting 22 -> 21) in `trv-climate/boiler_setback.yaml`. Set from HA; the first try lost the shift (ViCare writes slope + shift as one command and HA filled in its stale cached +6) - write one, reload the integration, then the other. Eero's call |
 
 Why the shift and not the slope: the Viessmann curve (`VT = RT + shift − slope ×
 DAR × (1.4347 + 0.021·DAR + 247.9e-6·DAR²)`, `DAR = outside − RT`, RT = the boiler's
@@ -53,6 +54,98 @@ sensor error also grows with radiator temperature (seen within an hour on
 the wrong shape across the weather - short in mild weather, hot in a cold snap.
 So the efficiency goal and the balancing goal point the same way: as low a slope
 as holds the house, with shift covering the mild end.
+
+## Reference curve - what the house needs (2026-11-13)
+
+Worked out with Eero on 2026-11-13; the model is `./curve-model.py`, which
+re-prints every table here and can be re-calibrated from a new night.
+
+**Viessmann's guidance** (Vitodens 111-W manual, "Heating curve"): factory setting
+slope 1.4 / level (shift) 0; slope ranges underfloor 0.2-0.8, low-temperature radiator
+systems 0.8-1.6. The curve formula at the top of this file reproduces the observed
+supply within ~1 K (11-11..11-13).
+
+**Inputs.**
+- Radiators: Atol C3 H500 (ISAN), 51.4 W per section at 75/65/20 (ΔT50), exponent n
+  1.26. 75 sections in all, ~3.9 kW at ΔT50; kitchen 23 sections = 1.18 kW. Per m² every
+  room has about the same (59-64 W/m² at ΔT50).
+- Heat loss from four winters of daily ViCare heating gas against the boiler's outside
+  sensor: 0.50-0.54 m³/K/day in 2024/25 and 2025/26, heating from ~18-19 °C outside -
+  roughly 190 W/K after ViCare's ~10 % over-read (`Kodu 24/2026 Heating economics.md`)
+  and boiler efficiency. Hot water is excluded (separate ViCare counter); the bathroom
+  floor loop is included.
+- Design outside temperature −22 °C (Tallinn area).
+- The house (`PLANS.md` Background): wooden, little thermal mass; the kitchen is a
+  later ash-block addition with two outer walls (S, W), open to the dining area and
+  the gallery, and with the bedroom doors shut it also carries the hallway with the
+  stairwell radiator. No other emitters.
+
+**Method.** The kitchen is the only room that runs flat out, so it sets the curve.
+Calibrated on its own balance on the night 11-12/13 (valve 100 % for 15 h, room 21.27,
+supply 49.3 °C, outside 2.6 °C, ~5 m/s onto the S wall): radiator output ~ (supply −
+room)^1.26, loss ~ (room − free heat − outside). No catalogue watts or room areas
+enter - only the exponent and the free heat (cooking, people, sun), which the data
+cannot pin down: 2.5 K (heating from 19 °C, as the gas says) is the central guess,
+0 and 4.5 K the range. The other rooms are scaled from their valve duty that night.
+
+**Supply each room needs, °C** (central guess):
+
+| Outside | +10 | +5 | 0 | −5 | −10 | −15 | −22 |
+|---|---|---|---|---|---|---|---|
+| Kitchen, 21.5 | 39 | 47 | 53 | 60 | 66 | 72 | 80 |
+| Kitchen, 21.0 | 38 | 45 | 52 | 59 | 65 | 71 | 79 |
+| Lola (46 % duty) | 31 | 35 | 39 | 42 | 45 | 48 | 53 |
+| Ada (37 %) | 29 | 33 | 36 | 39 | 42 | 44 | 48 |
+| Stairwell (16 %) | 26 | 27 | 29 | 30 | 32 | 33 | 35 |
+| Master (5 %) | 23 | 24 | 24 | 25 | 26 | 26 | 27 |
+| 1.0/+6 (to 11-13) | 43 | 48 | 52 | 56 | 61 | 65 | 72 |
+| **1.4/−2 (from 11-13)** | 40 | 47 | 54 | 60 | 66 | 72 | 81 |
+| Viessmann factory 1.4/0 | 42 | 49 | 56 | 62 | 68 | 74 | 83 |
+| Last winter, actual | 46 | 55 | 63 | 71 | 80 | 82 | 82 |
+
+**What it says.**
+1. **The kitchen asks for ~15 K hotter water than any bedroom**, because of what it
+   heats (two outer walls in ash block, the open gallery and hallway), not because its
+   radiator is small for its own floor area. Every bedroom would be content at ~35-39 °C
+   at 0 °C and ~53 °C at −22.
+2. **Its need is a slope, not a shift.** Loss grows with cold; a radiator's output
+   grows slower than linearly with water temperature, so the required curve steepens.
+   The "flat shortfall → shift" reading of 11-12 was judged on 2.4-6.3 °C outside, too
+   narrow to show a slope. 1.0/+6 was right at ~0 °C only, and would have let the
+   kitchen settle at ~19 °C at −10.
+3. **Eero's floor (2026-11-13): bedrooms hold; kitchen ≥ 20 at −10, ≥ 19 at −22.**
+   1.2/+2 just meets it on the central guess, 1.3/0 at the high end of free heat,
+   1.4/−2 everywhere in the range. Chosen: **1.4/−2** - a curve that is too high costs
+   little (HA's room thermostat caps every room at its target, so the surplus only
+   shuts valves sooner), one that is too low costs comfort the kitchen cannot recover.
+   Cost, only below ~−5: a hotter return (condensing fades near 55 °C, ~1-2 % on those
+   days) and sharper bedroom cycling. Step down to 1.3/0 if Ada / Lola / Master run
+   warm on the first −10 days while the kitchen is fine.
+4. **Night setback** (`trv-climate/boiler_setback.yaml`): room setting 21 instead of
+   22 from 23:00 to 05:00. On 1.4/−2 the kitchen settles at ~20.7 at 0 °C and ~20.3 at
+   −10 (in practice it sags less by 05:00), and every bedroom keeps ≥ ~5 K of supply
+   margin. Room setting 20 would leave the bedrooms ~2.6 K.
+5. **Gas.** Heat loss is set by the room temperatures, not the curve: ~5 % of heating
+   gas per K across the flat. The night setback saves ~2-3 % in this light, wooden
+   house; lower supply in mild weather a little more from condensing. The levers that
+   matter more are the targets (the kitchen went 21.5 → 21.0 on 11-13), the burner
+   short-cycling (`PLANS.md` §8), and in the long run insulation.
+6. **For the heat pump** the kitchen is the whole question: it alone needs ~80 °C at
+   design, the rest of the flat ~55. A gallery radiator would fix it but is not an
+   option (Eero, 2026-11-13); outside insulation is the real fix, timing open.
+
+**Unexplained, for later.**
+- **Last winter the boiler ran far above its nominal curve:** 80-82 °C supply at
+  −10 °C and pinned at ~82 below that, where 1.2/0 at the then room setting 25 gives
+  ~67. Fits a different slope or a max-temperature limit; the recorder only holds the
+  curve settings from 2026-05-31 on.
+- **The gas shows ~2× the heat the radiators should give:** ~1.7 kW into the radiator
+  circuit on 11-12/13 against ~0.7-0.9 kW from valve duty × catalogue output.
+  Candidates: the ~70 m of distribution pipes (under the hallway and gallery - so partly
+  heating exactly the space in question), ViCare over-reading more than 10 % at ~8 %
+  modulation, or a smaller radiator ΔT than assumed (`PLANS.md` §8's flow/return
+  sensors answer that). It does not move the curve: the model is calibrated on the
+  kitchen's own balance, not on watts.
 
 ## Why this matters
 

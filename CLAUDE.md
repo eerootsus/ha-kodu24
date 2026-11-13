@@ -138,6 +138,10 @@ room-thermostat era, when every room sits at target: per time step, the share of
 HA had each valve open, room mean, outside, flow and the wind onto each wall. Rising
 duty with wind at a steady temperature is the wind's cost per room.
 
+`./curve-model.py` (2026-11-13) prints the supply temperature each room needs against
+the Viessmann curve, calibrated on a night the kitchen valve ran 100 % (change `CAL`
+from a new `--duty` night). Reasoning in `HEATING_CURVE_TEST.md` "Reference curve".
+
 ## Zigbee mesh topology
 
 `./zigbee-topology.sh` prints who parents whom and at what **first-hop LQI**,
@@ -251,6 +255,8 @@ history and `DANFOSS.md` if that logic is ever needed again.)
 **trv-climate/trims.yaml** (2026-11-10; was `trim_adjust.yaml`) - The trims as helpers, `input_number.trv_trim_<room>`, in "+ heats more" units for every room (a TRVZB's offset is minus its trim): **set a trim there, never on the device** - `trv_trim_apply` writes it, reads it back and retries. Trims only matter in fallback or with the room thermostat off. The automatic trim adjuster that stepped them ±0.5 was removed 2026-11-12 (superseded by the room thermostat; in git history).
 
 **trv-climate/room_thermostat.yaml** (2026-11-10, **on**) - HA is the thermostat: every 5 min each TRV's setpoint goes to **28 (open)** when its room (door sensor) is under `input_number.room_target_<room>` − 0.2, to **5 (shut)** at or above target (was target + 0.1 until 2026-11-11), unchanged in between. The TRV's head, trim and firmware logic no longer decide anything. A room whose sensor is silent for 20 min falls back to its TRV (setpoint = target), with a push. **Room targets are the helpers now - a TRV's dial is overwritten within 5 min.** Switching `input_boolean.room_thermostat` off writes every TRV back to its room target. While on, the trims do nothing and the heating alerts judge against the room targets and read the cause from the valve HA set; switch it off before the balancing test. Its readouts (2026-11-12): `sensor.valve_open_<room>` (100 open / 0 shut; the hourly mean in long-term statistics is the valve's duty) and `sensor.room_error_<room>` (room − target), graphed on the Küte view in place of the old settled-offset graph.
+
+**trv-climate/boiler_setback.yaml** (2026-11-13, **on**) - Night setback on the boiler: inside `input_datetime.boiler_setback_start` → `_end` (23:00 → 05:00) HA writes the Vitodens normal *and* reduced room setting to `input_number.boiler_room_night` (21), otherwise `_day` (22), which lowers the whole curve; the bedrooms keep their margin, the kitchen sags (its below-target alert is muted during the setback + 4 h). One switch, `input_boolean.boiler_setback`; pushes only if the boiler will not take the value. **ViCare write quirks:** the vicare `number` entities stop refreshing after an HA restart and `update_entity` does not help - only `homeassistant.reload_config_entry` re-reads them, so verify a write by reloading; and never write curve slope and shift back to back (ViCare sets both in one command and HA fills the other from its stale cache - on 2026-11-13 that undid a shift).
 
 **trv-climate/trim_check.yaml** - Reads every TRV trim back from the device (`homeassistant.update_entity` is a fresh ZHA read) at 03:45 and on remount signals, pushes if one differs from its `input_number.trv_trim_<room>` helper. Never writes. A failed read keeps the cached value, so it can miss a reset, never invent one.
 

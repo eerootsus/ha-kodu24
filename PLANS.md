@@ -209,6 +209,25 @@ freed by the visit rather than a flow change - judge her on the next days, not t
 
 ### 2. Curve shift - decide on the kitchen in the cold
 
+**2026-11-13: decided - curve 1.4/−2, kitchen target 21.0, night setback 23:00-05:00
+(room setting 21).** Reasoning, model and tables in `HEATING_CURVE_TEST.md` "Reference
+curve"; the setback is `trv-climate/boiler_setback.yaml`. Still open:
+- **First −5..−10 °C days:** kitchen should hold ≥ 20 (Eero's floor) by day; if
+  Ada / Lola / Master run warm while it does, step down to 1.3/0. If the kitchen
+  falls under 20, raise the shift by 1 (`./curve-model.py`, re-calibrated, says how far).
+- **First mornings after the setback:** how long the kitchen takes to recover; end it
+  at 04:00 instead of 05:00 if breakfast is cold. Bedrooms must not alert at night.
+- **Master double-door sensor** (contact): the model says the kitchen carries the
+  gallery and hallway when the bedroom doors are shut - a door sensor would show
+  whether its night duty follows the doors.
+- **Weekday away-mode, parked:** lower room targets while everyone is out (presence,
+  not a fixed schedule) - maybe 2-4 % more gas; revisit after a couple of weeks of the
+  night setback.
+- The gas/radiator heat gap and last winter's 82 °C plateau ("Unexplained" there) go
+  with §8's flow/return sensors.
+
+The rest of this section is the history that led there.
+
 **2026-11-10 22:42: shift +4 → +5** (all valves open under the HA room thermostat,
 rooms flat 45 min, burner short-cycling at ~44 °C). **Done 2026-11-10 20:18: shift +3 → +4** (Eero; set from HA, `HEATING_CURVE_TEST.md`
 "Curve in force"). The kitchen ran 95-96 % open with the radiator hot all over and
@@ -417,6 +436,22 @@ Then add flow/return/ΔT to `./heating-check.py` and the Küte view.
   chimney (stack effect, little wind effect measured). Hallway extracts are an
   option; they would work by stack effect — high, into a warm flue — and one grille
   per flue.
+- **Construction (Eero, 2026-11-13):** a wooden building (1931 project); only the
+  central common stairwell is masonry. Basement foundation and walls are limestone.
+  **The kitchen is a later addition in ash/cinder block** (tuhkplokk-type), so the room
+  that sets the curve is built differently from the rest: more mass (it cools and
+  recovers slower than the wooden rooms), likely a worse wall U-value than the log
+  walls, and the joint to the old house was a suspected draught path. **Checked
+  2026-11-13** on 696 h of Alt-vs-door-sensor offsets (regressed on room−outside and the
+  wind onto the S and W walls): the Master Alt, next to the joint, does **not** react to
+  southerly wind (+0.003 K per m/s), but cools 0.045 K per K of room−outside - 5× Lola's
+  south-wall Alt (0.009) and as steep as the kitchen's (0.043). So a cold bridge / poorly
+  insulated junction, not a draught (caveat: Alt placement differs; Master's room
+  sensor gets en-suite floor heat). The kitchen's Alt is the one that takes wind:
+  −0.04 K per m/s onto S, −0.08 onto W. Worth a look when insulation comes up.
+  So the flat has little thermal mass: rooms cool and recover within hours, which
+  makes a setback show in the rooms (and save) more than in a masonry house - and
+  makes the kitchen's slow recovery after one matter more.
 - **Layout and orientation** (from the 2019 renovation drawings in `~/Documents/Kodu
   24/2019 Remont/Plaanid-joonised`, `Kodu - 20190404.pdf` p.6 = radiators, and the
   1997 floor plans in `Maja/Kodu_tn_24_projekt`; confirmed by Eero 2026-11-10). Flat 1

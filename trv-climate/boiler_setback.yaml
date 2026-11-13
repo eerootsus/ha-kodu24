@@ -1,0 +1,205 @@
+# Night setback on the boiler: HA lowers the Vitodens room setting at night, so the
+# whole heating curve drops; the bedrooms keep holding their targets, the kitchen /
+# gallery / hallway sag.
+#
+# Why (Eero, 2026-11-13): bedrooms must hold, the kitchen may run lower at night, and
+# gas is worth saving. The curve is set by the kitchen alone - it needs ~15 K hotter
+# water than any bedroom (HEATING_CURVE_TEST.md "Curve in force", 2026-11-13) - so at
+# night, when only the bedrooms matter, the curve can come down. Modelled on 1.4/-2:
+# room setting 21 instead of 22 keeps every bedroom >= ~5 K of supply margin over what
+# it needs, and lets the kitchen settle at ~20.2 at 0 C outside, ~19 at -10. 20 would
+# take the kitchen to ~18 at -10 and leave the bedrooms ~2.6 K. Expect a few % of gas,
+# not tens: the bigger levers are the room targets themselves (~5 % per K).
+# The catch is the morning: the kitchen radiator has no reserve, so it climbs back
+# slowly - end the setback well before people get up.
+#
+# How: the Vitodens curve is relative to its room setting
+# (`number.vitodens_100_normal_temperature`). HA writes both the normal AND the
+# reduced setting to the wanted value, so whatever the boiler's own time program is
+# doing (it runs "normal" all day; "reduced" was never used) the room setting is the
+# one HA wants - one owner, as CLAUDE.md "Control principle" requires.
+#   in window (input_datetime start -> end, may cross midnight) -> night value
+#   otherwise                                                    -> day value
+# Day/night values are helpers, whole degrees (the boiler takes steps of 1).
+#
+# ViCare quirks this works around (seen 2026-11-13):
+# - The vicare number entities stop refreshing after an HA restart; even
+#   `homeassistant.update_entity` does not refresh them. Only reloading the
+#   integration does, so every check starts with a reload, and a write is verified by
+#   reloading again.
+# - Never write heating-curve slope and shift back to back: ViCare sets them in one
+#   command, and HA fills in the other from its (possibly stale) cache, which undoes
+#   the first write. Not an issue for the room settings, which are separate commands.
+#
+# Pushes only when the boiler will not take the value (3 tries). Each change goes to
+# the logbook. The kitchen's below-target alert is muted while the setback runs and
+# for 4 h after (heating_alerts.yaml); the bedrooms' alerts are not - they are the
+# check that the setback is safe.
+#
+# Turning `input_boolean.boiler_setback` off writes the day value back once and
+# leaves the boiler alone after that.
+#
+# Install: declared as `climate_boiler_setback:` in configuration.yaml. First deploy:
+# restart (new helpers), seed day 22 / night 21 / 23:00 / 05:00, then switch it on.
+# The helpers start at their minimum, so the automation refuses values outside 18-24.
+
+input_boolean:
+  boiler_setback:
+    name: Boiler night setback
+    icon: mdi:weather-night
+
+input_datetime:
+  boiler_setback_start:
+    name: Boiler setback start
+    has_date: false
+    has_time: true
+  boiler_setback_end:
+    name: Boiler setback end
+    has_date: false
+    has_time: true
+
+input_number:
+  boiler_room_day:
+    name: Boiler room setting, day
+    min: 16
+    max: 24
+    step: 1
+    unit_of_measurement: °C
+    mode: box
+  boiler_room_night:
+    name: Boiler room setting, night
+    min: 16
+    max: 24
+    step: 1
+    unit_of_measurement: °C
+    mode: box
+
+template:
+  - binary_sensor:
+      - name: Boiler setback active
+        unique_id: boiler_setback_active
+        icon: mdi:weather-night
+        state: >
+          {% set s = states('input_datetime.boiler_setback_start') %}
+          {% set e = states('input_datetime.boiler_setback_end') %}
+          {% set t = now().strftime('%H:%M:%S') %}
+          {{ is_state('input_boolean.boiler_setback', 'on')
+             and s not in ['unknown', 'unavailable'] and e not in ['unknown', 'unavailable']
+             and s != e
+             and ((s <= t < e) if s < e else (t >= s or t < e)) }}
+
+automation:
+  - id: boiler_setback_apply
+    alias: "Heating - boiler night setback"
+    description: "Sets the Vitodens normal + reduced room setting to the night value inside the setback window and the day value outside it, verifies by reloading ViCare, pushes if the boiler will not take it. Source: ha-kodu24/trv-climate/boiler_setback.yaml."
+    mode: restart
+    triggers:
+      - trigger: state
+        id: edge
+        entity_id: binary_sensor.boiler_setback_active
+        not_from: [unknown, unavailable]
+        not_to: [unknown, unavailable]
+      - trigger: state
+        id: switch
+        entity_id: input_boolean.boiler_setback
+        to: "on"
+      - trigger: state
+        id: helper
+        entity_id: [input_number.boiler_room_day, input_number.boiler_room_night]
+      - trigger: homeassistant
+        id: start
+        event: start
+      # Daily check, catches a change made in the ViCare app.
+      - trigger: time
+        id: check
+        at: "12:00:00"
+    conditions:
+      # The edge also fires when the switch goes off (writes the day value once);
+      # everything else only while the setback is switched on.
+      - "{{ trigger.id == 'edge' or is_state('input_boolean.boiler_setback', 'on') }}"
+    actions:
+      - if: "{{ trigger.id == 'start' }}"
+        then:
+          - delay: "00:02:00"
+      - variables:
+          night: "{{ is_state('binary_sensor.boiler_setback_active', 'on') }}"
+          want: "{{ (states('input_number.boiler_room_night') if night else states('input_number.boiler_room_day')) | float(0) | int }}"
+          before: "{{ states('number.vitodens_100_normal_temperature') }}"
+          # The ViCare config entry (reload by entity target is deprecated, 2027.4).
+          vicare_entry: "{{ config_entry_id('number.vitodens_100_normal_temperature') }}"
+      - if: "{{ not (18 <= want <= 24) }}"
+        then:
+          - action: notify.mobile_app_eeros_iphone_17
+            data:
+              title: "Boiler setback: {{ want }} °C refused"
+              message: "The {{ 'night' if night else 'day' }} room setting helper is {{ want }}, outside 18-24 - not written. Set input_number.boiler_room_{{ 'night' if night else 'day' }}."
+              data:
+                push:
+                  thread-id: heating
+          - stop: "helper out of range"
+      - repeat:
+          sequence:
+            - action: homeassistant.reload_config_entry
+              data:
+                entry_id: "{{ vicare_entry }}"
+            - wait_template: >
+                {{ states('number.vitodens_100_normal_temperature') not in ['unknown', 'unavailable']
+                   and states('number.vitodens_100_reduced_temperature') not in ['unknown', 'unavailable'] }}
+              timeout: "00:02:00"
+            - delay: "00:00:05"
+            - if: "{{ states('number.vitodens_100_normal_temperature') | float(0) != want }}"
+              then:
+                - action: number.set_value
+                  target:
+                    entity_id: number.vitodens_100_normal_temperature
+                  data:
+                    value: "{{ want }}"
+                - delay: "00:00:15"
+            - if: "{{ states('number.vitodens_100_reduced_temperature') | float(0) != want }}"
+              then:
+                - action: number.set_value
+                  target:
+                    entity_id: number.vitodens_100_reduced_temperature
+                  data:
+                    value: "{{ want }}"
+            - delay: "00:00:30"
+          # Only true straight after a reload that found both right (a write leaves
+          # the stale old value in place until the next reload).
+          until: >
+            {{ (states('number.vitodens_100_normal_temperature') | float(0) == want
+                and states('number.vitodens_100_reduced_temperature') | float(0) == want)
+               or repeat.index >= 3 }}
+      - if: >
+          {{ states('number.vitodens_100_normal_temperature') | float(0) != want
+             or states('number.vitodens_100_reduced_temperature') | float(0) != want }}
+        then:
+          # The last iteration may have written without reloading; check once more.
+          - action: homeassistant.reload_config_entry
+            data:
+              entry_id: "{{ vicare_entry }}"
+          - wait_template: "{{ states('number.vitodens_100_normal_temperature') not in ['unknown', 'unavailable'] }}"
+            timeout: "00:02:00"
+          - delay: "00:00:05"
+      - choose:
+          - conditions: >
+              {{ states('number.vitodens_100_normal_temperature') | float(0) != want
+                 or states('number.vitodens_100_reduced_temperature') | float(0) != want }}
+            sequence:
+              - action: notify.mobile_app_eeros_iphone_17
+                data:
+                  title: "Boiler setback: room setting not taken"
+                  message: >
+                    Wanted {{ want }} °C ({{ 'night' if night else 'day' }}), the boiler reports
+                    normal {{ states('number.vitodens_100_normal_temperature') }} / reduced
+                    {{ states('number.vitodens_100_reduced_temperature') }} after 3 tries.
+                    Check ViCare (app / `ha core logs | grep -i vicare`).
+                  data:
+                    push:
+                      thread-id: heating
+          - conditions: "{{ before | float(0) != want }}"
+            sequence:
+              - action: logbook.log
+                data:
+                  name: "Boiler setback"
+                  entity_id: binary_sensor.boiler_setback_active
+                  message: "Boiler room setting {{ before }} -> {{ want }} °C ({{ 'night' if night else 'day' }})."
