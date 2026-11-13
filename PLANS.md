@@ -217,13 +217,10 @@ curve"; the setback is `trv-climate/boiler_setback.yaml`. Still open:
   falls under 20, raise the shift by 1 (`./curve-model.py`, re-calibrated, says how far).
 - **First mornings after the setback:** how long the kitchen takes to recover; end it
   at 04:00 instead of 05:00 if breakfast is cold. Bedrooms must not alert at night.
-- **Master double-door sensor** (contact): the model says the kitchen carries the
-  gallery and hallway when the bedroom doors are shut - a door sensor would show
-  whether its night duty follows the doors.
 - **Weekday away-mode, parked:** lower room targets while everyone is out (presence,
   not a fixed schedule) - maybe 2-4 % more gas; revisit after a couple of weeks of the
   night setback.
-- The gas/radiator heat gap is the lounge floor (runs all winter) plus pipe heat
+- The gas/radiator heat gap is the living-room floor (runs all winter) plus pipe heat
   (`HEATING_CURVE_TEST.md` "Unexplained") - the floor side is the next project ("Floor
   heating" under HA work). Where the radiator runs go after the manifold is still
   unknown: through the basement = lost heat, lag them; inside the flat = fine.
@@ -331,8 +328,8 @@ switched off).
 
 ### 5. Batteries
 
-Last ones not yet replaced. Unchanged from 2026-10-17 to 2026-11-05: bathroom leak
-sensor 23 % (safety device — first), stairwell TRV 29 %, master TRV 35 %.
+Bathroom leak sensor replaced (100 %, 2026-11-13). Left: stairwell TRV 28 %, master TRV
+34 % (2026-11-13) - both eTRVs, so they go with the TRVZB swap (§3) unless that slips.
 
 ### 6. Kitchen lamps as routers
 
@@ -422,7 +419,7 @@ Then add flow/return/ΔT to `./heating-check.py` and the Küte view.
 
 ## Floor heating - the next project (Eero, 2026-11-13)
 
-The floors are the other half of the heating and nothing in HA sees them: the lounge
+The floors are the other half of the heating and nothing in HA sees them: the living-room
 rings alone give roughly as much winter heat as the five radiators, on a fixed mixer
 setting (head 5 = 38 °C), with no control and no measurement. Same principle as the
 radiators (CLAUDE.md "Control principle"): measure first, then put the logic in HA.
@@ -431,13 +428,14 @@ radiators (CLAUDE.md "Control principle"): measure first, then put the logic in 
 - **Floor circuit flow/return** after the Uponor PUSH-23: two SNZB-02P strapped to the
   pipes under insulation, like §8's at the boiler (buy four at once). Gives the floor
   ΔT and, with §8, the floor's share of the boiler's heat.
-- **The lounge room temperature** - `sensor.th_living_room_temperature` exists; check
-  it is the downstairs lounge, not the upstairs living strip. Downstairs bathroom:
-  `sensor.tz2000_a476raq2_ts0201_temperature` ("TH downstairs bathroom").
-- **Which rings the mixer serves**, ring ↔ room ↔ manifold port, written down while
-  on site.
-- Then a heating-check-style view: lounge temperature against outside and the floor
-  flow, to see whether the lounge is overheated (= gas to save) or held.
+- **Room temperatures exist already:** living room `sensor.th_living_room_temperature`
+  (rings 1-2; "lounge" in the flow sheet is the same room), downstairs bathroom
+  `sensor.tz2000_a476raq2_ts0201_temperature` ("TH downstairs bathroom", ring 3),
+  upstairs bathroom `sensor.th_upstairs_bathroom_temperature_2` (ring 4).
+- **Which rings the mixer serves** - all four, or the bathrooms only (see "Floor
+  heating" in Background).
+- Then a heating-check-style view: living-room temperature against outside and the
+  floor flow, to see whether it is overheated (= gas to save) or held.
 
 **Then control** (the existing plan):
 - **Zone valves**, not eTRVs: solenoid valves on an **ESP32 relay
@@ -484,8 +482,11 @@ radiators (CLAUDE.md "Control principle"): measure first, then put the logic in 
   floor with a common stairwell entered from the middle of the street facade. Kodu tn
   is to the **east**; the building is turned only ~10-15° clockwise, so the faces are
   close to the compass points:
-  - **West end (garden, terrace; workshop below):** kitchen + dining, open into the
-    living strip along the north side. One radiator, under the west window. The
+  - **West end (garden, terrace; workshop below):** kitchen + dining, open through a
+    large opening into the **gallery** (a wide hallway section, with double doors to
+    Master) along the north side; the hallway continues past the WC, Ada and Lola to
+    the stairwell. No floor heating in this open space (on this floor only the en-suite
+    floor is heated). One radiator, under the west window. The
     kitchen is the **south-west corner**: two outer walls, south and west, and both
     face open gardens (Eero, 2026-11-11), so it is the most wind-exposed room.
   - **South long wall (outer):** Master (next to the kitchen; manifold at its inner
@@ -501,8 +502,9 @@ radiators (CLAUDE.md "Control principle"): measure first, then put the logic in 
     flat, and the common stairwell at its east end.
   - **Middle:** bathroom + WC on one shared floor-heating loop (the en-suite), next to
     the manifold.
-  - **Downstairs:** a lounge and a bathroom, floor-heated - see "Floor heating" below.
-    The boiler is in the basement under Master, ~3 m from the manifold.
+  - **Downstairs:** the **living room** and a bathroom, both floor-heated, and the
+    boiler, under Master, ~3 m from the manifold. Not connected to the kitchen. See
+    "Floor heating" below.
   - **Above:** heated flats over all of it. **Below:** the workshop under the kitchen.
     Heated neighbours are therefore above and along the north (kitchen/hallway) side;
     the outer walls are south, west and east only.
@@ -530,11 +532,11 @@ radiators (CLAUDE.md "Control principle"): measure first, then put the logic in 
   makes magnetite sludge - so the leak feeds the debris problem too (§1 "Debris"),
   and finding it is part of keeping the system clean.
 
-**Floor heating** (Eero's "Floor flow Kodu 24" sheet, 2026-11-13): four rings - two
-over the **downstairs lounge** (2 × 13.7 m², ~91 m of 20 mm pipe each, 150 mm spacing;
-they **run all winter**), the downstairs bathroom (6.9 m², ~46 m) and the upstairs
-bathroom (2.9 m², ~19 m by geometry; the flush measurement says ~35). The downstairs
-pipes are **old plastic** - most likely without an oxygen barrier, so oxygen diffuses
+**Floor heating** (Eero's "Floor flow Kodu 24" sheet, 2026-11-13), four rings, numbered
+from the left at the manifold: **1 and 2 the living room** ("lounge" in the sheet;
+2 × 13.7 m², ~91 m of 20 mm pipe each, 150 mm spacing; they **run all winter**), **3 the
+downstairs bathroom** (6.9 m², ~46 m), **4 the upstairs bathroom** (2.9 m², ~19 m by
+geometry; the flush measurement says ~35). The floor pipes downstairs are **old plastic** - most likely without an oxygen barrier, so oxygen diffuses
 into the system water all the time and rusts the steel radiators: another source of the
 magnetite in the valve inserts (§1 "Debris"), and one more reason for the magnetic
 dirt separator. The sheet's flushed volumes are rough (the radiator rows include the

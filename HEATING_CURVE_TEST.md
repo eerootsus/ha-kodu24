@@ -139,14 +139,14 @@ cannot pin down: 2.5 K (heating from 19 °C, as the gas says) is the central gue
   −10 °C and pinned at ~82 below that, where 1.2/0 at the then room setting 25 gives
   ~67. Fits a different slope or a max-temperature limit; the recorder only holds the
   curve settings from 2026-05-31 on.
-- **The gas shows more heat than the radiators should give - explained: the lounge
+- **The gas shows more heat than the radiators should give - explained: the living-room
   floor, plus pipe heat.** 16:00-04:00 on 11-12/13: mean burner modulation 9.2 %, ViCare
   gas 2.4 m³ heating + 0.7 DHW = 2.8 kW → modulation × ~30 kW, i.e. ViCare's gas is
   computed from modulation × rated input (32 kW Vitodens 111-W, B1LF), so beyond its
   ~10 % annual over-read it is not inventing heat. After that and boiler efficiency
   ~1.85 kW went into the house; the radiators account for ~0.8 kW (valve duty ×
   catalogue output). The rest is the **floor heating**, which is more than the bathroom:
-  two **lounge rings (~27 m², downstairs) run all winter** (Eero, 2026-11-13), plus the
+  two **living-room rings (~27 m²) run all winter** (Eero, 2026-11-13), plus the
   downstairs and upstairs bathrooms - ~1 kW at a plausible ~25-30 W/m² - and the
   uninsulated aluplex distribution pipes (16 mm bare pipe at ~27 K over room air: ~13-14
   W/m). The summer floor baseline (~0.45 kW) is the bathrooms only. The boiler sits in
