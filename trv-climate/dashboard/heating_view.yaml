@@ -157,46 +157,35 @@ sections:
 - type: grid
   cards:
   - type: heading
-    heading: Gaasikatel
-    icon: mdi:water-boiler
-  - type: tile
-    entity: sensor.vicare_outside_temperature
-    name: Õues (katla andur)
-    grid_options:
-      columns: 6
-  - type: tile
-    entity: weather.forecast_kodu
-    name: Õues (met.no)
-    state_content:
-    - temperature
-    - state
-    grid_options:
-      columns: 6
-  - type: tile
-    entity: sensor.vicare_supply_temperature
-    name: Pealevool
-    grid_options:
-      columns: 6
-  - type: tile
-    entity: binary_sensor.vicare_burner_active
-    name: Põleti
-    grid_options:
-      columns: 6
-  - type: tile
-    entity: sensor.vicare_heating_gas_consumption_current_day
-    name: Gaas täna
-    grid_options:
-      columns: 6
-  - type: tile
-    entity: sensor.vicare_heating_gas_consumption_last_seven_days
-    name: Gaas 7 päeva
-    grid_options:
-      columns: 6
+    heading: Juhtimine
+    icon: mdi:tune-variant
   - type: tile
     entity: input_boolean.room_thermostat
     name: HA termostaat
     grid_options:
       columns: 12
+  # Night setback (trv-climate/boiler_setback.yaml): tap toggles the switch; the icon
+  # lights while the setback window is running; the tile beside it is what the boiler
+  # actually holds.
+  - type: custom:mushroom-template-card
+    entity: input_boolean.boiler_setback
+    primary: Öine langetus
+    secondary: >-
+      {% if is_state('input_boolean.boiler_setback', 'on') %}{{ states('input_datetime.boiler_setback_start')[:5] }}–{{ states('input_datetime.boiler_setback_end')[:5] }}, {{ states('input_number.boiler_room_night') | int }} / {{ states('input_number.boiler_room_day') | int }} °C{{ ' · käib' if is_state('binary_sensor.boiler_setback_active', 'on') else '' }}{% else %}väljas{% endif %}
+    icon: mdi:weather-night
+    icon_color: >-
+      {{ 'indigo' if is_state('binary_sensor.boiler_setback_active', 'on') else ('grey' if is_state('input_boolean.boiler_setback', 'on') else 'disabled') }}
+    tap_action:
+      action: toggle
+    hold_action:
+      action: more-info
+    grid_options:
+      columns: 6
+  - type: tile
+    entity: number.vitodens_100_normal_temperature
+    name: Katla toa seade
+    grid_options:
+      columns: 6
   - type: tile
     entity: number.vitodens_100_heating_curve_slope
     name: Küttekõver
@@ -205,16 +194,6 @@ sections:
   - type: tile
     entity: number.vitodens_100_heating_curve_shift
     name: Kõvera nihe
-    grid_options:
-      columns: 6
-  - type: tile
-    entity: climate.vicare_heating
-    name: Režiim
-    grid_options:
-      columns: 6
-  - type: tile
-    entity: water_heater.vicare_water
-    name: Tarbevesi
     grid_options:
       columns: 6
 - type: grid
@@ -261,6 +240,94 @@ sections:
       \ nädalate kaupa: `./heating-check.py`.\n**Siht** = HA toa siht, kui HA termostaat on sees (TRV seatakse siis 28 = avatud / 5 = kinni); muidu TRV enda siht."
     grid_options:
       columns: full
+# Beside Diagnostika: the heating pressure, the slow-leak watch (heating-pressure/,
+# PLANS.md Background "Heating system pressure").
+- type: grid
+  cards:
+  - type: heading
+    heading: Rõhk
+    icon: mdi:gauge
+  # The slow-leak watch: at a steady supply temperature the daily mean should hold
+  # ~1.9-2.0 bar; a step down by mid-December means the leak is still there (PLANS.md).
+  - type: statistics-graph
+    title: Päeva keskmine, 30 p
+    chart_type: line
+    period: day
+    days_to_show: 30
+    stat_types:
+    - mean
+    entities:
+    - entity: sensor.vitodens_100_supply_pressure
+      name: Rõhk
+    min_y_axis: 1.5
+    max_y_axis: 2.5
+    grid_options:
+      columns: 12
+      rows: 7
+- type: grid
+  column_span: 2
+  cards:
+  - type: heading
+    heading: Gaasikatel
+    icon: mdi:water-boiler
+  - type: tile
+    entity: sensor.vicare_outside_temperature
+    name: Õues (katla andur)
+    grid_options:
+      columns: 6
+  - type: tile
+    entity: weather.forecast_kodu
+    name: Õues (met.no)
+    state_content:
+    - temperature
+    - state
+    grid_options:
+      columns: 6
+  - type: tile
+    entity: sensor.vicare_supply_temperature
+    name: Pealevool
+    grid_options:
+      columns: 6
+  - type: tile
+    entity: binary_sensor.vicare_burner_active
+    name: Põleti
+    grid_options:
+      columns: 6
+  - type: tile
+    entity: sensor.vicare_heating_gas_consumption_current_day
+    name: Gaas täna
+    grid_options:
+      columns: 6
+  - type: tile
+    entity: sensor.vicare_heating_gas_consumption_last_seven_days
+    name: Gaas 7 päeva
+    grid_options:
+      columns: 6
+  - type: tile
+    entity: climate.vicare_heating
+    name: Režiim
+    grid_options:
+      columns: 6
+  - type: tile
+    entity: water_heater.vicare_water
+    name: Tarbevesi
+    grid_options:
+      columns: 6
+  # Fills the boiler section beside the gas graph: the curve at work - supply against
+  # outside, and the room setting the night setback lowers (boiler_setback.yaml).
+  - type: history-graph
+    title: Pealevool, õues ja katla toa seade, 48 h
+    hours_to_show: 48
+    entities:
+    - entity: sensor.vicare_supply_temperature
+      name: Pealevool
+    - entity: sensor.vicare_outside_temperature
+      name: Õues
+    - entity: number.vitodens_100_normal_temperature
+      name: Katla toa seade
+    grid_options:
+      columns: full
+      rows: 4
 - type: grid
   cards:
   - type: heading
@@ -300,17 +367,13 @@ sections:
     - entity: sensor.ikea_of_sweden_vindstyrka_temperature
       name: Töökoda
     grid_options:
-      columns: full
+      columns: 12
       rows: 6
-- type: grid
-  column_span: 3
-  cards:
-  - type: heading
-    heading: Mida siht maksab
-    icon: mdi:valve
   - type: statistics-graph
     title: Klapp avatud, % tunnist (7 p)
     chart_type: line
+    min_y_axis: 0
+    max_y_axis: 100
     period: hour
     days_to_show: 7
     stat_types:
@@ -327,11 +390,13 @@ sections:
     - entity: sensor.valve_open_stairwell
       name: Trepihall
     grid_options:
-      columns: 18
+      columns: 12
       rows: 6
   - type: statistics-graph
     title: Tuba − siht, K (7 p)
     chart_type: line
+    min_y_axis: -1
+    max_y_axis: 1
     period: hour
     days_to_show: 7
     stat_types:
@@ -348,7 +413,7 @@ sections:
     - entity: sensor.room_error_stairwell
       name: Trepihall
     grid_options:
-      columns: 18
+      columns: 12
       rows: 6
   - type: markdown
     content: 'Klapp ~100 % ja tuba sihist all = katlast ei tule piisavalt (kõver). Muidu näitab
