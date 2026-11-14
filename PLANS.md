@@ -439,6 +439,11 @@ radiators (CLAUDE.md "Control principle"): measure first, then put the logic in 
   (rings 1-2; "lounge" in the flow sheet is the same room), downstairs bathroom
   `sensor.tz2000_a476raq2_ts0201_temperature` ("TH downstairs bathroom", ring 3),
   upstairs bathroom `sensor.th_upstairs_bathroom_temperature_2` (ring 4).
+  **All three are Tuya TS0201 (`_TZ2000_a476raq2`, the ones with a screen) and report
+  far too rarely to control a floor on:** on 2026-11-14 the living room had changed once
+  in 33 h and the downstairs bathroom not at all in a day, though all three were alive
+  on the mesh. Replace them with SNZB-02P like the kitchen and stairwell door sensors,
+  bought together with the pipe sensors above (seven in all), before any floor logic.
 - Then a heating-check-style view: living-room temperature against outside and the
   floor flow, to see whether it is overheated (= gas to save) or held.
 
