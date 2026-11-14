@@ -217,6 +217,12 @@ curve"; the setback is `trv-climate/boiler_setback.yaml`. Still open:
   falls under 20, raise the shift by 1 (`./curve-model.py`, re-calibrated, says how far).
 - **First mornings after the setback:** how long the kitchen takes to recover; end it
   at 04:00 instead of 05:00 if breakfast is cold. Bedrooms must not alert at night.
+  First night (13/14, ~3.5 °C out): writes 23:01 / 05:01 took, mean supply ~46 vs
+  47.7 the night before (the ~2.3 K the curve predicts); kitchen sagged to 20.7-20.9
+  and was back at 21.0 by 09:00, bedrooms fine. The floors cannot see it as long as
+  the boiler stays above the Uponor head's ~38 °C: living room 21.3 → 21.4, bathrooms
+  unchanged (but those sensors report coarsely). Kept as is (Eero, 2026-11-14) -
+  adjust only if the people living there report cold floors or mornings.
 - **Weekday away-mode, parked:** lower room targets while everyone is out (presence,
   not a fixed schedule) - maybe 2-4 % more gas; revisit after a couple of weeks of the
   night setback.
