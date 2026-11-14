@@ -432,9 +432,11 @@ setting (head 5 = 38 °C), with no control and no measurement. Same principle as
 radiators (CLAUDE.md "Control principle"): measure first, then put the logic in HA.
 
 **Measure first:**
-- **Floor circuit flow/return** after the Uponor PUSH-23: two SNZB-02P strapped to the
-  pipes under insulation, like §8's at the boiler (buy four at once). Gives the floor
-  ΔT and, with §8, the floor's share of the boiler's heat.
+- **Floor circuit flow/return** after the Uponor PUSH-23: external probes on the pipes
+  under insulation, read by an **ESP32 (ESPHome)** - Eero has the probes already
+  (2026-11-14; check whether they are I2C or 1-wire DS18B20 before wiring). Wired probes
+  report as often as asked, no batteries. The same board can later carry the zone-valve
+  relays below. Gives the floor ΔT and, with §8, the floor's share of the boiler's heat.
 - **Room temperatures exist already:** living room `sensor.th_living_room_temperature`
   (rings 1-2; "lounge" in the flow sheet is the same room), downstairs bathroom
   `sensor.tz2000_a476raq2_ts0201_temperature` ("TH downstairs bathroom", ring 3),
@@ -443,7 +445,7 @@ radiators (CLAUDE.md "Control principle"): measure first, then put the logic in 
   far too rarely to control a floor on:** on 2026-11-14 the living room had changed once
   in 33 h and the downstairs bathroom not at all in a day, though all three were alive
   on the mesh. Replace them with SNZB-02P like the kitchen and stairwell door sensors,
-  bought together with the pipe sensors above (seven in all), before any floor logic.
+  before any floor logic (three to buy).
 - Then a heating-check-style view: living-room temperature against outside and the
   floor flow, to see whether it is overheated (= gas to save) or held.
 
