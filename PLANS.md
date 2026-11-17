@@ -166,10 +166,12 @@ short kitchen is the curve and the wind.
   (it was already the least-worked room, 4-37 %) and a warmer room, so watch for night
   overshoot, and higher humidity in a bedroom two people sleep in: `wall_rh_master`
   / `_72h`. If it climbs, set the inlet part-open rather than fully open.
-- **Ada's inlet is on A (automatic)** - left as is (Eero, 2026-11-17). Her room shows
-  no daytime drying or cooling and holds target evenly, so it is the reference: if Lola's
-  or Master's humidity climbs with theirs shut, A is the setting to try first (Lola's
-  needs its damper reseated for that to mean anything).
+- **Ada's inlet was on A (automatic); plugged 2026-11-17 ~22:45** (Eero), so all three
+  bedrooms now have no inlet air - "we will see how this behaves". Before, her room
+  showed no daytime drying or cooling on A. Watch all three bedrooms' humidity
+  (`wall_rh_<room>_72h`, push at 75 %) and night temperatures (less heat needed, so
+  less valve duty and possible overshoot). If a room gets stuffy or damp, A is the
+  setting to go back to first (Lola's needs its damper reseated for that to mean anything).
 
 ### 4. Zigbee routers — ZBMINIR2 (on the shelf since 2026-08-23)
 
