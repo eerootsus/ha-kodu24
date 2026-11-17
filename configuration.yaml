@@ -36,8 +36,23 @@ zha:
           path: /config/zigbee_ota
 
 
+# Excluded (2026-11-17): diagnostic noise that made up most of a 1.7 GB database,
+# carried into every nightly backup and its two off-site copies. Current and voltage
+# duplicate the plugs' power sensors (kept); RSSI/LQI do not describe a device's link
+# anyway (CLAUDE.md "Zigbee mesh topology"); the ping average was never graphed.
+# Excluded entities also lose long-term statistics - add one back here if it is ever
+# wanted in a graph. Nothing in this repo or the dashboards reads them.
 recorder:
   purge_keep_days: 180
+  exclude:
+    entity_globs:
+      - sensor.*_rssi
+      - sensor.*_lqi
+      - sensor.*_rms_current
+      - sensor.*_rms_voltage
+      - sensor.8_8_8_8_round_trip_time_*
+    entities:
+      - sensor.stairwell_lamp_voltage
 
 
 homeassistant:
