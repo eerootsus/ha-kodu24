@@ -14,8 +14,9 @@
 # flag set - the one write that cleared it by hand (DANFOSS.md). If the flag is still
 # set 5 minutes later, it pushes instead: then something needs a human.
 #
-# This writes the clock only - no setpoint, trim or valve setting - so it stays
-# outside the "advise, don't automate" rule for heating.
+# This writes the clock only - no setpoint, trim or valve setting - so it never
+# competes with the room thermostat (CLAUDE.md "Control principle": one decision
+# per quantity, in one file).
 #
 # Install: declared as `climate_clock_sync:` in configuration.yaml.
 

@@ -63,39 +63,45 @@ above setpoint — exactly the Stairwell behavior.
 This *was* the summer mechanism, as `update_heating_season`: disable external
 sensors above 18 °C outdoor, resume below 16 °C, hysteresis in between, driven by
 `sensor.vicare_outside_temperature`. **That function no longer exists.** The feed is
-now off permanently — `0x4015 = -8000` was written once, by hand, on all five
-eTRVs (four since Ada's became a TRVZB, 2026-10-26) — originally so Better
-Thermostat could own the setpoint; BT is gone and the feed stayed off. Summer-off
+now off permanently — `0x4015 = -8000` was written once, by hand, on every eTRV
+(three remain: kitchen, Master, stairwell; Ada and Lola got TRVZBs 2026-10-26 /
+11-12) — originally for Better Thermostat (`TRV_REGULATION.md` "History: Better
+Thermostat"); the feed stayed off. Summer-off
 is now physical: the radiator master valves are closed (`PLANS.md` §1).
 
-Caveat: with the external sensor off, a valve will still open if the room drops
-below its setpoint (e.g. a cool summer morning against a winter setpoint). In
-practice the user's summer "off" (5 °C) setpoints keep rooms well above setpoint,
-so valves stay closed.
+Caveat: with the external sensor off, a valve will still open if its own head reads
+below its setpoint. In summer the room thermostat's shut setpoint (5 °C) keeps it
+well above, so valves stay closed - bar the 1 % hold of §2.6.
 
 ### How this automation drives the eTRVs
 
-**It does not, and neither does anything else.** As of the Better Thermostat
-cutover `room_climate.py` (then `danfoss.py`) writes nothing to the TRVs — it publishes
-`sensor.climate_<area>_temperature` / `_humidity` and stops there. BT was then
-trialled and removed (`TRV_REGULATION.md`), so each eTRV now runs its own PID on
-its **internal** sensor, with the external feed still disabled from the BT prep.
-Setpoints are set by hand.
+**By setpoint only, from HA's room thermostat** (`trv-climate/room_thermostat.yaml`,
+since 2026-11-10): every 5 min it writes **32 (open)** when the room's door sensor is
+under target − 0.2 and **5 (shut)** at or above target. The
+eTRV's PID still runs on its **internal** sensor, external feed disabled, so "open" is
+just a setpoint far above anything its head reads. If a room's sensor goes silent, or
+the thermostat is switched off, the eTRV gets the room target and regulates itself
+with its trim (`0x404B`, `trv-climate/trims.yaml`). `room_climate.py` (then
+`danfoss.py`) writes nothing to the TRVs - it publishes
+`sensor.climate_<area>_temperature` / `_humidity`, the thermostat's input. The other
+writers: `clock_sync.yaml` (clock), `trims.yaml` (trim), `balancing_test.yaml`
+(setpoints, only while it runs). The three eTRVs are to be replaced by TRVZBs, kitchen
+first (decided 2026-11-17).
 
 What that removed, and what replaced it:
 
 | Was | Did | Now |
 |---|---|---|
-| `update_external_temperatures()` | pushed weighted room temp to `0x4015` every 5 min | gone — `0x4015 = -8000` written by hand on all five; Lola was fed again 2026-10-18 → 19 by `trv-climate/room_feed.yaml` (automatic offset mode); the valve barely responded and the feed is **parked** - `0x4015` back to −8000 on all five |
-| `update_heating_season()` | toggled the feed on outdoor temp for summer | gone — BT's outdoor threshold |
+| `update_external_temperatures()` | pushed weighted room temp to `0x4015` every 5 min | gone — `0x4015 = -8000` written by hand on every eTRV; Lola was fed again 2026-10-18 → 19 by `trv-climate/room_feed.yaml` (automatic offset mode, deleted 2026-11-12, in git history); the valve barely responded - `0x4015` back to −8000 |
+| `update_heating_season()` | toggled the feed on outdoor temp for summer | gone — summer-off is the radiator master valves (`PLANS.md` §1) |
 | `set_time()` | weekly Time cluster `0x000A` sync | replaced 2026-10-25 by `trv-climate/clock_sync.yaml` (writes the time whenever a TRV flags it lost). Before that: affects only valve-exercise/adaptation timing; sync by hand via ZHA if wanted **Taking the head off clears the clock**: the kitchen eTRV showed `Invalid_clock_information` (SW error bit 10) after a remount on 2026-10-25. Fixed with one write - `zha.set_zigbee_cluster_attribute`, endpoint 1, cluster 10 (`in`), attribute 0, value = seconds since 2000-01-01 UTC (`$(date +%s) - 946684800`); the error cleared within a minute. Do this after every remount (e.g. the presetting visit, `PLANS.md` §1). **A remount also resets the regulation setpoint offset (`0x404B`, the trim) to 0** - HA keeps showing the old value; see `TRV_REGULATION.md` "Trims in force" |
-| `radiator_covered()` | wrote `0x4016` from a device label | gone — the label is inert; all five sit at `FALSE` |
-| `disable_load_balancing()` | wrote `0x4032 = FALSE` | gone. The claim here that all five were already FALSE was **wrong**: on 2026-10-18 Lola and Kitchen read `0x4032 = 1` (HA `switch.trv_danfoss_<room>_use_load_balancing` on). Switched off then; all five now FALSE, verified on the devices. Inert while `0x4040 = -8000`, but Danfoss says single-eTRV rooms must not use it |
+| `radiator_covered()` | wrote `0x4016` from a device label | gone — the label is inert; every eTRV sits at `FALSE` |
+| `disable_load_balancing()` | wrote `0x4032 = FALSE` | gone. The claim here that all five were already FALSE was **wrong**: on 2026-10-18 Lola and Kitchen read `0x4032 = 1` (HA `switch.trv_danfoss_<room>_use_load_balancing` on). Switched off then; all FALSE, verified on the devices. Inert while `0x4040 = -8000`, but Danfoss says single-eTRV rooms must not use it |
 | `queue_zigbee_write()` | retried sleepy-device writes | gone — see the gotcha below |
 
 The sections below are the **device** reference — how the eTRV behaves, and which
 attribute does what — and remain accurate regardless of who is driving it. They are
-also what you need if the control logic is ever revived from git history.
+what you need if an eTRV misbehaves under the room thermostat.
 
 ### Operational gotchas we hit
 
@@ -244,14 +250,15 @@ from external but locally closed. Disabled in Covered Radiator mode.
 ## What reads this document
 
 `room_climate.py` (formerly `danfoss.py`) no longer maps onto any of it — see "How this automation drives the
-eTRVs" above. The attribute reference is here for three consumers:
+eTRVs" above. The attribute reference is here for:
 
-- **Whatever replaces room-based control**, if anything does. Note `0x404B`
-  (Regulation SetPoint Offset) is capped at ±2.5 K — too small for Better
-  Thermostat to calibrate with, which is why it drove the setpoint instead, but
-  possibly enough as a static per-room trim now that BT is gone.
+- **The fallback trims** (`trv-climate/trims.yaml`, `trim_check.yaml`): `0x404B`
+  (Regulation SetPoint Offset), capped at ±2.5 K, and reset to 0 by a remount.
+- **The room thermostat** only through the setpoint, but §2.6 (the residual 1 %
+  hold) is why it shuts at 5 and why summer-off stays physical.
 - **`trv_debug.py` / `trv_unstick.py`**, which address `0x4016`, `0x4032` and friends
   raw. Note the manufacturer-code rule in the gotchas — it is the usual reason a
   read or write raises instead of returning.
-- **`HEATING_CURVE_TEST.md`**, whose whole pass/fail design turns on §2.6: the
-  residual ~1 % demand means `pi_heating_demand` cannot be read as "needs heat".
+- **Reading valve demand**: per §2.6 the residual ~1 % means `pi_heating_demand`
+  cannot be read as "needs heat" - judge a room by its door sensor and the valve HA
+  set (`./heating-check.py --duty`).

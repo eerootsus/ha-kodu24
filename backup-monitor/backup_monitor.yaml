@@ -1,18 +1,21 @@
 # Backup monitor — alerts for the backup jobs protecting the server.
 #
-# Seven jobs. Three run on the VM (alpine-docker) and are off-site: media, borg,
-# flash. Two run on the Unraid host, both defined in the `unraid` repo:
+# Seven jobs, all defined in the `unraid` repo, all reporting through the same webhook.
+#
+# On the VM (alpine-docker):
+#   `media`, `borg`, `flash` — the off-site backups.
+#   `mail`   — outbound relay health, daily at 02:00 via mail-relay-check
+#              (added 2026-10-04).
+#   `immich` — phone photo uploads per person, daily via immich-upload-check
+#              (2026-11-05): fail when someone's count has not grown in 14 days.
+#   The last two are not backups; they ride this machinery because a dead-man
+#   switch is exactly what a health check wants.
+#
+# On the Unraid host:
 #   `pool`  — ZFS pool -> parity array, nightly (added 2026-09-05). Host-side
 #             because the consistent snapshot needs zfs, and because the VM's own
 #             vdisk is part of what it copies, so a VM-side cron would be circular.
 #   `zpool` — pool health, daily at 06:00 via zpool-check.sh (added 2026-09-12).
-#   `mail` — outbound relay health, daily at 02:00 via mail-relay-check on the
-#   VM (added 2026-10-04).
-#             Not a backup; it rides this machinery because a dead-man switch is
-#             exactly what a health check wants.
-#   `immich` — phone photo uploads per person, daily via immich-upload-check on
-#   the VM (2026-11-05): fail when someone's count has not grown in 14 days.
-# All seven report through the same webhook.
 #
 # Plus HA's own backups (2026-11-05), which are not a webhook job: automatic
 # backups go to the Yellow, Nabu Casa and the Hetzner Storage Box (sub-account
@@ -47,7 +50,8 @@
 #             every night — and false alarms are how you learn to swipe away
 #             the real one.
 #
-# Install: copy to config/backup-monitor/ and add under homeassistant: packages:
+# Install: deployed by ./deploy.sh (with ha_backup_copies.py into pyscript/) and
+# declared in configuration.yaml as
 #   backup_monitor: !include backup-monitor/backup_monitor.yaml
 
 input_text:

@@ -58,7 +58,17 @@ eink-serif:
       disabled-text-color: "#666666"
       divider-color: "#CCCCCC"
 
-  # Card-mod theme overrides (must be at theme root, not under modes)
+  # Card-mod theme overrides (must be at theme root, not under modes). What works and
+  # what fails SILENTLY (no error, just no effect) - found building this theme:
+  #   works:  `card-mod-card` (plain CSS) at root - applies to every card, selectors
+  #           just match where relevant
+  #   works:  `card-mod-row-yaml` with `hui-generic-entity-row: $:` - pierces the
+  #           row's shadow DOM
+  #   works:  `entities-card-row-gap: "0"` - cascades through the shadow DOM
+  #   FAILS:  `card-mod-card-yaml` with per-card-type `$:` selectors - the card IS
+  #           the element, not a child of it
+  #   FAILS:  card-mod variables nested under `modes: light:` - they must sit at root
+  # A theme change needs only Developer Tools -> YAML -> Themes, not a restart.
   card-mod-theme: eink-serif
   card-mod-card: |
     /* Weather card */

@@ -222,9 +222,8 @@ No build step required. Dependencies in `requirements.txt` are Home Assistant's 
 **room_climate.py** (named `danfoss.py` until 2026-11-05) - Main PyScript module containing:
 
 room_climate.py is **sensor-aggregation only** — it performs **no writes to the TRVs**
-and does not control heating. It was trimmed that way to make room for Better
-Thermostat; **BT was then trialled and removed** (2026-09-13, it offered nothing
-meaningful — see `TRV_REGULATION.md`). Its sensors are the **input of the room
+and does not control heating (trimmed that way for Better Thermostat, since removed -
+`TRV_REGULATION.md` "History: Better Thermostat"). Its sensors are the **input of the room
 thermostat** (`room_thermostat.yaml`, since 2026-11-10) and the dashboard. The TRVs' own external feed stays disabled (eTRVs) / off (TRVZB).
 
 - **Weighted Calculation**: `calculate_weighted_climate()` computes a per-area
@@ -237,7 +236,7 @@ thermostat** (`room_thermostat.yaml`, since 2026-11-10) and the dashboard. The T
 
 That's the whole module. The previous Zigbee control logic — time sync,
 radiator-covered, load-balancing, external-sensor feed/disable, and the
-retry queue — was removed so the script can never interfere with BT. (See git
+retry queue — was removed so the script can never interfere with HA's control. (See git
 history and `DANFOSS.md` if that logic is ever needed again.)
 
 **trv-climate/climate.yaml** - Template sensor definitions wrapping pyscript-created sensors for proper HA UI management.
@@ -248,13 +247,13 @@ history and `DANFOSS.md` if that logic is ever needed again.)
 
 **trv-climate/condensation.yaml** - Mould/condensation risk at the outer walls (2026-11-05), from each room's Alt sensor and its door reference: `wall_rh_<room>` (worse of the Alt's own RH and the room's vapour at the wall temperature; a stuck Alt RH is ignored), `wall_dew_margin_<room>`, and a 72 h mean. Pushes at a 72 h mean >= 75 % or a dew margin < 2 K for an hour; thresholds and this year's history are in its header. Advise only. The risk season here is summer into October, not winter.
 
-**trv-climate/balancing_test.yaml** - `script.balancing_test`: the repeatable before/after measurement for radiator balancing (all valves shut, then all fully open, each TRV's reading sampled every 5 min, targets restored; a watchdog restores them if it is interrupted). Results in `sensor.balancing_test_result` (this run + the previous one). The one place that writes TRV setpoints, and only while it runs.
+**trv-climate/balancing_test.yaml** - `script.balancing_test`: the repeatable before/after measurement for radiator balancing (all valves shut, then all fully open, each TRV's reading sampled every 5 min, targets restored; a watchdog restores them if it is interrupted). Results in `sensor.balancing_test_result` (this run + the previous one). Writes TRV setpoints only while it runs; switch the room thermostat off first, or the two fight.
 
 **trv-climate/clock_sync.yaml** - Writes the time to any eTRV reporting `Invalid_clock_information` (on the flag, and nightly at 03:30), pushes only if that does not clear it. The stairwell went 2026-10-01..25 without a clock unnoticed after `set_time()` was dropped. Clock only, never a heating setting.
 
 **trv-climate/trims.yaml** (2026-11-10; was `trim_adjust.yaml`) - The trims as helpers, `input_number.trv_trim_<room>`, in "+ heats more" units for every room (a TRVZB's offset is minus its trim): **set a trim there, never on the device** - `trv_trim_apply` writes it, reads it back and retries. Trims only matter in fallback or with the room thermostat off. The automatic trim adjuster that stepped them ±0.5 was removed 2026-11-12 (superseded by the room thermostat; in git history).
 
-**trv-climate/room_thermostat.yaml** (2026-11-10, **on**) - HA is the thermostat: every 5 min each TRV's setpoint goes to **32 (open**; 28 until 2026-11-17, when Lola's warm head reached 28 and idled her TRVZB while HA held it open) when its room (door sensor) is under `input_number.room_target_<room>` − 0.2, to **5 (shut)** at or above target (was target + 0.1 until 2026-11-11), unchanged in between. The TRV's head, trim and firmware logic no longer decide anything. A room whose sensor is silent for 20 min falls back to its TRV (setpoint = target), with a push. **Room targets are the helpers now - a TRV's dial is overwritten within 5 min.** Switching `input_boolean.room_thermostat` off writes every TRV back to its room target. While on, the trims do nothing and the heating alerts judge against the room targets and read the cause from the valve HA set; switch it off before the balancing test. Its readouts (2026-11-12): `sensor.valve_open_<room>` (100 open / 0 shut; the hourly mean in long-term statistics is the valve's duty) and `sensor.room_error_<room>` (room − target), graphed on the Küte view in place of the old settled-offset graph.
+**trv-climate/room_thermostat.yaml** (2026-11-10, **on**) - HA is the thermostat: every 5 min each TRV's setpoint goes to **32 (open)** (why 32: see its header) when its room (door sensor) is under `input_number.room_target_<room>` − 0.2, to **5 (shut)** at or above target (was target + 0.1 until 2026-11-11), unchanged in between. The TRV's head, trim and firmware logic no longer decide anything. A room whose sensor is silent for 20 min falls back to its TRV (setpoint = target), with a push. **Room targets are the helpers now - a TRV's dial is overwritten within 5 min.** Switching `input_boolean.room_thermostat` off writes every TRV back to its room target. While on, the trims do nothing and the heating alerts judge against the room targets and read the cause from the valve HA set; switch it off before the balancing test. Its readouts (2026-11-12): `sensor.valve_open_<room>` (100 open / 0 shut; the hourly mean in long-term statistics is the valve's duty) and `sensor.room_error_<room>` (room − target), graphed on the Küte view in place of the old settled-offset graph.
 
 **trv-climate/boiler_setback.yaml** (2026-11-13, **on**) - Night setback on the boiler: inside `input_datetime.boiler_setback_start` → `_end` (23:00 → 05:00) HA writes the Vitodens normal *and* reduced room setting to `input_number.boiler_room_night` (21), otherwise `_day` (22), which lowers the whole curve; the bedrooms keep their margin, the kitchen sags (its below-target alert is muted during the setback + 4 h). One switch, `input_boolean.boiler_setback`; pushes only if the boiler will not take the value. **ViCare write quirks:** the vicare `number` entities stop refreshing after an HA restart and `update_entity` does not help - only `homeassistant.reload_config_entry` re-reads them, so verify a write by reloading; and never write curve slope and shift back to back (ViCare sets both in one command and HA fills the other from its stale cache - on 2026-11-13 that undid a shift).
 
@@ -262,10 +261,7 @@ history and `DANFOSS.md` if that logic is ever needed again.)
 
 **Heating curve test - removed 2026-11-12, never run.** It judged rooms against the TRV setpoint, which the room thermostat now sets to 32 / 5, so it would have raised the curve to its caps; the curve is set by hand from valve duty instead (`HEATING_CURVE_TEST.md` "Curve in force"). Restore: `git checkout ce12cda -- curve-test/`, re-add `curve_test:` to `configuration.yaml` and the `deploy.sh` manifest, then fix its targets to `input_number.room_target_<room>`.
 
-**trv-climate/room_feed.yaml** - **Deleted 2026-11-12** (in git history). Was parked, not loaded (2026-10-19). Fed Lola's room
-temperature to her TRV (Danfoss automatic offset mode) for two nights; the valve
-barely responded, so she is back on a fixed trim. Kept as the record and for reuse
-(covered mode would need a 10-min cadence). Every TRV now runs on its own sensor + trim.
+**trv-climate/room_feed.yaml** - Deleted 2026-11-12 (in git history).
 
 ## Control principle: the logic lives in HA, devices are plain
 
@@ -277,18 +273,20 @@ ends, because nobody can tell which layer is at fault. So all the logic lives in
   value HA feeds it. Its own "smart" features stay off: eTRV window detection and load
   balancing, TRVZB adaptive mode and open-window (all off as of 2026-11-10). The
   eTRVs' anticipatory control loop cannot be switched off - the reason for replacing
-  them with TRVZBs (`PLANS.md` §3 "Direction").
+  them with TRVZBs (decided 2026-11-17 after Lola passed: `TRV_REGULATION.md` Lola row,
+  `PLANS.md` §3).
 - **The boiler is plain too**: it follows its curve, and HA sets the curve
   (`number.vitodens_100_heating_curve_shift` / `_slope`).
 - **HA's job is that whatever a room is set to is what the room gets** - including
-  on windy days, by adjusting the TRV feed/trims and the curve. Each piece of logic is
+  on windy days, by opening the valves from the room sensor and setting the curve. Each piece of logic is
   in this repo, slow, bounded, logged, pushes on every change, and has one switch.
-- **Order of knobs (Eero, 2026-11-10): TRV trims first, the boiler only when a trim
-  cannot help.** A room short with its valve throttled is a trim (or, on a TRVZB, its
-  feed/offset) matter. Only a room short with its valve fully open (≥ 80 %, TRVZB
-  calling) means the boiler is not delivering: then the shift, and the slope only for
-  shortfalls that grow with cold. Curve changes are logged in `HEATING_CURVE_TEST.md`
-  "Curve in force".
+- **Order of knobs (Eero, 2026-11-10, restated for the room thermostat):** the room
+  thermostat already opens any valve whose room is short, so a room short with its
+  valve held open (`sensor.valve_open_<room>` ~100 %, and the TRV actually heating -
+  check its `hvac_action`) means the boiler is not delivering: then the shift, and the
+  slope only for shortfalls that grow with cold. Trims only matter for the fallback
+  (thermostat off or a silent room sensor). Curve changes are logged in
+  `HEATING_CURVE_TEST.md` "Curve in force".
 - **The kitchen may fall short in high wind (Eero, 2026-11-11).** It is the SW corner,
   two outer walls onto open gardens, on one radiator. Do not raise the curve so far for
   it that the other rooms become hard to control (overshoot, valves cycling); a kitchen
@@ -296,8 +294,10 @@ ends, because nobody can tell which layer is at fault. So all the logic lives in
 - **One decision per quantity, in one file.** Two automations must never adjust the
   same thing; split the work by condition (e.g. rooms with throttled valves → room
   level; rooms with a fully open valve → the curve), so they cannot fight.
-- Which sensor feeds a TRVZB (door → corrected Alt → its own, `PLANS.md` §3) must be
-  visible on the dashboard, like every other decision HA takes.
+- Every decision HA takes must be visible on the dashboard (today: the room
+  thermostat's status line and valve duty). If the parked TRVZB room feed (`PLANS.md`
+  §3) is ever built, which sensor feeds each TRVZB (door → corrected Alt → its own)
+  must show there too.
 
 **Built 2026-11-10:** `trv-climate/room_thermostat.yaml` - HA opens/shuts each
 valve from its room's door sensor; the TRV's own reading no longer matters (Eero:
@@ -313,14 +313,14 @@ The trims (`trims.yaml`) only matter again if it is switched off.
 The Danfoss eTRV's native external-sensor feature holds an anticipatory ~1% valve
 opening and never fully closes when fed an external sensor (confirmed across all
 externally-fed TRVs; only an unfed one idles — see `DANFOSS.md` §2.6, and note
-"off" is only 5°C anti-freeze, not a real off). Control was therefore handed to
-Better Thermostat — which was then **trialled and removed** as not worth it.
+"off" is only 5°C anti-freeze, not a real off). Better Thermostat was tried on top and
+removed (`TRV_REGULATION.md` "History: Better Thermostat"); HA's room thermostat
+replaced both.
 
-What that leaves, and it matters with heating season coming: the external feed is
-still disabled on the three remaining eTRVs (`0x4015 = -8000`; Ada and Lola have Sonoff
-TRVZBs since 2026-10-26 and 2026-11-12, see `PLANS.md` §7), so each one regulates on its
-**internal** sensor, which sits on the radiator and reads warm. That is corrected
-with a static per-room trim (`regulation_setpoint_offset`; on the TRVZB,
+The external feed therefore stays disabled on the three eTRVs (`0x4015 = -8000`) and
+off on the TRVZBs. In **fallback** (thermostat off, or a room sensor silent for 20 min)
+each TRV regulates on its **internal** sensor, which sits on the radiator and reads
+warm, corrected by a static per-room trim (`regulation_setpoint_offset`; on the TRVZB,
 `local_temperature_offset` with the opposite sign; set 2026-10-17 —
 values and rationale in `TRV_REGULATION.md` "Trims in force").
 `DANFOSS.md` is the curated eTRV Zigbee/feature reference.
@@ -340,7 +340,8 @@ Configure in Home Assistant UI on devices:
 
 ## Swapping an eTRV for a TRVZB
 
-Done for Ada (2026-10-26) and Lola (2026-11-12); kitchen, Master and stairwell may follow.
+Done for Ada (2026-10-26) and Lola (2026-11-12). Kitchen, Master and stairwell follow -
+decided 2026-11-17 after Lola passed, kitchen first.
 1. Pair it in the room's area. ZHA names it "SONOFF TRVZB": rename the device to
    `TRV Sonoff <Room>` and its entities `sonoff_trvzb_*` → `trv_sonoff_<room>_*`, with
    `climate.sonoff_trvzb_thermostat` → `climate.trv_sonoff_<room>`, over the websocket

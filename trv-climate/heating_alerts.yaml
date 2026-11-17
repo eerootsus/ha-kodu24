@@ -2,7 +2,7 @@
 # and what that points at. Alert only: nothing here writes to the boiler or the TRVs.
 #
 # Rewritten 2026-11-12 for the room thermostat (room_thermostat.yaml): HA opens a
-# valve (TRV setpoint 32; 28 until 2026-11-17) whenever its room is under target, so a room that stays
+# valve (TRV setpoint 32) whenever its room is under target, so a room that stays
 # short has one of four causes, read from the TRV setpoint HA left it on:
 #
 #   32 (open)      -> the radiator is flat out and still short: the boiler is not

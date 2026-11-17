@@ -12,7 +12,7 @@
 # numeric, so HA long-term statistics keep them indefinitely, and the decline slope
 # before vs after the ZBMINIR2s go in is directly plottable in a statistics graph card.
 #
-# Install: copy to config/battery-monitor/ and add under homeassistant: packages:
+# Install: deployed by ./deploy.sh and declared in configuration.yaml as
 #   battery_monitor: !include battery-monitor/battery_monitor.yaml
 
 template:

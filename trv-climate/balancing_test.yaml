@@ -2,7 +2,7 @@
 # balancing (PLANS.md §1). Run it, walk away, read the result.
 #
 # What it measures: how fast each radiator warms when its valve is forced fully
-# open. The eTRV's own sensor sits on the radiator, so its reading rising is a
+# open. The TRV's own sensor sits on the radiator, so its reading rising is a
 # rough but consistent flow proxy - a radiator that gets more water warms faster.
 # Compare rooms against each other and a run against an earlier run, not against
 # any absolute number: the supply temperature follows the weather curve, so a
@@ -34,6 +34,9 @@
 #
 # Run: Developer Tools -> Actions -> script.balancing_test, with a label such as
 # "before" or "after presets". Abort: stop the script; the watchdog restores.
+# Use `cool_minutes: 240`, `open_minutes: 90`, not the 60/60 defaults: only those
+# gave a usable result (2026-10-25, PLANS.md §1 / TRV_REGULATION.md). Switch
+# input_boolean.room_thermostat off first - it rewrites every TRV within 5 min.
 #
 # Install: declared as `climate_balancing_test:` in configuration.yaml.
 

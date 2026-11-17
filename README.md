@@ -4,13 +4,19 @@ Home Assistant configuration for the house. It began as climate control alone,
 which is why most of it is still TRVs, and now also carries the general
 housekeeping packages that have nowhere better to live:
 
-- **`trv-climate/` + `room_climate.py`** — pyscript climate sensors for the
-  TRVs - Danfoss eTRVs, one Sonoff TRVZB (documented below). They are
-  observability, not control: Better Thermostat was trialled for control and
-  removed, so the TRVs regulate themselves.
+- **`trv-climate/` + `room_climate.py`** — pyscript room-climate sensors for the
+  TRVs - three Danfoss eTRVs and two Sonoff TRVZBs (Ada, Lola; documented below).
+  They are the input of HA's room thermostat, so they are control, not just
+  observability.
+- **`trv-climate/room_thermostat.yaml`** — HA is the thermostat: every 5 min it
+  opens (setpoint 32) or shuts (5) each TRV from its room's door sensor, with a
+  fallback to the TRV's own regulation when a room sensor goes silent.
+- **`trv-climate/boiler_setback.yaml`** — night setback on the boiler (23:00 →
+  05:00 lowers its room setting, and so the whole curve).
 - **`trv-climate/offset.yaml`** — measures how far each TRV's own sensor sits
-  from the real room, so the per-room trim is a number rather than a guess.
-  Read the `_settled` sensors; see `TRV_REGULATION.md`.
+  from the real room, so the per-room trim (the fallback) is a number rather than
+  a guess. The `_settled` sensors are dormant while the room thermostat is on;
+  see `TRV_REGULATION.md`.
 - **`trv-climate/heating_alerts.yaml`** — push alert when a radiator room stays
   under its target, with the cause read from what the room thermostat is doing
   (valve open = curve, shut = thermostat or sensor, fallback = sensor); the kitchen
@@ -23,7 +29,11 @@ housekeeping packages that have nowhere better to live:
   October, not winter.
 - **`heating-check.py`** — per-room "how well does each room hold its target"
   over a week, against a fixed pre-trim baseline, with degree-days and gas per
-  degree-day so different weeks compare.
+  degree-day so different weeks compare. `--duty` shows, per time step, the share
+  of time HA had each valve open, with outside, flow and wind onto each wall.
+- **`curve-model.py`** — the supply temperature each room needs against the
+  Viessmann curve, calibrated on a night the kitchen valve ran 100 %
+  (`HEATING_CURVE_TEST.md` "Reference curve").
 - **`trv-climate/dashboard/heating_view.yaml`** — record of the Küte dashboard
   view (storage mode; the live copy is in `/config/.storage`): room cards, boiler
   tiles, and the live Diagnostika table (room vs TRV vs target, sensors, trim,
@@ -88,9 +98,8 @@ from the shell and keep the record in step.
 Pyscript room-climate sensors for the radiator TRVs: three Danfoss eTRV0103s (kitchen,
 Master, stairwell) and Sonoff TRVZBs on Ada's radiator since 2026-10-26 and Lola's since 2026-11-12.
 
-`room_climate.py` is **sensor aggregation only** — it performs no writes to the TRVs.
-It was trimmed that way for Better Thermostat, which was then trialled and removed
-(`TRV_REGULATION.md`). Since 2026-11-10 these sensors drive HA's room thermostat
+`room_climate.py` is **sensor aggregation only** — it performs no writes to the TRVs
+(Better Thermostat history: `TRV_REGULATION.md` "History: Better Thermostat"). Since 2026-11-10 these sensors drive HA's room thermostat
 (`trv-climate/room_thermostat.yaml`), which opens or shuts each TRV from its room's
 door sensor; each TRV's own PID on its internal sensor plus trim is the fallback.
 
@@ -107,10 +116,10 @@ door sensor; each TRV's own PID on its internal sensor plus trim is the fallback
   then freezes at its last value rather than going `unavailable`, which is how
   Ada's room went blind 2026-10-26 → 11-05
 
-Removed in the Better Thermostat cutover: the external-sensor feed, weekly time
-sync, radiator-covered writes, load-balancing disable, and the Zigbee retry queue.
-BT is gone now too, so **git history is the only copy** — that is where to look if
-room-based control is ever wanted back.
+The old eTRV control code - external-sensor feed, radiator-covered writes,
+load-balancing disable and the Zigbee retry queue - was removed from this module;
+**git history is the only copy**. Room-based control now lives in
+`room_thermostat.yaml`, and the eTRV clock in `clock_sync.yaml`.
 
 ## Home Assistant Setup
 
@@ -175,8 +184,6 @@ homeassistant:
   customize:
     sensor.trv_danfoss_kitchen_load_estimate:
       state_class: measurement
-    sensor.trv_danfoss_lola_load_estimate:
-      state_class: measurement
     sensor.trv_danfoss_master_load_estimate:
       state_class: measurement
     sensor.trv_danfoss_stairwell_load_estimate:
@@ -193,13 +200,15 @@ homeassistant:
 
 That is the whole schedule. `set_time`, `radiator_covered`,
 `disable_load_balancing`, `update_external_temperatures`, `update_heating_season`
-and `process_pending_writes` were all removed in the Better Thermostat cutover,
-and with them the Zigbee retry queue and its `pyscript.get_pending_writes` debug
-service. Nothing in this repo writes to a TRV any more.
+and `process_pending_writes` were all removed, and with them the Zigbee retry queue
+and its `pyscript.get_pending_writes` debug service. `room_climate.py` writes nothing
+to a TRV. The writers are YAML packages: `room_thermostat.yaml` (setpoint, every
+5 min), `trims.yaml` (`trv_trim_apply`, the trim), `clock_sync.yaml` (the eTRV
+clock) and `balancing_test.yaml` (setpoints, only while it runs).
 
 The queue existed because eTRVs are sleepy end-devices that miss one-shot writes
-(`DANFOSS.md` §1.1). That constraint still holds for anything that *does* write to
-them — `trv_debug.py` and `trv_unstick.py` included — so re-read a value back
+(`DANFOSS.md` §1.1). That constraint still holds for everything that writes to
+them — the packages above, `trv_debug.py` and `trv_unstick.py` — so re-read a value back
 before trusting that a write landed.
 
 ---
