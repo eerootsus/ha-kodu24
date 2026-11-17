@@ -138,6 +138,17 @@ short kitchen is the curve and the wind.
      Lola's and Ada's inlets.** If hers is open, close it only partly and watch her
      humidity a week - her room is the humid one (plants, above), and the inlet may be
      what keeps that in check. Also: how close the headboard and curtains are to her TRV.
+     **Or an air leak** in her exposed SE corner (corner joint, window frames, floor
+     edge, sockets in the outer walls) - from the sensors it looks the same as an open
+     inlet: it needs the open door as the way out, so it shows only by day. A gap in the
+     *insulation* alone does not fit: conduction is steady (worse at night, when it is
+     colder) and cannot dry the air, and her wall-side sensor stays 8-9.5 K above the
+     dew point, so nothing condenses there. **To tell them apart:** inlet first; then,
+     door open in some wind, an incense stick along the corner, window frames, skirting
+     and sockets; a thermal camera on a cold morning shows both (missing insulation =
+     a steady cold patch, a leak = cold streaks from a gap). **Free test, no visit:** one
+     day with her door shut - if the daytime drying and window-side cooling vanish, it
+     is an air path through her room (inlet or leak); if not, it is inside the room.
 
 ### 4. Zigbee routers — ZBMINIR2 (on the shelf since 2026-08-23)
 
