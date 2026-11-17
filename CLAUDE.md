@@ -259,7 +259,7 @@ history and `DANFOSS.md` if that logic is ever needed again.)
 
 **trv-climate/trim_check.yaml** - Reads every TRV trim back from the device (`homeassistant.update_entity` is a fresh ZHA read) at 03:45 and on remount signals, pushes if one differs from its `input_number.trv_trim_<room>` helper. Never writes. A failed read keeps the cached value, so it can miss a reset, never invent one.
 
-**Heating curve test - removed 2026-11-12, never run.** It judged rooms against the TRV setpoint, which the room thermostat now sets to 32 / 5, so it would have raised the curve to its caps; the curve is set by hand from valve duty instead (`HEATING_CURVE_TEST.md` "Curve in force"). Restore: `git checkout ce12cda -- curve-test/`, re-add `curve_test:` to `configuration.yaml` and the `deploy.sh` manifest, then fix its targets to `input_number.room_target_<room>`.
+**Heating curve test - removed 2026-11-12, never run.** The curve is set by hand from valve duty (`HEATING_CURVE_TEST.md` "Curve in force"); restore notes in its "The removed curve test".
 
 **trv-climate/room_feed.yaml** - Deleted 2026-11-12 (in git history).
 
