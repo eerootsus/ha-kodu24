@@ -151,8 +151,10 @@ short kitchen is the curve and the wind.
      is an air path through her room (inlet or leak); if not, it is inside the room.
      **Checked 2026-11-17 (Eero): her inlet (PAX valve) is set closed but does not seal**
      - air movement is felt, and the damper disc shows a gap at its seat. So the air path
-     is confirmed; an extra corner leak is not ruled out. Not yet known: which wall it is
-     in (S takes the wind, E is sheltered) and whether Ada's leaks too. Plan: if the
+     is confirmed; an extra corner leak is not ruled out. It is in her **south wall** - the
+     face the wind has been on (5-6 m/s onto S since 11-13) - which is why the same small
+     leak moves more air than Ada's would on her sheltered east wall. Not yet known:
+     whether Ada's leaks too. Plan: if the
      11-18 check shows 32 alone gets her daytime run to 21.5, leave it - it is fresh air
      for a humid room. If not, reseat the damper disc, and/or plug or cover the grille
      for the coldest weeks and watch her humidity (`wall_rh_lola_72h` pushes at 75 %).
