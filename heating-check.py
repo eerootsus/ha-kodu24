@@ -21,7 +21,7 @@ from the recorder, not statistics, so it only reaches back recorder retention
 
 Since 2026-11-10 HA is the thermostat (trv-climate/room_thermostat.yaml): every room
 is held at its target, so room temperature no longer shows how hard a room is to
-heat. The valve DUTY does - the share of time HA had the valve open (setpoint 28).
+heat. The valve DUTY does - the share of time HA had the valve open (setpoint 32; 28 until 2026-11-17).
 `--duty` prints it per room in time steps, next to outside temperature and the wind
 on each wall, to see which rooms the wind costs most (PLANS.md "House").
 
@@ -305,7 +305,7 @@ def window(label, t0, t1):
 
 
 THERMOSTAT = "input_boolean.room_thermostat"
-OPEN_SP = 27  # setpoint >= this = HA opened the valve (it writes 28 open / 5 shut)
+OPEN_SP = 27  # setpoint >= this = HA opened the valve (it writes 32 open, 28 until 2026-11-17, / 5 shut)
 
 
 def on_spans(t0, t1):

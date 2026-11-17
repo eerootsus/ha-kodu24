@@ -49,7 +49,7 @@ below:
   just one number per room, which is why it is the one being prepared for.
 
 > **2026-11-10 21:53: HA room thermostat on** (`trv-climate/room_thermostat.yaml`):
-> each TRV is driven to setpoint 28 (open) or 5 (shut) from its room's door sensor
+> each TRV is driven to setpoint 32 (open; 28 until 2026-11-17) or 5 (shut) from its room's door sensor
 > against `input_number.room_target_<room>` (all 21.5), so the trims below do not act
 > while it runs. Why: at 21:30 Ada's TRVZB sat 0.5 K under its own target for 17 min
 > and would not heat, and Master/Lola/stairwell valves were throttled with their rooms

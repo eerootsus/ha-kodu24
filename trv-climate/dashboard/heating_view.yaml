@@ -7,7 +7,7 @@
 # (living room, bathrooms, workshop), each card just temperature and humidity (TRV rooms: tap to change
 # the room target, `input_number.room_target_<room>`; icon colour = distance from it).
 # Since 2026-11-10 the HA room thermostat (room_thermostat.yaml) drives every TRV to
-# 28 (open) / 5 (shut), so the cards and the Diagnostika table compare the room with
+# 32 (open) / 5 (shut), so the cards and the Diagnostika table compare the room with
 # the HA room target while it is on, and show HA's decision (avatud / kinni / TRV ise). Boiler in the column beside
 # it. Targets, gaps, valves and trims live in the live Diagnostika table, next to
 # the sensor-error graph; trends below. Sections grids are 12 columns PER span
@@ -237,7 +237,7 @@ sections:
       \ %}\n\n**Tuba** = ukse juures olev andur (Andur); Alt on välisseina ääres ja ei lähe arvesse.\n\
       **TRV−tuba** = TRV-anduri viga (~ = hetkeväärtus, muidu settled). Trimm peaks sellega\nühtima, et\
       \ tuba jõuaks sihini. **⇄** = TRV-le saadetakse toa temperatuuri (automaatne nihe, trimm 0). Võrdlus\
-      \ nädalate kaupa: `./heating-check.py`.\n**Siht** = HA toa siht, kui HA termostaat on sees (TRV seatakse siis 28 = avatud / 5 = kinni); muidu TRV enda siht."
+      \ nädalate kaupa: `./heating-check.py`.\n**Siht** = HA toa siht, kui HA termostaat on sees (TRV seatakse siis 32 = avatud / 5 = kinni); muidu TRV enda siht."
     grid_options:
       columns: full
 # Beside Diagnostika: the heating pressure, the slow-leak watch (heating-pressure/,

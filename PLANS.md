@@ -271,7 +271,7 @@ the shift, not the slope (`HEATING_CURVE_TEST.md`). (The automatic curve test wa
 
 - **TRVZB fitted 2026-11-12** (outcome and settings: `TRV_REGULATION.md` "Trims in
   force", Lola row; procedure: `CLAUDE.md` "Swapping an eTRV for a TRVZB"). HA's room
-  thermostat drives it 28 / 5 from the door sensor.
+  thermostat drives it 32 / 5 from the door sensor.
 - **Pass mark - Lola is the test for the other eTRVs** (Eero, 2026-11-10): nights within
   ±0.3 K of target over the next ~3 nights (`heating-check --duty`), against −1.0…−1.8 on
   her eTRV. If she passes, kitchen, Master and stairwell get TRVZBs too - the kitchen
@@ -509,7 +509,9 @@ radiators (CLAUDE.md "Control principle"): measure first, then put the logic in 
     **Except Lola's south-east corner**, which looks down the open end of the street
     (Eero, 2026-11-11) and may catch wind from the south-east through that gap. The two children's rooms, radiators under the east windows:
     Lola's (corner) and **Ada's** in the north-east, which borders the common stairwell
-    and has only the one outer wall.
+    and has only the one outer wall. **Lola's room has two windows**; Ada's, Master and
+    the stair room have one each (Eero, 2026-11-17) - with two outer walls, the most
+    glass per radiator of the TRV rooms after the kitchen.
   - **North long side:** no outer wall - the party wall with the other ground-floor
     flat, and the common stairwell at its east end.
   - **Middle:** bathroom + WC on one shared floor-heating loop (the en-suite), next to

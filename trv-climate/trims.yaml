@@ -2,7 +2,7 @@
 #
 # A trim corrects a TRV's own head reading so that, regulating by itself, it lands
 # the room near its target. Since 2026-11-10 HA's room thermostat drives every valve
-# 28 / 5 from the room sensor, so a trim only matters when a room falls back to its
+# 32 / 5 from the room sensor, so a trim only matters when a room falls back to its
 # own TRV (its sensor silent for 20 min) or the thermostat is switched off. The
 # automatic trim adjuster that used to live here (`trv_trim_adjust`, 2026-11-10) was
 # removed 2026-11-12: the thermostat superseded it, and a fixed trim is enough for a

@@ -11,7 +11,7 @@
 # takes the head out of the loop.
 #
 # How, every 5 min (and when a target or the switch changes), per room:
-#   room (door sensor, room_climate.py) < target - 0.2  ->  TRV setpoint 28 = open
+#   room (door sensor, room_climate.py) < target - 0.2  ->  TRV setpoint 32 = open
 #   room >= target                                      ->  TRV setpoint 5  = shut
 #   in between                                          ->  leave it as it is
 # The 0.2 K band keeps a 0.1 K sensor wobble from flipping a valve. Shut was at
@@ -24,6 +24,14 @@
 # is easier to live with than to notice and correct.
 # The outer-wall Alts were checked as an earlier shut signal: they track the door
 # sensor at a fixed offset with no lead (Master -0.8, Lola -0.2), so they add nothing.
+# Open is 32, not 28 (2026-11-17): "open" is still a setpoint the TRV judges against
+# its own head, and Lola's head (warm pocket: headboard + curtains, two windows) read
+# 28 within 30-45 min of heating, so her TRVZB went idle while HA held it "open" -
+# it heated only 83 % of its open hours since 11-13, ~50 % on 11-17 daytime, while
+# the room sat under target. The other heads peaked 24-31. Every TRV's max setpoint
+# limit is 35; 32 leaves room for an eTRV's head and keeps a ceiling if one is ever
+# left there. If a head reaches 32, compare sensor.trv_sonoff_<room>_hvac_action
+# with valve_open_<room> - it is the room's enclosure, not the boiler.
 # Writes only when the TRV's setpoint is not already the wanted one, so a write a
 # sleepy eTRV missed is simply retried on the next run.
 #
@@ -36,7 +44,7 @@
 # Turning the TRV's dial by hand is overwritten within 5 min; change the helper.
 # Turning the thermostat off writes every TRV's setpoint back to its room target.
 #
-# While it is on: with setpoints of 28 / 5 the trims (trims.yaml) do nothing; the heating alerts judge rooms against the room
+# While it is on: with setpoints of 32 / 5 the trims (trims.yaml) do nothing; the heating alerts judge rooms against the room
 # targets; `offset.yaml`'s settled offsets and the balancing test assume a normal
 # setpoint - switch this off before running the balancing test.
 #
@@ -93,7 +101,7 @@ input_text:
 automation:
   - id: room_thermostat
     alias: "Heating - room thermostat"
-    description: "Every 5 min: opens a TRV (setpoint 28) when its room is under target - 0.2, shuts it (5) at or above target, falls back to the TRV's own regulation if the room sensor is silent. Off unless input_boolean.room_thermostat. Source: ha-kodu24/trv-climate/room_thermostat.yaml."
+    description: "Every 5 min: opens a TRV (setpoint 32) when its room is under target - 0.2, shuts it (5) at or above target, falls back to the TRV's own regulation if the room sensor is silent. Off unless input_boolean.room_thermostat. Source: ha-kodu24/trv-climate/room_thermostat.yaml."
     mode: single
     max_exceeded: silent
     triggers:
@@ -121,7 +129,7 @@ automation:
         lola: ["Lola tuba", "climate.trv_sonoff_lola", "sensor.climate_lola_s_room_temperature"]
         stairwell: ["Trepihall", "climate.trv_danfoss_stairwell", "sensor.climate_trepihall_temperature"]
         ada: ["Ada tuba", "climate.trv_sonoff_ada", "sensor.climate_ada_s_room_temperature"]
-      open_sp: 28
+      open_sp: 32
       shut_sp: 5
       below: 0.2
       above: 0.0
@@ -231,7 +239,7 @@ automation:
           value: "off - TRVs regulate themselves"
 
 # --- Readouts (2026-11-12): what holding the target costs, per room -------------
-# `sensor.valve_open_<room>` is 100 while HA holds the valve open (setpoint 28) and
+# `sensor.valve_open_<room>` is 100 while HA holds the valve open (setpoint 32; 28 until 2026-11-17) and
 # 0 while shut (5); unavailable when the thermostat is off or the room is on its own
 # TRV, so those hours drop out instead of counting as shut. With state_class
 # measurement HA's long-term statistics keep its time-weighted hourly mean, which IS
