@@ -154,11 +154,18 @@ short kitchen is the curve and the wind.
      is confirmed; an extra corner leak is not ruled out. It is in her **south wall** - the
      face the wind has been on (5-6 m/s onto S since 11-13) - which is why the same small
      leak moves more air than Ada's would on her sheltered east wall. Not yet known:
-     whether Ada's leaks too. Plan: if the
-     11-18 check shows 32 alone gets her daytime run to 21.5, leave it - it is fresh air
-     for a humid room. If not, reseat the damper disc, and/or plug or cover the grille
-     for the coldest weeks and watch her humidity (`wall_rh_lola_72h` pushes at 75 %).
-     The foam filter is yellowed - cheap to replace.
+     whether Ada's leaks too. The foam filter is yellowed - cheap to replace.
+     **Done 2026-11-17 ~22:30: Lola's inlet plugged** (Eero), the same evening as open =
+     32 (21:36) - two changes at once, so 11-18 onward cannot say which one fixed the
+     daytime run; the plug's own signature is her daytime drying (absolute humidity
+     −0.59 g/m³ day vs night) and window-side cooling (door − wall 0.37 K) going away.
+     **Watch her humidity** - her room is the humid one (plants) and this was its only
+     fresh air with the door shut: `wall_rh_lola_72h` pushes at 75 %; if it climbs, open
+     the inlet partly again rather than leave the plug in.
+- **Master's inlet was open; closed 2026-11-17 ~22:30** (Eero). Expect lower valve duty
+  (it was already the least-worked room, 4-37 %) and a warmer room, so watch for night
+  overshoot, and higher humidity in a bedroom two people sleep in: `wall_rh_master`
+  / `_72h`. If it climbs, set the inlet part-open rather than fully open.
 
 ### 4. Zigbee routers — ZBMINIR2 (on the shelf since 2026-08-23)
 
