@@ -279,6 +279,15 @@ the shift, not the slope (`HEATING_CURVE_TEST.md`). (The automatic curve test wa
   for the TRVZBs is now that they close fully in summer and carry no hidden logic.
   Watch whether preset 4 costs her: valve flat out and room below ~21 at night = back
   to 5-6.
+  **Passed (checked 2026-11-17, `heating-check --duty` from 11-13 10:00):** every night
+  21.35-21.46 on 21.5 (−0.04…−0.15 K, the thermostat's intended slight-under), valve
+  24-50 % open at night - so preset 4 is not costing her either. Days ran 21.22-21.42
+  with the valve "open" 67-92 %, but that was her head reaching the open setpoint of 28
+  and idling the TRVZB (fixed 2026-11-17: open = 32, `room_thermostat.yaml` header),
+  not the room or the radiator. **Decision: TRVZBs for the kitchen, Master and stairwell,
+  kitchen first** - three to order; the stairwell (28 %) and Master (34 %) eTRV
+  batteries (§5) go with them. Still unproven until spring: that they close fully in
+  summer (§7).
 - **Parked: feeding the room temperature to the TRVZBs** (their external input), only
   needed if the room thermostat is ever dropped.
   **Feed design - never regulate on a frozen number** (Eero, 2026-11-10). The feed
