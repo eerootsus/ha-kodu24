@@ -172,6 +172,10 @@ short kitchen is the curve and the wind.
   (`wall_rh_<room>_72h`, push at 75 %) and night temperatures (less heat needed, so
   less valve duty and possible overshoot). If a room gets stuffy or damp, A is the
   setting to go back to first (Lola's needs its damper reseated for that to mean anything).
+- **Moving the bedroom inlets under the windows, behind the radiators** (Eero's idea) is
+  building work, so it lives in the house TODO doc ("Kodu 24 TODO", Google Docs, section
+  "Ventilatsioon"), with what to settle first. Here only what HA sees: valve duty and
+  humidity per room are the before/after measure.
 
 ### 4. Zigbee routers — ZBMINIR2 (on the shelf since 2026-08-23)
 
