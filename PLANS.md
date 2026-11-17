@@ -120,6 +120,24 @@ short kitchen is the curve and the wind.
   her overnight moisture gain (r −0.02), a modest stack-effect one (r −0.30) and a
   small gain (~+0.25 g/m³ per night): ventilation copes, the baseline is high. A CO₂
   sensor is the definitive ventilation test if still needed.
+- **Lola's room by day (found 2026-11-17).** From ~11:00 her valve stays "open" all
+  afternoon and the room sits at 21.3-21.4, never reaching 21.5; nights cycle normally.
+  Ada's room, the hall (stairwell sensor, next to Lola's door) and the wind show no such
+  pattern, so it is her room only. Two parts:
+  1. **Her TRVZB idling at the open setpoint 28** - head in a warm pocket (headboard +
+     curtains; even shut it cools only to 22-24 vs Ada's 20-21), so by day it heated ~half
+     the time HA held it open. Fixed 2026-11-17: open = 32. **Check 11-18 from 11:00
+     (`heating-check.py --duty`, `sensor.trv_sonoff_lola_hvac_action`):** does the
+     daytime run now reach 21.5 and shut? If yes, part 2 is minor.
+  2. **More outside air by day, before the TRVZB too.** Her window side cools against her
+     door sensor by day (door - wall gap 0.37 K vs 0.19 at night; eTRV era 0.28 vs 0.16),
+     and her room dries by day (absolute humidity −0.59 g/m³ day vs night; Ada +0.05,
+     hall −0.01). Both doors stand open by day. Lead: her **fresh-air inlet** is not
+     fully closed, and with her door open by day outside air flows in through it to the
+     hall and extract; at night the shut door blocks the path. **Next visit: check
+     Lola's and Ada's inlets.** If hers is open, close it only partly and watch her
+     humidity a week - her room is the humid one (plants, above), and the inlet may be
+     what keeps that in check. Also: how close the headboard and curtains are to her TRV.
 
 ### 4. Zigbee routers — ZBMINIR2 (on the shelf since 2026-08-23)
 
