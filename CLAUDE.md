@@ -118,11 +118,14 @@ Reload all), so a package can deploy cleanly and still show nothing until then.
   `ssh host 'cat file'` for pulling one file.
 - A newly added `authorized_keys` entry needs the **add-on restarted**, not
   just the config saved.
-- **Two keys are authorized** (add-on `a0d7b954_ssh`): `iBook G7` (ED25519, this
-  workstation's own 1Password) and, since 2026-11-05, `oroma-lent` (ECDSA, the
-  agent lent by `ssh -A` from the device being sat at, see `~/.ssh/config`). Without
-  the second, a session driven remotely got "Permission denied (publickey)":
-  the iBook key's 1Password prompt appears on a screen nobody is at. The add-on's
+- **Three keys are authorized** (add-on `a0d7b954_ssh`): `iBook G7` (ED25519, this
+  workstation's own 1Password) and the two mobile Secure Enclave keys,
+  `iphone182-blink-se` and `ipad166-blink-se` (since 2026-11-19; the phone's was
+  there from 2026-11-05 as `oroma-lent`). They arrive as the agent lent by `ssh -A`
+  from the device in hand (see eeroma `config/ssh/config`): from the iPad the lent
+  key is the iPad's. Without one, a session driven remotely got "Permission denied
+  (publickey)": the iBook key's 1Password prompt appears on a screen nobody is at.
+  The list matches unraid `ssh/mobile-keys.pub`. The add-on's
   options can be read and changed without ssh over the websocket API
   (`supervisor/api`, `/addons/a0d7b954_ssh/info` and `/options`, then `/restart`).
 
